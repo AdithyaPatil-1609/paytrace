@@ -32,7 +32,7 @@ export async function getCommitmentsForPerson(personId = "priya") {
     const result = await session.run(commitmentQuery, { personId });
     return result.records.map((row) => {
       const properties = row.get("commitment").properties;
-      return toCommitment({
+      const graphCommitment = toCommitment({
         ...properties,
         annualCost: properties.annualCost.toNumber(),
         amount: properties.amount.toNumber(),
@@ -42,6 +42,10 @@ export async function getCommitmentsForPerson(personId = "priya") {
         instrument: properties.instrument as Instrument,
         kind: properties.kind as CommitmentKind
       });
+      // The graph owns transaction and commitment facts. The local fixture enriches
+      // the prototype with the reviewed copy from the merchant dictionary.
+      const fixtureCopy = priyaCommitments.find((item) => item.id === graphCommitment.id);
+      return fixtureCopy ? { ...fixtureCopy, ...graphCommitment } : graphCommitment;
     });
   } finally {
     await session.close();
