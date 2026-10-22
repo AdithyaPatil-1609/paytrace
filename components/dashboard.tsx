@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { formatINR } from "@/lib/format";
 import { unusedTotal, yearlyTotal } from "@/lib/analysis";
 import type { Commitment } from "@/lib/types";
+import { DataActions, type ImportSummary } from "@/components/data-actions";
 
 type DashboardProps = { commitments: Commitment[] };
 type View = "overview" | "commitments" | "plan";
@@ -11,10 +12,12 @@ type View = "overview" | "commitments" | "plan";
 const monthlyPulse = [49, 57, 53, 63, 68, 60, 74, 66, 81, 72, 65, 78];
 const months = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
-export function Dashboard({ commitments }: DashboardProps) {
+export function Dashboard({ commitments: seedCommitments }: DashboardProps) {
   const [view, setView] = useState<View>("overview");
   const [selectedId, setSelectedId] = useState("fitline-gym");
   const [showAll, setShowAll] = useState(false);
+  const [commitments, setCommitments] = useState(seedCommitments);
+  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
   const selected = commitments.find((commitment) => commitment.id === selectedId) ?? commitments[0];
   const annual = useMemo(() => yearlyTotal(commitments), [commitments]);
   const unused = useMemo(() => unusedTotal(commitments), [commitments]);
@@ -44,8 +47,8 @@ export function Dashboard({ commitments }: DashboardProps) {
 
       <section className="workspace">
         <header className="topbar">
-          <div className="crumb"><span className="live-dot" /> LIVE ANALYSIS <i>·</i> FY 2026</div>
-          <div className="person"><div className="notification">⌁<b>3</b></div><div className="person-avatar">P</div><div><strong>Priya Sharma</strong><small>Bengaluru, India</small></div><span className="chevron">⌄</span></div>
+          <div className="crumb"><span className="live-dot" /> {importSummary ? `IMPORTED · ${importSummary.fileName.toUpperCase()}` : "LIVE ANALYSIS"} <i>·</i> FY 2026</div>
+          <div className="topbar-actions"><DataActions commitments={commitments} onImport={(result) => { setCommitments(result.commitments); setSelectedId(result.commitments[0]?.id ?? selectedId); setImportSummary(result.summary); setView("overview"); }} /><div className="person"><div className="notification">⌁<b>3</b></div><div className="person-avatar">P</div><div><strong>Priya Sharma</strong><small>Bengaluru, India</small></div><span className="chevron">⌄</span></div></div>
         </header>
 
         {view === "overview" && <Overview annual={annual} unused={unused} debt={debt} actionItems={displayActions} selected={selected} onInspect={inspect} onShowAll={() => setShowAll((visible) => !visible)} showAll={showAll} />}
