@@ -1,11 +1,11 @@
-# Recur
+# Paytrace
 
-Recur turns a year of statement-like fixtures into plain-language recurring-payment choices. This first build is entirely synthetic: no login, bank connection, or real cancellation action.
+Paytrace turns a year of synthetic statement, SMS, and email fixtures into four useful views: every payment, plain-language merchant matching, issues, and a cancellation path for each autopay. It never connects to a bank, phone, or mailbox, and it never sends a revoke.
 
 ## Stack and structure
 
-- `app/` - Next.js screens: Annual, List, Detail, and Cancel.
-- `components/` - interactive dashboard UI.
+- `app/` - Next.js application shell and styles.
+- `components/` - interactive four-screen Paytrace prototype and CSV export.
 - `data/` - local fixture fallback so the prototype runs without secrets.
 - `db/neo4j/` - the core graph schema, seed data, driver, and commitment query.
 - `lib/` - analysis and formatting helpers.
@@ -20,8 +20,8 @@ Neo4j is the source of truth when configured. The graph models a person, account
 3. Install dependencies with `npm install`.
 4. Run `npm run dev`, then open `http://localhost:3000`.
 
-Without Neo4j environment variables, the app uses the same synthetic fixture in `data/priya.ts`; this makes the product reviewable before a database is provisioned.
+Without Neo4j environment variables, the app uses the synthetic Priya fixture in `data/priya.ts`; this keeps the prototype reviewable before a database is provisioned.
 
 ## Verify
 
-Run `npm test` for the nine fixture tests and `npm run build` for a production build.
+Run `npm test` for the fixture tests and `npm run build` for a production build.

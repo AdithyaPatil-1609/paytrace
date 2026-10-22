@@ -15,4 +15,12 @@ export type Commitment = {
   status: string;
   canCancel: boolean;
   cancellationPath?: string;
+  source?: "SMS" | "SMS and email";
+  plainDescription?: string;
+  issue?: string;
+  stopService?: string;
+  stopMoney?: string;
+  ifSilent?: string;
+  trap?: string;
+  mandateRef?: string;
 };

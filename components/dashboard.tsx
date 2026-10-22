@@ -1,142 +1,97 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { headspaceCommitment } from "@/data/priya";
 import { formatINR } from "@/lib/format";
-import { unusedTotal, yearlyTotal } from "@/lib/analysis";
 import type { Commitment } from "@/lib/types";
-import { DataActions, type ImportSummary } from "@/components/data-actions";
 
 type DashboardProps = { commitments: Commitment[] };
-type View = "overview" | "commitments" | "plan";
+type Screen = "all" | "language" | "issues" | "paths";
 
-const monthlyPulse = [49, 57, 53, 63, 68, 60, 74, 66, 81, 72, 65, 78];
-const months = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+const screens: { id: Screen; number: string; label: string }[] = [
+  { id: "all", number: "01", label: "All payments" },
+  { id: "language", number: "02", label: "Plain language" },
+  { id: "issues", number: "03", label: "Issues" },
+  { id: "paths", number: "04", label: "Cancel paths" }
+];
 
 export function Dashboard({ commitments: seedCommitments }: DashboardProps) {
-  const [view, setView] = useState<View>("overview");
-  const [selectedId, setSelectedId] = useState("fitline-gym");
-  const [showAll, setShowAll] = useState(false);
-  const [commitments, setCommitments] = useState(seedCommitments);
-  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
-  const selected = commitments.find((commitment) => commitment.id === selectedId) ?? commitments[0];
-  const annual = useMemo(() => yearlyTotal(commitments), [commitments]);
-  const unused = useMemo(() => unusedTotal(commitments), [commitments]);
-  const debt = useMemo(() => commitments.find((item) => item.kind === "debt")?.annualCost ?? 0, [commitments]);
-  const actionItems = useMemo(
-    () => commitments.filter((item) => item.canCancel && ["unused", "silent", "trial"].includes(item.kind)).sort((a, b) => b.annualCost - a.annualCost),
-    [commitments]
-  );
-  const displayActions = showAll ? actionItems : actionItems.slice(0, 3);
+  const [screen, setScreen] = useState<Screen>("all");
+  const [simulated, setSimulated] = useState(false);
+  const [stopped, setStopped] = useState<string[]>([]);
+  const commitments = useMemo(() => simulated ? [...seedCommitments, headspaceCommitment] : seedCommitments, [seedCommitments, simulated]);
+  const active = commitments.filter((item) => !stopped.includes(item.id));
+  const total = active.reduce((sum, item) => sum + item.annualCost, 0);
+  const issueItems = active.filter((item) => ["unused", "silent", "trial"].includes(item.kind));
+  const leakage = active.filter((item) => item.kind === "unused").reduce((sum, item) => sum + item.annualCost, 0);
+  const hike = active.find((item) => item.id === "spotify") ? 240 : 0;
 
-  function inspect(id: string) {
-    setSelectedId(id);
-    setView("commitments");
+  function resetSimulation() {
+    setSimulated(false);
+    setStopped((current) => current.filter((id) => id !== "headspace"));
   }
 
-  return (
-    <main className="recur-shell">
-      <aside className="side-rail">
-        <div className="rail-brand"><span className="brand-orb">R</span><span>recur</span></div>
-        <nav className="rail-nav" aria-label="Dashboard navigation">
-          <NavButton icon="▦" label="Overview" active={view === "overview"} onClick={() => setView("overview")} />
-          <NavButton icon="◫" label="Commitments" active={view === "commitments"} onClick={() => setView("commitments")} />
-          <NavButton icon="✦" label="Action plan" active={view === "plan"} onClick={() => setView("plan")} />
-        </nav>
-        <div className="rail-note"><span>✦</span><p><strong>Private by design</strong>Your financial data is always explained, never guessed.</p></div>
-      </aside>
+  function confirmStop(id: string) {
+    setStopped((current) => current.includes(id) ? current : [...current, id]);
+  }
 
-      <section className="workspace">
-        <header className="topbar">
-          <div className="crumb"><span className="live-dot" /> {importSummary ? `IMPORTED · ${importSummary.fileName.toUpperCase()}` : "LIVE ANALYSIS"} <i>·</i> FY 2026</div>
-          <div className="topbar-actions"><DataActions commitments={commitments} onImport={(result) => { setCommitments(result.commitments); setSelectedId(result.commitments[0]?.id ?? selectedId); setImportSummary(result.summary); setView("overview"); }} /><div className="person"><div className="notification">⌁<b>3</b></div><div className="person-avatar">P</div><div><strong>Priya Sharma</strong><small>Bengaluru, India</small></div><span className="chevron">⌄</span></div></div>
-        </header>
-
-        {view === "overview" && <Overview annual={annual} unused={unused} debt={debt} actionItems={displayActions} selected={selected} onInspect={inspect} onShowAll={() => setShowAll((visible) => !visible)} showAll={showAll} />}
-        {view === "commitments" && <Commitments commitments={commitments} selected={selected} onInspect={setSelectedId} onPlan={() => setView("plan")} />}
-        {view === "plan" && <ActionPlan actionItems={actionItems} selected={selected} onInspect={inspect} />}
+  return <main className="paytrace-shell">
+    <header className="product-bar"><div className="wordmark"><span>p</span>paytrace</div><p>PROTOTYPE <i>·</i> SYNTHETIC MESSAGES ONLY</p><div className="bar-actions"><button className="export-csv" onClick={() => downloadCsv(active)}>↓ Export CSV</button><div className="persona"><b>PD</b><span>Priya Demo</span></div></div></header>
+    <div className="app-layout">
+      <aside className="side-nav"><p>THE FOUR SCREENS</p>{screens.map((item) => <button key={item.id} className={screen === item.id ? "active" : ""} onClick={() => setScreen(item.id)}><span>{item.number}</span>{item.label}</button>)}<div className="side-note"><strong>Prototype only</strong><span>It shows a route to stop a payment. It never sends a revoke.</span></div></aside>
+      <section className="main-stage">
+        <nav className="mobile-nav">{screens.map((item) => <button className={screen === item.id ? "active" : ""} onClick={() => setScreen(item.id)} key={item.id}>{item.number}</button>)}</nav>
+        {screen === "all" && <AllPayments items={active} total={total} simulated={simulated} onSimulate={() => setSimulated(true)} onReset={resetSimulation} />}
+        {screen === "language" && <PlainLanguage items={active} />}
+        {screen === "issues" && <Issues items={issueItems} total={total} leakage={leakage} hike={hike} />}
+        {screen === "paths" && <CancelPaths items={active} stopped={stopped} onConfirm={confirmStop} />}
       </section>
-    </main>
-  );
+    </div>
+  </main>;
 }
 
-function NavButton({ icon, label, active, onClick }: { icon: string; label: string; active: boolean; onClick: () => void }) {
-  return <button className={`rail-button ${active ? "active" : ""}`} onClick={onClick}><span>{icon}</span>{label}</button>;
+function ScreenHeader({ number, eyebrow, title, copy }: { number: string; eyebrow: string; title: string; copy: string }) {
+  return <header className="screen-header"><p><span>SCREEN {number}</span> · {eyebrow}</p><h1>{title}</h1><div>{copy}</div></header>;
 }
 
-function Overview({ annual, unused, debt, actionItems, selected, onInspect, onShowAll, showAll }: { annual: number; unused: number; debt: number; actionItems: Commitment[]; selected: Commitment; onInspect: (id: string) => void; onShowAll: () => void; showAll: boolean }) {
-  return <>
-    <section className="welcome-row">
-      <div><p className="section-kicker">MONDAY, 22 OCTOBER</p><h1>Good evening, Priya<span>.</span></h1><p className="welcome-copy">Here is the quiet story behind your recurring money.</p></div>
-      <button className="statement-button"><span>⇩</span> View source statements</button>
-    </section>
-
-    <section className="hero-grid">
-      <article className="freedom-card">
-        <div className="freedom-top"><span className="label-pill">POTENTIAL FREEDOM</span><span className="sparkle">✦</span></div>
-        <p>There is room to make your money feel lighter.</p>
-        <strong>{formatINR(unused)}</strong><small>could stop leaving your account this year</small>
-        <div className="freedom-progress"><span /><i>4 opportunities found</i></div>
-        <button onClick={() => onInspect("fitline-gym")}>See the opportunities <span>→</span></button>
-      </article>
-      <article className="spend-card">
-        <div className="card-heading"><div><p className="section-kicker">12-MONTH COMMITMENT</p><h2>{formatINR(annual)}</h2></div><span className="year-chip">2026</span></div>
-        <div className="pulse-chart" aria-label="Monthly recurring payment trend">
-          {monthlyPulse.map((height, index) => <div className={index === 8 ? "bar current" : "bar"} key={`${height}-${index}`}><span style={{ height: `${height}%` }} /><small>{months[index]}</small></div>)}
-        </div>
-        <div className="chart-caption"><span><i className="dot purple" />Recurring payments</span><strong>Up 8.4% from last year</strong></div>
-      </article>
-    </section>
-
-    <section className="metric-row" aria-label="Key payment metrics">
-      <Metric icon="↻" tone="purple" label="Active commitments" value="14" detail="Across 5 payment rails" />
-      <Metric icon="◎" tone="gold" label="Needs your attention" value="4" detail="Worth reviewing this week" />
-      <Metric icon="◈" tone="green" label="Fixed essentials" value={formatINR(debt)} detail="Home loan, shown separately" />
-    </section>
-
-    <section className="dashboard-grid">
-      <article className="action-queue panel">
-        <div className="panel-heading"><div><p className="section-kicker">YOUR ACTION QUEUE</p><h2>A few good moves</h2></div><button onClick={onShowAll}>{showAll ? "Show less" : "See all"} <span>→</span></button></div>
-        <div className="action-list">
-          {actionItems.map((item, index) => <button className="action-row" onClick={() => onInspect(item.id)} key={item.id}><span className={`action-number ${item.kind}`}>0{index + 1}</span><div className="action-copy"><strong>{item.merchant}</strong><small>{item.status}</small></div><div className="action-value"><strong>{formatINR(item.annualCost)}</strong><small>/ year</small></div><span className="arrow">→</span></button>)}
-        </div>
-      </article>
-
-      <article className="radar-card panel">
-        <div className="panel-heading"><div><p className="section-kicker">RECURRING RADAR</p><h2>What we noticed</h2></div><span className="radar-icon">⌁</span></div>
-        <div className="radar-ring"><div><strong>82</strong><span>money clarity<br />score</span></div></div>
-        <div className="radar-note"><span>↗</span><p>Your score is <strong>12 points higher</strong> than last month. Nice work staying aware.</p></div>
-      </article>
-    </section>
-
-    <section className="upcoming panel">
-      <div className="panel-heading"><div><p className="section-kicker">UP NEXT</p><h2>Coming up in the next 14 days</h2></div><button onClick={() => onInspect(selected.id)}>Open calendar <span>→</span></button></div>
-      <div className="upcoming-items"><Upcoming date="24" month="OCT" title="FitLine Gym" detail="UPI Autopay" value="₹1,500" color="gold" /><Upcoming date="28" month="OCT" title="Spotify Premium" detail="Card · price changed" value="₹139" color="purple" /><Upcoming date="01" month="NOV" title="Home loan EMI" detail="eNACH · fixed payment" value="₹8,500" color="dark" /></div>
-    </section>
+function AllPayments({ items, total, simulated, onSimulate, onReset }: { items: Commitment[]; total: number; simulated: boolean; onSimulate: () => void; onReset: () => void }) {
+  return <><ScreenHeader number="1" eyebrow="ALL OF THEM" title="Every periodic payment, on one page" copy="This is the whole book before any judgement. Monthly rows show the amount that leaves each month and the amount across the year. Electricity changes amount, and society has uneven dates. Both still belong here." />
+    <section className="year-banner"><div><span>YEAR OF EVERYTHING</span><strong>{formatINR(total)}</strong><small>{items.length} recurring commitments from statement lines and payment messages.</small></div><div className="year-note"><b>{simulated ? "New autopay is included" : "A clear annual total"}</b><p>{simulated ? "Headspace is now on screens 1, 2, and 4. It is not an issue." : "The current Spotify price is shown here. Price history belongs on screen 3."}</p></div></section>
+    <section className="data-panel"><div className="table-caption"><span>WHAT THE MESSAGE PRINTS</span><span>EACH MONTH</span><span>THIS YEAR</span><span>SOURCE</span></div><div className="payment-rows">{items.map((item) => <div className="payment-row" key={item.id}><strong>{item.rawNarration}</strong><span>{monthlyCost(item)}</span><b>{formatINR(item.annualCost)}</b><small>{item.source}</small></div>)}</div></section>
+    <p className="exclusion-note"><strong>Not added to this list:</strong> one Swiggy order, a transfer to Rahul, salary credits, the credit-card repayment, and YouTube&apos;s ₹1 authorisation. They are statement lines, not recurring commitments.</p>
+    <section className="simulation-card"><div><p>SIMULATE NEW AUTOPAY</p><h2>{simulated ? "Headspace is now being tracked" : "See what a new autopay looks like"}</h2><span>{simulated ? "UPI/HEADSPACE/7712003344 is on the full list, plain-language view, and cancel paths. A second click will not duplicate it." : "One click adds Headspace: ₹299 every month, source SMS, no email, and no issue flag. It never appears on the issues screen."}</span></div>{simulated ? <button className="secondary-button" onClick={onReset}>Reset simulation</button> : <button className="primary-button" onClick={onSimulate}>Simulate new autopay <i>→</i></button>}</section>
   </>;
 }
 
-function Metric({ icon, tone, label, value, detail }: { icon: string; tone: string; label: string; value: string; detail: string }) {
-  return <article className="metric-card"><span className={`metric-icon ${tone}`}>{icon}</span><div><small>{label}</small><strong>{value}</strong><p>{detail}</p></div></article>;
+function PlainLanguage({ items }: { items: Commitment[] }) {
+  return <><ScreenHeader number="2" eyebrow="PLAIN LANGUAGE" title="The bank string, in words a person knows" copy="Every match comes from a hand-written merchant dictionary. Paytrace does not guess the merchant. Headspace joins only after you simulate it." />
+    <section className="data-panel language-panel"><div className="language-caption"><span>STRING</span><span>A PERSON READS</span><span>WHAT IT ACTUALLY IS</span></div>{items.map((item) => <article className="language-row" key={item.id}><code>{item.rawNarration}</code><strong>{item.merchant}</strong><p>{item.plainDescription}</p></article>)}</section>
+  </>;
 }
 
-function Upcoming({ date, month, title, detail, value, color }: { date: string; month: string; title: string; detail: string; value: string; color: string }) {
-  return <div className="upcoming-entry"><div className={`date-badge ${color}`}><strong>{date}</strong><span>{month}</span></div><div><strong>{title}</strong><small>{detail}</small></div><b>{value}</b></div>;
+function Issues({ items, total, leakage, hike }: { items: Commitment[]; total: number; leakage: number; hike: number }) {
+  return <><ScreenHeader number="3" eyebrow="CHANGES, ISSUES, UNUSED" title="Only what deserves your attention" copy="Screen 1 is the whole book. This page is the part that should change what she does. The full year stays visible so flags are not mistaken for her entire financial life." />
+    <section className="issue-metrics"><Metric value={formatINR(total)} label="Everything on screen 1, this year." /><Metric value={formatINR(leakage)} label="Still leaving for the gym, Canva, FitApp, and the caller tune." accent /><Metric value={formatINR(hike)} label="Spotify's silent hike. ₹119 became ₹139, with no email." accent /></section>
+    <section className="issues-table"><div className="issue-caption"><span>PLAIN NAME</span><span>WHAT IS WRONG</span><span>MONTH</span><span>THIS YEAR</span><span>MESSAGE</span></div>{items.map((item) => <article className="issue-row" key={item.id}><strong>{item.merchant}</strong><p>{item.issue}</p><span>{monthlyCost(item)}</span><b>{formatINR(item.annualCost)}</b><small>{item.source}</small></article>)}</section>
+    <p className="screen-footnote">Not on this page: Netflix, Google One, Prime, JioHotstar, insurance, electricity, society, and the loan. Electricity&apos;s changing amount and society&apos;s uneven dates are discovery signals, not waste.</p>
+  </>;
 }
 
-function Commitments({ commitments, selected, onInspect, onPlan }: { commitments: Commitment[]; selected: Commitment; onInspect: (id: string) => void; onPlan: () => void }) {
-  return <section className="commitment-view">
-    <div className="view-intro"><p className="section-kicker">ALL RECURRING PAYMENTS</p><h1>Every commitment,<br /><em>made legible.</em></h1><p>Tap a payment to see why Recur grouped it, what it costs, and what you can do next.</p></div>
-    <div className="commitment-layout">
-      <div className="commitment-table panel"><div className="table-title"><span>14 recurring payments found</span><button>Filter ⌄</button></div>{commitments.sort((a, b) => b.annualCost - a.annualCost).map((item) => <button className={`commitment-row ${item.id === selected.id ? "selected" : ""}`} onClick={() => onInspect(item.id)} key={item.id}><span className={`service-glyph ${item.kind}`}>{item.merchant.slice(0, 1)}</span><div><strong>{item.merchant}</strong><small>{item.instrument} · {item.cadence}</small></div><span className={`status-dot ${item.kind}`} /><b>{formatINR(item.annualCost)}</b></button>)}</div>
-      <DetailCard commitment={selected} onPlan={onPlan} />
-    </div>
-  </section>;
+function Metric({ value, label, accent = false }: { value: string; label: string; accent?: boolean }) { return <article className={accent ? "issue-metric accent" : "issue-metric"}><strong>{value}</strong><span>{label}</span></article>; }
+
+function CancelPaths({ items, stopped, onConfirm }: { items: Commitment[]; stopped: string[]; onConfirm: (id: string) => void }) {
+  return <><ScreenHeader number="4" eyebrow="HOW TO STOP EACH ONE" title="A cancel path for every autopay" copy="Normal paths show two tracks: stop the service, then stop the money. Every path also says what to do if the merchant never replies. The loan has no revoke control." />
+    <section className="path-list">{items.map((item) => <article className={`path-card ${["unused", "silent", "trial"].includes(item.kind) ? "issue" : ""} ${stopped.includes(item.id) ? "stopped" : ""}`} key={item.id}><div className="path-name"><strong>{item.merchant}</strong><span>{monthlyCost(item)}</span>{item.mandateRef && <small>Mandate: {item.mandateRef}</small>}</div><div className="path-copy"><div><b>STOP THE SERVICE</b><p>{item.stopService}</p></div><div><b>STOP THE MONEY</b><p>{item.stopMoney}</p></div><div className="silent-line"><b>IF THEY STAY SILENT</b><p>{item.ifSilent}</p></div>{item.trap && <p className="trap"><strong>Watch for:</strong> {item.trap}</p>}</div><div className="path-action">{stopped.includes(item.id) ? <span className="stopped-label">✓ Marked stopped</span> : item.canCancel ? <button onClick={() => onConfirm(item.id)}>I&apos;ve completed this <i>→</i></button> : <span className="no-action">No revoke control</span>}</div></article>)}</section>
+  </>;
 }
 
-function DetailCard({ commitment, onPlan }: { commitment: Commitment; onPlan: () => void }) {
-  return <aside className="detail-card"><div className="detail-top"><span className={`service-glyph large ${commitment.kind}`}>{commitment.merchant.slice(0, 1)}</span><span className={`kind-pill ${commitment.kind}`}>{commitment.kind}</span></div><h2>{commitment.merchant}</h2><p className="raw-text">{commitment.rawNarration}</p><div className="detail-cost"><span>Expected cost this year</span><strong>{formatINR(commitment.annualCost)}</strong></div><div className="why-box"><span>✦</span><div><small>WHY RECUR FLAGGED THIS</small><p>{commitment.evidence}</p></div></div>{commitment.canCancel ? <button className="plan-button" onClick={onPlan}>Add to my action plan <span>→</span></button> : <p className="safe-payment">✓ This is a fixed essential, not a subscription to cancel.</p>}</aside>;
-}
+function monthlyCost(item: Commitment) { return item.cadence === "annual" ? "once a year" : item.id === "electricity" ? "about ₹1,800" : item.id === "society" ? "₹4,500 each time" : `${formatINR(item.amount)} / month`; }
 
-function ActionPlan({ actionItems, selected, onInspect }: { actionItems: Commitment[]; selected: Commitment; onInspect: (id: string) => void }) {
-  return <section className="plan-view"><div className="view-intro"><p className="section-kicker">A CALMER MONEY ROUTINE</p><h1>Your four-step<br /><em>action plan.</em></h1><p>Small decisions, ordered by the money they could return to you.</p></div><div className="plan-layout"><div className="plan-steps">{actionItems.map((item, index) => <button className={`plan-step ${item.id === selected.id ? "selected" : ""}`} onClick={() => onInspect(item.id)} key={item.id}><span>{index + 1}</span><div><small>STEP 0{index + 1}</small><strong>{item.merchant}</strong><p>{item.cancellationPath}</p></div><b>{formatINR(item.annualCost)}<em> saved / year</em></b></button>)}</div><DetailCard commitment={selected} onPlan={() => undefined} /></div></section>;
+function downloadCsv(items: Commitment[]) {
+  const headers = ["statement_narration", "plain_name", "monthly_cost_inr", "annual_cost_inr", "source", "status", "issue", "cancel_path"];
+  const encode = (value: string | number | undefined) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+  const rows = items.map((item) => [item.rawNarration, item.merchant, item.cadence === "annual" ? "" : item.amount, item.annualCost, item.source, item.status, item.issue, item.cancellationPath].map(encode).join(","));
+  const blob = new Blob([[headers.join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a"); anchor.href = url; anchor.download = "paytrace-commitments.csv"; anchor.click(); URL.revokeObjectURL(url);
 }

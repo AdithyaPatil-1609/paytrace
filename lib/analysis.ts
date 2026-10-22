@@ -13,7 +13,8 @@ export function groupByKind(items: Commitment[]) {
 }
 
 export function isSilentPriceHike(item: Commitment) {
-  return item.kind === "silent" && item.evidence.toLowerCase().includes("no price-change notice");
+  const evidence = item.evidence.toLowerCase();
+  return item.kind === "silent" && (evidence.includes("no price-change notice") || evidence.includes("price email does not"));
 }
 
 export function isZombie(item: Commitment) {
