@@ -1,16 +1,133 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { priyaCommitments } from "../data/priya";
-import { groupByKind, isSilentPriceHike, isZombie, unusedTotal, yearlyTotal } from "../lib/analysis";
+import { withSimulatedAutopay } from "../data/simulation";
+import { groupByKind, isSilentPriceHike, isTrialConverted, isZombie, splitByBucket, unusedTotal, yearlyTotal } from "../lib/analysis";
+import { detectCommitments } from "../lib/engine";
+import { loadFixtures, loadParserFixtures } from "../lib/fixtures";
 
-const find = (id: string) => priyaCommitments.find((item) => item.id === id)!;
+const dataset = loadFixtures();
+const commitments = detectCommitments(dataset);
+const find = (id: string) => commitments.find((item) => item.id === id)!;
 
-test("1. adds every expected yearly projection", () => assert.equal(yearlyTotal(priyaCommitments), 199138));
-test("2. identifies the total Priya does not use", () => assert.equal(unusedTotal(priyaCommitments), 27936));
-test("3. recognises Spotify as a silent hike", () => assert.equal(isSilentPriceHike(find("spotify")), true));
-test("4. keeps a trial that became paid distinct", () => assert.equal(find("youtube").kind, "trial"));
-test("5. marks the eleven-month gym as unused", () => assert.equal(isZombie(find("fitline")), true));
-test("6. does not call a recent service a zombie", () => assert.equal(isZombie({ ...find("fitline"), lastOpenedMonthsAgo: 1 }), false));
-test("7. preserves variable electricity as essential", () => assert.equal(find("electricity").kind, "essential"));
-test("8. keeps the home loan separate as debt", () => assert.equal(find("home-loan").kind, "debt"));
-test("9. maintains a distinct group for every kind", () => assert.equal(Object.keys(groupByKind(priyaCommitments)).length, 5));
+// The nine checks the prototype is done when it passes.
+
+test("1. Spotify at 119, 119, 139, 139 with no price notice is a silent hike", () => {
+  const spotify = find("spotify");
+  assert.equal(spotify.amountPattern, "step");
+  assert.equal(spotify.previousAmount, 119);
+  assert.equal(spotify.amount, 139);
+  assert.equal(spotify.hasPriceChangeNotice, false);
+  assert.equal(isSilentPriceHike(spotify), true);
+});
+
+test("2. the YouTube trial notice followed by 149 is a converted trial", () => {
+  const youtube = find("youtube");
+  assert.equal(isTrialConverted(youtube), true);
+  assert.equal(youtube.amount, 149);
+  // The one-rupee hold is evidence, never the price.
+  assert.equal(youtube.holds.length, 1);
+  assert.equal(youtube.holds[0].amount, 1);
+});
+
+test("3. the monthly gym last opened eleven months ago is a zombie", () => {
+  const gym = find("fitline-gym");
+  assert.equal(gym.cadence, "monthly");
+  assert.equal(isZombie(gym), true);
+  assert.equal(gym.kind, "unused");
+});
+
+test("4. one Swiggy row is not a commitment", () => {
+  assert.equal(commitments.some((item) => item.rawNarration.includes("SWIGGY")), false);
+  assert.equal(commitments.some((item) => item.rawNarration.includes("RAHUL")), false);
+});
+
+test("5. PayPal Spotify and PayPal Netflix stay two commitments", () => {
+  const fixtures = detectCommitments(loadParserFixtures());
+  assert.equal(fixtures.length, 2);
+  assert.deepEqual(fixtures.map((item) => item.rawNarration).sort(), ["PAYPAL *NETFLIX", "PAYPAL *SPOTIFY"]);
+  // They are a parser fixture, so they never touch Priya's year.
+  assert.equal(commitments.some((item) => item.rawNarration.startsWith("PAYPAL")), false);
+});
+
+test("6. electricity from 900 to 3,200 is one variable commitment", () => {
+  const bescom = commitments.filter((item) => item.rawNarration === "BESCOM BILLPAY");
+  assert.equal(bescom.length, 1);
+  assert.equal(bescom[0].amountPattern, "variable");
+  assert.equal(bescom[0].amount, 1800);
+  assert.equal(bescom[0].annualCost, 21600);
+});
+
+test("7. society on scattered dates is one irregular commitment", () => {
+  const society = commitments.filter((item) => item.rawNarration === "NEFT APT SOCIETY");
+  assert.equal(society.length, 1);
+  assert.equal(society[0].cadence, "irregular");
+  assert.equal(society[0].annualCost, 18000);
+});
+
+test("8. the loan narration is an obligation with no cancel action", () => {
+  const loan = find("home-loan");
+  assert.equal(loan.kind, "debt");
+  assert.equal(loan.cancelMode, "block");
+  assert.equal(loan.canCancel, false);
+  assert.equal(loan.signals.includes("obligation"), true);
+});
+
+test("9. the next-year projections add to 1,99,138", () => {
+  assert.equal(yearlyTotal(commitments), 199138);
+  assert.equal(commitments.length, 14);
+});
+
+// The screens around those nine.
+
+test("10. the unused part of the year is 27,936", () => {
+  assert.equal(unusedTotal(commitments), 27936);
+});
+
+test("11. the annual screen splits the year five ways without losing a rupee", () => {
+  const split = splitByBucket(commitments);
+  assert.equal(split.length, 5);
+  assert.equal(split.reduce((sum, group) => sum + group.total, 0), 199138);
+  assert.equal(split.find((group) => group.bucket === "debt")?.total, 102000);
+  assert.equal(split.find((group) => group.bucket === "bills")?.total, 54000);
+});
+
+test("12. every kind still has its own group", () => {
+  assert.equal(Object.keys(groupByKind(commitments)).length, 5);
+});
+
+test("13. a recent open is not a zombie", () => {
+  assert.equal(isZombie(find("netflix")), false);
+  assert.equal(find("netflix").kind, "essential");
+});
+
+test("14. simulating a new autopay detects Headspace and moves the year to 2,02,726", () => {
+  const simulated = detectCommitments(withSimulatedAutopay(dataset));
+  const headspace = simulated.find((item) => item.id === "headspace-plus")!;
+  assert.equal(headspace.amount, 299);
+  assert.equal(headspace.annualCost, 3588);
+  assert.equal(headspace.kind, "essential");
+  assert.equal(headspace.issue, undefined);
+  assert.equal(yearlyTotal(simulated), 202726);
+  // A second click must not add a second copy.
+  assert.equal(detectCommitments(withSimulatedAutopay(withSimulatedAutopay(dataset))).length, simulated.length);
+});
+
+test("15. annual rows carry the next charge date and no monthly figure", () => {
+  assert.equal(find("amazon-prime").nextCharge, "2027-08-15");
+  assert.equal(find("jiohotstar").nextCharge, "2027-09-03");
+  assert.equal(find("amazon-prime").cadence, "annual");
+});
+
+test("16. revoking the gym drops the year by 18,000", () => {
+  const withoutGym = commitments.filter((item) => item.id !== "fitline-gym");
+  assert.equal(yearlyTotal(commitments) - yearlyTotal(withoutGym), 18000);
+});
+
+test("17. every commitment carries its evidence and its cancel copy", () => {
+  for (const item of commitments) {
+    assert.ok(item.evidenceRows.length >= 1, `${item.id} has no evidence`);
+    assert.ok(item.whyRecurring.length > 0, `${item.id} has no recurrence reason`);
+    assert.ok(item.stopService.length > 0, `${item.id} has no service step`);
+    assert.ok(item.inDictionary, `${item.id} is not in the dictionary`);
+  }
+});

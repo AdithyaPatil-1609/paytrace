@@ -1,0 +1,15 @@
+brand,narration,mechanism,interval,amount_pattern,latest_or_median_inr,monthly_cost_inr,annual_cost_inr,price_line,bucket,signal,cancel_mode,debit_count_in_fixture,last_opened
+FitLine Gym,UPI/GYMFITLINE/9845128891,upi_autopay,monthly,fixed,1500,1500,18000,"Rs 1,500 every month, and Rs 18,000 this year",leak,zombie,normal,12,2025-11-18
+Canva,CANVA.COM PADDLE.NET,card_recurring,monthly,fixed,499,499,5988,"Rs 499 every month, and Rs 5,988 this year",leak,zombie,normal,12,2026-02-03
+FitApp,GOOGLE*FITAPP,play_store,monthly,fixed,299,299,3588,"Rs 299 every month, and Rs 3,588 this year",leak,zombie,normal,12,2026-01-11
+Caller tune,VAS CTUNE IDEA,vas,monthly,fixed,30,30,360,"Rs 30 every month, and Rs 360 this year",leak,vas,normal,12,
+YouTube,GOOGLE*YOUTUBEPREM,card_recurring,monthly,trial_then_fixed,149,149,1788,"Rs 149 every month, and Rs 1,788 this year",review,trial_converted,normal,7,2026-10-10
+Spotify,POS 4512 SPOTIFY STOCKHOLM,card_recurring,monthly,step,139,139,1668,"Rs 139 every month now, was Rs 119, and Rs 1,668 this year",uses,silent_hike,normal,12,2026-10-19
+Netflix,NETFLIX.COM,card_recurring,monthly,fixed,649,649,7788,"Rs 649 every month, and Rs 7,788 this year",uses,none,normal,12,2026-10-20
+Amazon Prime,AMZN PRIME IN,card_recurring,annual,fixed,1499,,1499,"Rs 1,499 once a year. Next charge 15 Aug 2027. There is no monthly debit.",uses,annual_next_date,normal,2,2026-09-02
+Google One,GOOGLE*ONE,card_recurring,monthly,fixed,130,130,1560,"Rs 130 every month, and Rs 1,560 this year",uses,none,normal,12,2026-10-01
+JioHotstar,JIOHOTSTAR,card_recurring,annual,fixed,899,,899,Rs 899 once a year. Next charge 3 Sep 2027. There is no monthly debit.,uses,annual_next_date,normal,2,2026-10-12
+HDFC Life,NACH/HDFC LIFE,enach,monthly,fixed,1200,1200,14400,"Rs 1,200 every month, and Rs 14,400 this year",bill,obligation,warn,12,
+BESCOM,BESCOM BILLPAY,bbps,monthly,variable,1800,1800,21600,"about Rs 1,800 a month, and Rs 21,600 this year",bill,variable_amount,explain,12,
+Society,NEFT APT SOCIETY,neft_standing,irregular,fixed,4500,,18000,"Rs 4,500 each time it is charged, and Rs 18,000 this year",bill,irregular_interval,explain,4,
+Home loan,ACH DR LIC HSG EMI,emi_ach,monthly,fixed,8500,8500,102000,"Rs 8,500 every month, and Rs 1,02,000 this year",debt,obligation,block,12,

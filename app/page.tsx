@@ -1,10 +1,10 @@
 import { Dashboard } from "@/components/dashboard";
-import { getCommitmentsForPerson } from "@/db/neo4j/commitments";
+import { loadFixtures } from "@/lib/fixtures";
 
-// Read Neo4j at request time after the connection variables are supplied.
+// The fixture is read per request so an edit to data/raw shows up on reload.
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const commitments = await getCommitmentsForPerson();
-  return <Dashboard commitments={commitments} />;
+  const dataset = loadFixtures();
+  return <Dashboard dataset={dataset} />;
 }
