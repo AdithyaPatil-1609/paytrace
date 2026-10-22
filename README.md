@@ -1,6 +1,6 @@
-# Lekha
+# Recur
 
-Lekha turns a year of statement-like fixtures into plain-language recurring-payment choices. This first build is entirely synthetic: no login, bank connection, or real cancellation action.
+Recur turns a year of statement-like fixtures into plain-language recurring-payment choices. This first build is entirely synthetic: no login, bank connection, or real cancellation action.
 
 ## Stack and structure
 

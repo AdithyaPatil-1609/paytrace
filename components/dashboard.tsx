@@ -29,10 +29,10 @@ export function Dashboard({ commitments }: DashboardProps) {
   return (
     <main className="page-shell">
       <header className="masthead">
-        <div>
-          <p className="eyebrow">RECURRING PAYMENTS, EXPLAINED</p>
-          <h1>Lekha</h1>
-          <p className="lede">Every recurring debit, in plain language. One synthetic year for Priya, Bengaluru.</p>
+        <div className="brand-intro">
+          <div className="brand-line"><span className="brand-mark">R</span><p className="eyebrow">RECURRING PAYMENTS, EXPLAINED</p></div>
+          <h1>Recur<span>.</span></h1>
+          <p className="lede">Know what keeps coming back. One clear view of Priya's recurring payments, built from a synthetic year.</p>
         </div>
         <div className="profile-chip"><span>PR</span><div><strong>Priya</strong><small>Synthetic fixture</small></div></div>
       </header>
@@ -86,7 +86,7 @@ function List({ commitments, onSelect }: { commitments: Commitment[]; onSelect: 
   return (
     <section className="content-panel">
       <div className="section-heading"><div><p className="eyebrow">MATCHED COMMITMENTS</p><h2>The statement, made readable</h2></div><p>Click any row for its proof.</p></div>
-      <div className="table-wrap"><table><thead><tr><th>Statement narration</th><th>Lekha calls it</th><th>Signal</th><th>Next year</th></tr></thead>
+      <div className="table-wrap"><table><thead><tr><th>Statement narration</th><th>Recur calls it</th><th>Signal</th><th>Next year</th></tr></thead>
       <tbody>{commitments.sort((a, b) => b.annualCost - a.annualCost).map((item) => <tr key={item.id} onClick={() => onSelect(item.id)}><td>{item.rawNarration}</td><td>{item.merchant}</td><td><span className={`table-dot ${item.kind}`} />{item.status}</td><td>{formatINR(item.annualCost)}</td></tr>)}</tbody></table></div>
     </section>
   );
@@ -105,7 +105,7 @@ function Cancel({ commitment }: { commitment: Commitment }) {
   return (
     <section className="cancel-panel content-panel">
       <p className="eyebrow">CANCELLATION PATH</p><h2>{commitment.merchant}</h2>
-      {commitment.canCancel ? <><p className="cancel-copy">{commitment.cancellationPath}</p><div className="callout"><strong>Before you cancel</strong><span>This demo only explains the path. It never changes a real mandate or payment.</span></div></> : <><p className="cancel-copy">{commitment.evidence}</p><div className="callout"><strong>Keep this payment</strong><span>{commitment.status}. Lekha separates debt and essential bills from subscriptions.</span></div></>}
+      {commitment.canCancel ? <><p className="cancel-copy">{commitment.cancellationPath}</p><div className="callout"><strong>Before you cancel</strong><span>This demo only explains the path. It never changes a real mandate or payment.</span></div></> : <><p className="cancel-copy">{commitment.evidence}</p><div className="callout"><strong>Keep this payment</strong><span>{commitment.status}. Recur separates debt and essential bills from subscriptions.</span></div></>}
     </section>
   );
 }
