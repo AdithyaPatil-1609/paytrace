@@ -1,0 +1,7 @@
+txn_id,persona,date,account_id,account_type,narration,debit_inr,credit_inr,balance_after_inr,reference,channel,txn_kind,brand
+FIX-0001,parser_fixture,2026-01-08,CC-FIXTURE-0001,credit_card,PAYPAL *SPOTIFY,119,,,FIX000000000001,CARD,debit_purchase,Spotify
+FIX-0002,parser_fixture,2026-02-08,CC-FIXTURE-0001,credit_card,PAYPAL *SPOTIFY,119,,,FIX000000000002,CARD,debit_purchase,Spotify
+FIX-0003,parser_fixture,2026-03-08,CC-FIXTURE-0001,credit_card,PAYPAL *SPOTIFY,119,,,FIX000000000003,CARD,debit_purchase,Spotify
+FIX-0004,parser_fixture,2026-01-19,CC-FIXTURE-0001,credit_card,PAYPAL *NETFLIX,649,,,FIX000000000004,CARD,debit_purchase,Netflix
+FIX-0005,parser_fixture,2026-02-19,CC-FIXTURE-0001,credit_card,PAYPAL *NETFLIX,649,,,FIX000000000005,CARD,debit_purchase,Netflix
+FIX-0006,parser_fixture,2026-03-19,CC-FIXTURE-0001,credit_card,PAYPAL *NETFLIX,649,,,FIX000000000006,CARD,debit_purchase,Netflix

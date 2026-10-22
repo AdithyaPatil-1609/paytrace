@@ -1,0 +1,15 @@
+mandate_id,created_on,mechanism,narration,brand,max_amount_inr,frequency,mandate_ref,account_id,status_as_of_2026_10_22
+MDT-01,2025-10-28,upi_autopay,UPI/GYMFITLINE/9845128891,FitLine Gym,1500,monthly,UMN-8f3a21c09e,SAV-PRIYA-9912,active
+MDT-02,2024-06-01,enach,NACH/HDFC LIFE,HDFC Life,1200,monthly,UMRN-HDFC000998877665544,SAV-PRIYA-9912,active
+MDT-03,2023-04-05,emi_ach,ACH DR LIC HSG EMI,Home loan,8500,monthly,LICHSG445901,SAV-PRIYA-9912,active
+MDT-04,2025-06-12,bbps,BESCOM BILLPAY,BESCOM,5000,as_billed,BBPS-BESCOM-441290,SAV-PRIYA-9912,active
+MDT-05,2024-01-15,neft_standing,NEFT APT SOCIETY,Society,4500,irregular,SI-SOCIETY-17,SAV-PRIYA-9912,active
+MDT-06,2024-11-02,vas,VAS CTUNE IDEA,Caller tune,30,monthly,VAS-CTUNE-5541,SAV-PRIYA-9912,active
+MDT-07,2024-11-11,card_recurring,POS 4512 SPOTIFY STOCKHOLM,Spotify,139,monthly,CARD-SPOTIFY-2291,CC-PRIYA-2291,active
+MDT-08,2024-11-16,card_recurring,NETFLIX.COM,Netflix,649,monthly,CARD-NETFLIX-2291,CC-PRIYA-2291,active
+MDT-09,2025-11-07,card_recurring,CANVA.COM PADDLE.NET,Canva,499,monthly,CARD-CANVA-2291,CC-PRIYA-2291,active
+MDT-10,2025-10-21,play_store,GOOGLE*FITAPP,FitApp,299,monthly,PLAY-FITAPP-2291,CC-PRIYA-2291,active
+MDT-11,2026-04-01,card_recurring,GOOGLE*YOUTUBEPREM,YouTube,149,monthly,CARD-YT-2291,CC-PRIYA-2291,active
+MDT-12,2025-08-15,card_recurring,AMZN PRIME IN,Amazon Prime,1499,annual,CARD-PRIME-2291,CC-PRIYA-2291,active
+MDT-13,2025-11-09,card_recurring,GOOGLE*ONE,Google One,130,monthly,CARD-G1-2291,CC-PRIYA-2291,active
+MDT-14,2025-09-03,card_recurring,JIOHOTSTAR,JioHotstar,899,annual,CARD-HOTSTAR-2291,CC-PRIYA-2291,active
