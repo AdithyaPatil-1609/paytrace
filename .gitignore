@@ -3,3 +3,7 @@ node_modules/
 coverage/
 *.log
 .DS_Store
+
+# local env — never commit real credentials
+.env
+.env*.local
