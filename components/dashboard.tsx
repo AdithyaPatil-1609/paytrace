@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { withSimulatedAutopay } from "@/data/simulation";
+import { simulatedNotices, withSimulatedAutopay } from "@/data/simulation";
 import { hikeAmount, isSilentPriceHike, issueItems, splitByBucket, yearlyTotal } from "@/lib/analysis";
 import { toCsv } from "@/lib/csv";
 import { bucketCopy, bucketLabels, detectCommitments } from "@/lib/engine";
@@ -13,7 +13,7 @@ import { PriceHistory } from "@/components/visualizations/price-history";
 import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
 import { UnusedSavings } from "@/components/visualizations/unused-savings";
 import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
-import { DemoOverlay, type DemoStep } from "@/components/demo-runner";
+import { AutopayNotice } from "@/components/demo-runner";
 
 type DashboardProps = { dataset: Dataset; source: SourceInfo };
 type Screen = "annual" | "list" | "language" | "issues" | "paths";
@@ -32,7 +32,7 @@ export function Dashboard({ dataset, source }: DashboardProps) {
   const [revoked, setRevoked] = useState<string[]>([]);
   const [kept, setKept] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [demoStep, setDemoStep] = useState<DemoStep>("idle");
+  const [noticeOpen, setNoticeOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
   // Detection runs over the fixture rows, so simulating an autopay means
@@ -55,12 +55,9 @@ export function Dashboard({ dataset, source }: DashboardProps) {
   const openItem = active.find((item) => item.id === openId) ?? null;
 
   const newItem = active.find((item) => item.signals.includes("new"));
-  const hikeItem = active.find((item) => item.signals.includes("silent_hike"));
-  const zombieItem = active
-    .filter((item) => item.kind === "unused" && item.cancelMode === "normal")
-    .sort((a, b) => b.annualCost - a.annualCost)[0];
+  const autopayMessage = simulatedNotices.find((notice) => notice.eventType === "mandate_created") ?? simulatedNotices[0];
 
-  // Bring whatever the run is talking about into view.
+  // Bring the new row into view once the message has been applied.
   useEffect(() => {
     if (!highlightId) return;
     const target = document.querySelector(`[data-row="${highlightId}"]`);
@@ -71,37 +68,18 @@ export function Dashboard({ dataset, source }: DashboardProps) {
     setSimulated(true);
     setScreen("list");
     setHighlightId("headspace-plus");
-    setDemoStep("autopay");
+    setNoticeOpen(true);
   }
 
-  function advanceDemo() {
-    if (demoStep === "autopay") {
-      setScreen("issues");
-      setHighlightId(hikeItem?.id ?? null);
-      setDemoStep("price");
-      return;
-    }
-    if (demoStep === "price") {
-      setHighlightId(zombieItem?.id ?? null);
-      setDemoStep("unused");
-      return;
-    }
-    if (demoStep === "unused") {
-      setScreen("paths");
-      setHighlightId(zombieItem?.id ?? null);
-      setDemoStep("cancel");
-    }
-  }
-
-  function endDemo() {
-    setDemoStep("done");
+  function dismissNotice() {
+    setNoticeOpen(false);
     setHighlightId(null);
   }
 
   function resetSimulation() {
     setSimulated(false);
     setRevoked((current) => current.filter((id) => id !== "headspace-plus"));
-    setDemoStep("idle");
+    setNoticeOpen(false);
     setHighlightId(null);
   }
 
@@ -133,8 +111,8 @@ export function Dashboard({ dataset, source }: DashboardProps) {
           {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV fixture"}
         </span>
         <div className="bar-actions">
-          <button className="run-demo" onClick={demoStep === "idle" || demoStep === "done" ? startDemo : endDemo}>
-            {demoStep === "idle" || demoStep === "done" ? "▶ Run the demo" : "■ Stop the run"}
+          <button className="run-demo" onClick={startDemo}>
+            ▶ Run the demo
           </button>
           <button className="export-csv" onClick={() => downloadCsv(active)}>
             ↓ Export CSV
@@ -231,14 +209,13 @@ export function Dashboard({ dataset, source }: DashboardProps) {
         </section>
       </div>
 
-      <DemoOverlay
-        step={demoStep}
-        newItem={newItem}
-        hikeItem={hikeItem}
-        zombieItem={zombieItem}
-        onAdvance={advanceDemo}
-        onDecline={endDemo}
-        onFinish={endDemo}
+      <AutopayNotice
+        open={noticeOpen}
+        channel={autopayMessage.channel.toUpperCase()}
+        sender={autopayMessage.sender}
+        message={autopayMessage.text}
+        item={newItem}
+        onDismiss={dismissNotice}
       />
 
       {openItem && <DetailPanel item={openItem} asOf={dataset.asOf} onClose={() => setOpenId(null)} />}
@@ -394,7 +371,11 @@ function AnnualView({
             </div>
             <div className="bucket-rows">
               {group.rows.map((item) => (
-                <button key={item.id} onClick={() => onOpen(item.id)}>
+                <button
+                  className={item.signals.includes("new") ? "is-new" : ""}
+                  key={item.id}
+                  onClick={() => onOpen(item.id)}
+                >
                   <span>{item.merchant}</span>
                   <b>{formatINR(item.annualCost)}</b>
                 </button>
@@ -533,7 +514,11 @@ function PlainLanguage({ items, onOpen }: { items: Commitment[]; onOpen: (id: st
           <span>WHAT IT ACTUALLY IS</span>
         </div>
         {items.map((item) => (
-          <button className="language-row" key={item.id} onClick={() => onOpen(item.id)}>
+          <button
+            className={item.signals.includes("new") ? "language-row is-new" : "language-row"}
+            key={item.id}
+            onClick={() => onOpen(item.id)}
+          >
             <code>{item.rawNarration}</code>
             <strong>
               {item.merchant}
@@ -615,6 +600,11 @@ function Issues({
 
       <p className="screen-footnote">
         Not on this page: Netflix, Google One, Prime, JioHotstar, insurance, electricity, society, and the loan.
+        {allItems.some((item) => item.signals.includes("new")) &&
+          ` ${allItems
+            .filter((item) => item.signals.includes("new"))
+            .map((item) => item.merchant)
+            .join(", ")} was just detected. Nothing is wrong with it, so it is not listed here. `}
         Electricity&apos;s changing amount and society&apos;s uneven dates are discovery signals, not waste.
       </p>
     </>
@@ -672,7 +662,7 @@ function CancelPaths({
           const isIssue = ["unused", "silent", "trial"].includes(item.kind) && !isKept;
           return (
             <article
-              className={`path-card ${isIssue ? "issue" : ""} ${isKept ? "kept" : ""} ${highlightId === item.id ? "is-spotlit" : ""}`}
+              className={`path-card ${isIssue ? "issue" : ""} ${isKept ? "kept" : ""} ${item.signals.includes("new") ? "is-new" : ""} ${highlightId === item.id ? "is-spotlit" : ""}`}
               data-row={item.id}
               key={item.id}
             >
