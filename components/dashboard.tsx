@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { simulatedNotices, withSimulatedAutopay } from "@/data/simulation";
+import { useMemo, useState } from "react";
+import { withSimulatedAutopay } from "@/data/simulation";
 import { hikeAmount, isSilentPriceHike, issueItems, splitByBucket, yearlyTotal } from "@/lib/analysis";
 import { toCsv } from "@/lib/csv";
 import { bucketCopy, bucketLabels, detectCommitments } from "@/lib/engine";
@@ -13,7 +13,6 @@ import { PriceHistory } from "@/components/visualizations/price-history";
 import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
 import { UnusedSavings } from "@/components/visualizations/unused-savings";
 import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
-import { AutopayNotice } from "@/components/demo-runner";
 
 type DashboardProps = { dataset: Dataset; source: SourceInfo };
 type Screen = "annual" | "list" | "language" | "issues" | "paths";
@@ -32,8 +31,6 @@ export function Dashboard({ dataset, source }: DashboardProps) {
   const [revoked, setRevoked] = useState<string[]>([]);
   const [kept, setKept] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [noticeOpen, setNoticeOpen] = useState(false);
-  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   // Detection runs over the fixture rows, so simulating an autopay means
   // adding rows and detecting again, not appending a finished commitment.
@@ -54,33 +51,9 @@ export function Dashboard({ dataset, source }: DashboardProps) {
   const debt = yearlyTotal(active.filter((item) => item.bucket === "debt"));
   const openItem = active.find((item) => item.id === openId) ?? null;
 
-  const newItem = active.find((item) => item.signals.includes("new"));
-  const autopayMessage = simulatedNotices.find((notice) => notice.eventType === "mandate_created") ?? simulatedNotices[0];
-
-  // Bring the new row into view once the message has been applied.
-  useEffect(() => {
-    if (!highlightId) return;
-    const target = document.querySelector(`[data-row="${highlightId}"]`);
-    target?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [highlightId, screen]);
-
-  function startDemo() {
-    setSimulated(true);
-    setScreen("list");
-    setHighlightId("headspace-plus");
-    setNoticeOpen(true);
-  }
-
-  function dismissNotice() {
-    setNoticeOpen(false);
-    setHighlightId(null);
-  }
-
   function resetSimulation() {
     setSimulated(false);
     setRevoked((current) => current.filter((id) => id !== "headspace-plus"));
-    setNoticeOpen(false);
-    setHighlightId(null);
   }
 
   function confirmRevoke(id: string) {
@@ -112,9 +85,6 @@ export function Dashboard({ dataset, source }: DashboardProps) {
             {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV fixture"}
           </span>
           <div className="bar-actions">
-            <button className="run-demo" onClick={startDemo}>
-              ▶ Run the demo
-            </button>
             <button className="export-csv" onClick={() => downloadCsv(active)}>
               ↓ Export CSV
             </button>
@@ -181,7 +151,7 @@ export function Dashboard({ dataset, source }: DashboardProps) {
               onSimulate={() => setSimulated(true)}
               onReset={resetSimulation}
               onOpen={setOpenId}
-              highlightId={highlightId}
+              asOf={dataset.asOf}
             />
           )}
           {screen === "language" && <PlainLanguage items={active} onOpen={setOpenId} />}
@@ -194,7 +164,6 @@ export function Dashboard({ dataset, source }: DashboardProps) {
               hike={hike}
               onOpen={setOpenId}
               onGoToCancel={() => setScreen("paths")}
-              highlightId={highlightId}
             />
           )}
           {screen === "paths" && (
@@ -206,20 +175,10 @@ export function Dashboard({ dataset, source }: DashboardProps) {
               onConfirm={confirmRevoke}
               onKeep={keepIt}
               onFlagAgain={flagAgain}
-              highlightId={highlightId}
             />
           )}
         </section>
       </div>
-
-      <AutopayNotice
-        open={noticeOpen}
-        channel={autopayMessage.channel.toUpperCase()}
-        sender={autopayMessage.sender}
-        message={autopayMessage.text}
-        item={newItem}
-        onDismiss={dismissNotice}
-      />
 
       {openItem && <DetailPanel item={openItem} asOf={dataset.asOf} onClose={() => setOpenId(null)} />}
     </main>
@@ -271,10 +230,7 @@ function EvidenceStrip({ source }: { source: SourceInfo }) {
   return (
     <section className="evidence-strip" aria-label="CSV fixture">
       <p className="evidence-mark">CSV FIXTURE</p>
-      <p className="evidence-copy">
-        These screens are on the CSV fixture because Neo4j is not connected. Copy <code>.env.example</code> to{" "}
-        <code>.env.local</code>, then <code>npm run seed</code>.
-      </p>
+      <p className="evidence-copy">{source.note}</p>
     </section>
   );
 }
@@ -422,7 +378,7 @@ function AllPayments({
   onSimulate,
   onReset,
   onOpen,
-  highlightId
+  asOf
 }: {
   items: Commitment[];
   total: number;
@@ -431,7 +387,7 @@ function AllPayments({
   onSimulate: () => void;
   onReset: () => void;
   onOpen: (id: string) => void;
-  highlightId?: string | null;
+  asOf: string;
 }) {
   return (
     <>
@@ -472,11 +428,7 @@ function AllPayments({
         <div className="payment-rows">
           {items.map((item) => (
             <button
-              className={[
-                "payment-row",
-                item.signals.includes("new") ? "is-new" : "",
-                highlightId === item.id ? "is-spotlit" : ""
-              ].join(" ").trim()}
+              className={["payment-row", item.signals.includes("new") ? "is-new" : ""].join(" ").trim()}
               data-row={item.id}
               key={item.id}
               onClick={() => onOpen(item.id)}
@@ -495,8 +447,8 @@ function AllPayments({
         and no mandate behind it, so the grouping drops it. Open any row above to see the rule that kept it.
       </p>
 
-      <h2 className="viz-heading">What is due next</h2>
-      <RenewalCalendar items={items} onOpen={onOpen} />
+      <h2 className="viz-heading">The next two months</h2>
+      <RenewalCalendar items={items} asOf={asOf} onOpen={onOpen} />
 
       <section className="simulation-card">
         <div>
@@ -569,8 +521,7 @@ function Issues({
   leakage,
   hike,
   onOpen,
-  onGoToCancel,
-  highlightId
+  onGoToCancel
 }: {
   items: Commitment[];
   allItems: Commitment[];
@@ -579,7 +530,6 @@ function Issues({
   hike: number;
   onOpen: (id: string) => void;
   onGoToCancel: () => void;
-  highlightId?: string | null;
 }) {
   return (
     <>
@@ -604,7 +554,7 @@ function Issues({
         </div>
         {items.map((item) => (
           <button
-            className={highlightId === item.id ? "issue-row is-spotlit" : "issue-row"}
+            className="issue-row"
             data-row={item.id}
             key={item.id}
             onClick={() => onOpen(item.id)}
@@ -652,8 +602,7 @@ function CancelPaths({
   kept,
   onConfirm,
   onKeep,
-  onFlagAgain,
-  highlightId
+  onFlagAgain
 }: {
   items: Commitment[];
   allItems: Commitment[];
@@ -662,7 +611,6 @@ function CancelPaths({
   onConfirm: (id: string) => void;
   onKeep: (id: string) => void;
   onFlagAgain: (id: string) => void;
-  highlightId?: string | null;
 }) {
   const stoppedRows = allItems.filter((item) => revoked.includes(item.id));
   const saved = stoppedRows.reduce((sum, item) => sum + item.annualCost, 0);
@@ -687,7 +635,7 @@ function CancelPaths({
           const isIssue = ["unused", "silent", "trial"].includes(item.kind) && !isKept;
           return (
             <article
-              className={`path-card ${isIssue ? "issue" : ""} ${isKept ? "kept" : ""} ${item.signals.includes("new") ? "is-new" : ""} ${highlightId === item.id ? "is-spotlit" : ""}`}
+              className={`path-card ${isIssue ? "issue" : ""} ${isKept ? "kept" : ""} ${item.signals.includes("new") ? "is-new" : ""}`}
               data-row={item.id}
               key={item.id}
             >

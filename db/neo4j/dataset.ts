@@ -18,6 +18,8 @@ export type SourceInfo = {
   host?: string;
   database?: string;
   counts: { payments: number; messages: number; mandates: number; patterns: number; commitments: number };
+  /** Why the CSV fixture is on screen, when Neo4j was expected. */
+  note?: string;
 };
 
 export type LoadedDataset = { dataset: Dataset; source: SourceInfo };

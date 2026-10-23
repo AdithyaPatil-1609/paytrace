@@ -952,6 +952,19 @@ figcaption {
   border-color: var(--marigold);
 }
 
+.renewal-month {
+  margin: 22px 0 10px;
+  color: var(--ink);
+  font: 600 22px/1.2 var(--serif);
+  letter-spacing: -0.02em;
+}
+
+.renewal-empty {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 13px;
+}
+
 .renewal-date {
   display: grid;
   justify-items: center;
@@ -2086,107 +2099,6 @@ figcaption {
   }
 }
 
-/* --- the guided run ------------------------------------------------- */
-
-.run-demo {
-  border: 0;
-  border-radius: var(--r-sm);
-  padding: 9px 15px;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-}
-
-.run-demo:hover {
-  background: var(--marigold-deep);
-}
-
-.demo-alert {
-  position: fixed;
-  right: 26px;
-  bottom: 26px;
-  z-index: 60;
-  width: min(380px, calc(100vw - 32px));
-  padding: 22px 24px;
-  border: 1px solid var(--ink);
-  border-radius: var(--r-lg);
-  background: var(--paper-lift);
-  box-shadow: 0 20px 44px -18px rgba(36, 18, 49, 0.55);
-  animation: demo-in 0.26s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@keyframes demo-in {
-  from { transform: translateY(14px); opacity: 0; }
-}
-
-.demo-kicker {
-  margin: 0;
-  color: var(--marigold-deep);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-.demo-alert h2 {
-  margin: 10px 0 10px;
-  color: var(--ink);
-  font: 600 22px/1.2 var(--serif);
-  letter-spacing: -0.025em;
-}
-
-.demo-message {
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: var(--r-sm);
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.demo-body {
-  margin: 12px 0 0;
-  color: var(--ink-soft);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.demo-body strong {
-  color: var(--ink);
-}
-
-.demo-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin-top: 16px;
-}
-
-/* what the run is pointing at */
-.is-spotlit {
-  position: relative;
-  animation: spotlight 1.4s ease-in-out 2;
-}
-
-.payment-row.is-spotlit,
-.issue-row.is-spotlit {
-  box-shadow: inset 3px 0 0 var(--marigold), 0 0 0 2px var(--marigold);
-}
-
-.path-card.is-spotlit {
-  border-color: var(--marigold);
-  box-shadow: 0 0 0 2px var(--marigold), var(--lift-shadow);
-}
-
-@keyframes spotlight {
-  50% { background-color: var(--marigold-skin); }
-}
-
 /* --- the fridge calendar --------------------------------------------- */
 
 .fridge {
@@ -2362,7 +2274,6 @@ figcaption {
 }
 
 @media (max-width: 660px) {
-  .demo-alert { right: 12px; left: 12px; bottom: 12px; width: auto; padding: 18px; }
   .fridge { padding: 14px; }
   .fridge-head { display: block; }
   .fridge-nav { margin-top: 12px; }
