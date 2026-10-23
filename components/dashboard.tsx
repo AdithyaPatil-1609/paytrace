@@ -14,33 +14,35 @@ import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
 import { UnusedSavings } from "@/components/visualizations/unused-savings";
 import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
 
-type DashboardProps = { dataset: Dataset; source: SourceInfo };
-type Screen = "annual" | "list" | "language" | "issues" | "paths";
+type DashboardProps = { dataset: Dataset; source: SourceInfo; commitments?: Commitment[] };
+type Screen = "annual" | "list" | "issues" | "paths";
 
 const screens: { id: Screen; number: string; label: string }[] = [
   { id: "list", number: "01", label: "All payments" },
-  { id: "language", number: "02", label: "Plain language" },
-  { id: "issues", number: "03", label: "Issues" },
-  { id: "paths", number: "04", label: "Cancel paths" },
-  { id: "annual", number: "05", label: "Annual" }
+  { id: "issues", number: "02", label: "Issues" },
+  { id: "paths", number: "03", label: "Cancel paths" },
+  { id: "annual", number: "04", label: "Annual" }
 ];
 
-export function Dashboard({ dataset, source }: DashboardProps) {
+export function Dashboard({ dataset, source, commitments }: DashboardProps) {
   const [screen, setScreen] = useState<Screen>("list");
   const [simulated, setSimulated] = useState(false);
   const [revoked, setRevoked] = useState<string[]>([]);
   const [kept, setKept] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  // Detection runs over the fixture rows, so simulating an autopay means
-  // adding rows and detecting again, not appending a finished commitment.
-  const detected = useMemo(
-    () => detectCommitments(simulated ? withSimulatedAutopay(dataset) : dataset),
-    [dataset, simulated]
-  );
+  // Neo4j already decided the rows. Simulate is a new debit the graph has
+  // not seen, so that path detects again from the rows.
+  const detected = useMemo(() => {
+    if (commitments && commitments.length > 0 && !simulated) return commitments;
+    return detectCommitments(simulated ? withSimulatedAutopay(dataset) : dataset);
+  }, [dataset, simulated, commitments]);
 
   // The year before Simulate, so the screen can show the move.
-  const baseline = useMemo(() => yearlyTotal(detectCommitments(dataset)), [dataset]);
+  const baseline = useMemo(
+    () => yearlyTotal(commitments && commitments.length > 0 ? commitments : detectCommitments(dataset)),
+    [dataset, commitments]
+  );
   const active = detected.filter((item) => !revoked.includes(item.id));
   const total = yearlyTotal(active);
   const fullYear = yearlyTotal(detected);
@@ -99,7 +101,7 @@ export function Dashboard({ dataset, source }: DashboardProps) {
 
       <div className="app-layout">
         <aside className="side-nav">
-          <p>THE FIVE SCREENS</p>
+          <p>THE FOUR SCREENS</p>
           {screens.map((item) => (
             <button
               key={item.id}
@@ -154,7 +156,6 @@ export function Dashboard({ dataset, source }: DashboardProps) {
               asOf={dataset.asOf}
             />
           )}
-          {screen === "language" && <PlainLanguage items={active} onOpen={setOpenId} />}
           {screen === "issues" && (
             <Issues
               items={issues}
@@ -193,13 +194,12 @@ export function Dashboard({ dataset, source }: DashboardProps) {
 function EvidenceStrip({ source }: { source: SourceInfo }) {
   if (source.kind === "neo4j") {
     const host = source.host ?? "the configured host";
-    const database = source.database ?? "neo4j";
     return (
       <section className="evidence-strip live" aria-label="Neo4j evidence graph">
-        <p className="evidence-mark">NEO4J</p>
+        <p className="evidence-mark">Neo4j</p>
         <p className="evidence-copy">
-          All five screens are read from the evidence graph at <code>{host}</code>, database <code>{database}</code>.
-          Detection still runs in the app over those rows, so the graph and the screens agree.
+          Evidence graph · <code>{host}</code>
+          {source.analyzed ? " · issues, the year, and cancel paths decided here" : ""}
         </p>
         <dl className="evidence-counts">
           <div>
@@ -229,7 +229,7 @@ function EvidenceStrip({ source }: { source: SourceInfo }) {
 
   return (
     <section className="evidence-strip" aria-label="CSV fixture">
-      <p className="evidence-mark">CSV FIXTURE</p>
+      <p className="evidence-mark">CSV fixture</p>
       <p className="evidence-copy">{source.note}</p>
     </section>
   );
@@ -243,19 +243,18 @@ function SourcePanel({ source, detected }: { source: SourceInfo; detected: numbe
   if (source.kind !== "neo4j") return null;
 
   const inGraph = source.counts.commitments;
-  const agrees = inGraph === detected;
   return (
     <section className="source-panel live">
       <header>
-        <strong>Commitments</strong>
+        <strong>{source.analyzed ? "Decided in Neo4j" : "Commitments"}</strong>
         <span>
-          graph {inGraph} · detected {detected}
+          {detected} on screen · {inGraph} commitment nodes
         </span>
       </header>
       <p>
-        {agrees
-          ? "The graph's own Cypher and detection in the app counted the same commitments from these rows."
-          : `The graph's own Cypher counts ${inGraph} commitments. Detection in the app found ${detected} from the same rows. The gap is worth reading before the demo.`}
+        {source.analyzed && source.yearTotal !== undefined
+          ? `The issues, the cancel path on each row, and the year of ${formatINR(source.yearTotal)} came back from a Cypher query. This screen is showing that result.`
+          : `The graph holds ${inGraph} commitment nodes. Detection in the app found ${detected} from the rows it returned.`}
       </p>
     </section>
   );
@@ -300,7 +299,7 @@ function AnnualView({
   return (
     <>
       <ScreenHeader
-        number="5"
+        number="4"
         eyebrow="THE YEAR"
         title="The next twelve months, on one screen"
         copy="Every commitment projected forward and split five ways. The unused part is the money that should move. The loan sits apart from both: it is a debt, not a subscription."
@@ -325,7 +324,7 @@ function AnnualView({
 
       {stoppedValue > 0 && (
         <p className="revoke-banner">
-          A revoke confirmed on screen 4 has taken <strong>{formatINR(stoppedValue)}</strong> out of the year.
+          A revoke confirmed on screen 3 has taken <strong>{formatINR(stoppedValue)}</strong> out of the year.
         </p>
       )}
 
@@ -395,7 +394,7 @@ function AllPayments({
         number="1"
         eyebrow="ALL OF THEM"
         title="Every periodic payment, on one page"
-        copy="This is the whole book before any judgement. Monthly rows show the amount that leaves each month and the amount across the year. Electricity changes amount, and society has uneven dates. Both still belong here."
+        copy="This is the whole book before any judgement. Each row shows the bank string and the plain name beside it. Electricity changes amount, and society has uneven dates. Both still belong here."
       />
       <section className="year-banner">
         <div>
@@ -421,6 +420,7 @@ function AllPayments({
       <section className="data-panel">
         <div className="table-caption">
           <span>WHAT THE MESSAGE PRINTS</span>
+          <span>A PERSON READS</span>
           <span>EACH MONTH</span>
           <span>THIS YEAR</span>
           <span>SOURCE</span>
@@ -433,8 +433,15 @@ function AllPayments({
               key={item.id}
               onClick={() => onOpen(item.id)}
             >
-              <strong>{item.rawNarration}</strong>
-              <span>{monthlyCost(item)}</span>
+              <strong className="raw-narration">{item.rawNarration}</strong>
+              <span className="pay-plain">
+                <strong>
+                  {item.merchant}
+                  {!item.inDictionary && <i className="unknown-tag">unknown</i>}
+                </strong>
+                <em>{item.plainDescription}</em>
+              </span>
+              <span className="pay-month">{monthlyCost(item)}</span>
               <b>{formatINR(item.annualCost)}</b>
               <small>{item.source}</small>
             </button>
@@ -474,46 +481,6 @@ function AllPayments({
   );
 }
 
-function PlainLanguage({ items, onOpen }: { items: Commitment[]; onOpen: (id: string) => void }) {
-  const unknown = items.filter((item) => !item.inDictionary);
-  return (
-    <>
-      <ScreenHeader
-        number="2"
-        eyebrow="PLAIN LANGUAGE"
-        title="The bank string, in words a person knows"
-        copy="Every match comes from the hand-written dictionary in data/raw. Paytrace does not guess the merchant, and the longest matching pattern wins, so PayPal Spotify never collapses into Spotify."
-      />
-      <section className="data-panel language-panel">
-        <div className="language-caption">
-          <span>STRING</span>
-          <span>A PERSON READS</span>
-          <span>WHAT IT ACTUALLY IS</span>
-        </div>
-        {items.map((item) => (
-          <button
-            className={item.signals.includes("new") ? "language-row is-new" : "language-row"}
-            key={item.id}
-            onClick={() => onOpen(item.id)}
-          >
-            <code>{item.rawNarration}</code>
-            <strong>
-              {item.merchant}
-              {!item.inDictionary && <i className="unknown-tag">unknown</i>}
-            </strong>
-            <p>{item.plainDescription}</p>
-          </button>
-        ))}
-      </section>
-      <p className="screen-footnote">
-        {unknown.length === 0
-          ? "Every string on this fixture matched a pattern. A string that does not match stays unknown rather than being guessed at."
-          : `${unknown.length} string(s) did not match a pattern. They stay unknown until someone names them by hand.`}
-      </p>
-    </>
-  );
-}
-
 function Issues({
   items,
   allItems,
@@ -534,7 +501,7 @@ function Issues({
   return (
     <>
       <ScreenHeader
-        number="3"
+        number="2"
         eyebrow="CHANGES, ISSUES, UNUSED"
         title="Only what deserves your attention"
         copy="The list screen is the whole book. This page is the part that should change what she does. The full year stays visible so flags are not mistaken for her entire financial life."
@@ -618,7 +585,7 @@ function CancelPaths({
   return (
     <>
       <ScreenHeader
-        number="4"
+        number="3"
         eyebrow="HOW TO STOP EACH ONE"
         title="A cancel path for every autopay"
         copy="A normal path has two tracks: stop the service, then stop the money. Every path also says what to do when the merchant never replies, because the revoke does not need their answer. The loan has no revoke control."
