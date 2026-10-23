@@ -2391,111 +2391,113 @@ figcaption {
 }
 
 /* ---------------------------------------------------------------
-   Warnings carry real weight, and the forecast chart is readable
-   on its own. These come last so they win over the base rules.
+   Warnings carry real weight, actions read as accept or cancel,
+   and the month chart is a plain list of rows. These come last so
+   they win over the base rules.
    --------------------------------------------------------------- */
 
 :root {
-  --ember: #9c2415;
-  --ember-deep: #76180d;
-  --ember-skin: #f1cdc4;
-  --ember-edge: rgba(156, 36, 21, 0.45);
+  --ember: #8c1c0c;
+  --ember-deep: #671208;
+  --ember-skin: #e7ab9c;
+  --ember-edge: rgba(140, 28, 12, 0.55);
 }
 
-/* the leak figure is the loudest thing on the annual screen */
 .annual-figure.accent {
   border-color: var(--ember-deep);
   background: var(--ember-deep);
-  box-shadow: 0 1px 0 rgba(36, 18, 49, 0.08), 0 12px 26px -14px rgba(118, 24, 13, 0.7);
+  box-shadow: 0 1px 0 rgba(36, 18, 49, 0.08), 0 12px 26px -14px rgba(103, 18, 8, 0.75);
 }
 
-.annual-figure.accent span {
-  color: #efb8ab;
-}
-
-.annual-figure.accent strong {
-  color: #fff4f0;
-}
-
-.annual-figure.accent small {
-  color: #e8bbb0;
-}
+.annual-figure.accent span { color: #eeae9e; }
+.annual-figure.accent strong { color: #fff3ef; }
+.annual-figure.accent small { color: #e9b4a4; }
 
 .issue-metric.accent {
   border-color: var(--ember-deep);
   background: var(--ember-deep);
 }
 
-.issue-metric.accent strong {
-  color: #fff4f0;
-}
+.issue-metric.accent strong { color: #fff3ef; }
+.issue-metric.accent span { color: #e9b4a4; }
 
-.issue-metric.accent span {
-  color: #e8bbb0;
-}
+.kpi.alarm { background: var(--ember-skin); }
+.kpi.alarm span { color: var(--ember-deep); }
+.kpi.alarm strong { color: var(--ember-deep); }
 
-.kpi.alarm {
-  background: var(--ember-skin);
-}
-
-.kpi.alarm span {
-  color: var(--ember-deep);
-}
-
-.kpi.alarm strong {
-  color: var(--ember);
-}
-
-/* flagged rows: a solid red edge, and text dark enough to read as a warning */
 .issue-row {
   border-top: 1px solid var(--ember-edge);
   background: var(--ember-skin);
-  box-shadow: inset 3px 0 0 var(--ember);
+  box-shadow: inset 4px 0 0 var(--ember-deep);
 }
 
-.issue-row:hover {
-  background: #e9bbb0;
-}
-
-.issue-row strong {
-  color: var(--ember-deep);
-  font-weight: 700;
-}
-
-.issue-row p {
-  color: #5c3b33;
-}
-
+.issue-row:hover { background: #e09c8b; }
+.issue-row strong { color: var(--ember-deep); font-weight: 700; }
+.issue-row p { color: #4e2a21; }
 .issue-row span,
-.issue-row b {
-  color: #44231c;
-}
-
-.issue-row small {
-  color: #7a5349;
-}
+.issue-row b { color: #3a1d16; }
+.issue-row small { color: #6b3f33; }
 
 .bucket-card[data-bucket="unused"] {
   border-color: var(--ember-edge);
-  border-left: 3px solid var(--ember);
+  border-left: 4px solid var(--ember-deep);
   background: var(--ember-skin);
 }
 
-.bucket-card[data-bucket="unused"] header span {
-  color: #5c3b33;
-}
+.bucket-card[data-bucket="unused"] header span { color: #4e2a21; }
+.bucket-card[data-bucket="unused"] header b,
+.bucket-card[data-bucket="unused"] header strong { color: var(--ember-deep); }
 
+/* a flagged card is red all the way across, not just its spine */
 .path-card.issue {
-  border-color: var(--ember-edge);
-  border-left: 3px solid var(--ember);
+  border: 1px solid var(--ember-edge);
+  border-left: 4px solid var(--ember-deep);
+  background: var(--ember-skin);
 }
 
 .path-card.issue .path-name {
-  background: var(--ember-skin);
+  border-right-color: var(--ember-edge);
+  background: rgba(103, 18, 8, 0.12);
 }
 
-.path-card.issue .silent-line {
-  background: #e9bbb0;
+.path-card.issue .path-name strong { color: var(--ember-deep); }
+.path-card.issue .path-name span { color: #4e2a21; }
+.path-card.issue .path-mode { color: var(--ember-deep) !important; font-weight: 700 !important; }
+.path-card.issue .path-copy b { color: #7a4336; }
+.path-card.issue .path-copy p { color: #3f211a; }
+.path-card.issue .silent-line { background: rgba(103, 18, 8, 0.14); }
+.path-card.issue .path-action {
+  border-left-color: var(--ember-edge);
+  background: rgba(103, 18, 8, 0.07);
+}
+.path-card.issue .path-action small { color: #6b3f33; }
+
+/* settled: the warning is gone and the card reads as ordinary */
+.path-card.kept {
+  border-color: var(--rule-firm);
+  background: var(--paper-lift);
+}
+
+.kept-note {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--sage);
+  background: rgba(79, 122, 98, 0.12);
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.kept-note strong { color: var(--ink); }
+
+.kept-note button {
+  border: 0;
+  margin-left: 4px;
+  background: none;
+  color: var(--ink-soft);
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .detail-block.flagged {
@@ -2503,124 +2505,151 @@ figcaption {
   background: var(--ember-skin);
 }
 
-.detail-block.flagged p {
-  color: #5c3b33;
-}
+.detail-block.flagged p { color: #4e2a21; }
 
-.badge.silent {
-  background: var(--ember-deep);
-  color: #fff4f0;
-}
-
-.trap {
-  color: var(--ember-deep) !important;
-  font-weight: 500;
-}
+.badge.silent { background: var(--ember-deep); color: #fff3ef; }
+.trap { color: var(--ember-deep) !important; font-weight: 600; }
 
 .leak-track i,
-.bucket-card[data-bucket="unused"] .bucket-bar i,
-.price-dot.change {
-  fill: var(--ember);
-  background: var(--ember);
-}
+.bucket-card[data-bucket="unused"] .bucket-bar i { background: var(--ember-deep); }
+
+.price-dot.change { fill: var(--ember); stroke: var(--ember); }
 
 .change-line,
 .delta-label,
-.change-label {
-  stroke: var(--ember);
-  fill: var(--ember);
+.change-label { stroke: var(--ember); fill: var(--ember); }
+
+.change-line { fill: none; }
+
+/* --- accept and cancel ------------------------------------------------ */
+
+.path-action button.keep-button {
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
 }
 
-.change-line {
-  fill: none;
+.path-action button.keep-button:hover {
+  background: var(--ink);
+  color: var(--paper);
 }
 
-/* --- forecast chart -------------------------------------------------- */
-
-.forecast-chart {
-  display: block;
-  width: 100%;
-  overflow: visible;
+.path-action button.danger-button {
+  border: 0;
+  background: var(--ember-deep);
+  color: #fff3ef;
 }
 
-.forecast-bar {
-  transition: opacity 0.12s;
+.path-action button.danger-button:hover {
+  background: var(--ember);
 }
 
-.forecast-bar:hover {
-  opacity: 0.78;
+.path-card.issue .path-action button.keep-button {
+  border-color: var(--ember-deep);
+  color: var(--ember-deep);
 }
 
-.forecast-bar.peak {
-  stroke: var(--ink);
-  stroke-width: 1.5;
+.path-card.issue .path-action button.keep-button:hover {
+  background: var(--ember-deep);
+  color: #fff3ef;
 }
 
-.bar-value {
-  fill: var(--ink);
-  font: 600 11px var(--sans);
+/* --- the month list --------------------------------------------------- */
+
+.strip-lead {
+  margin: 0 0 16px;
+  max-width: 60ch;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.strip-lead strong {
+  color: var(--ink);
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
 }
 
-.bar-month {
-  fill: var(--ink-soft);
-  font: 500 11px var(--sans);
+.month-strip {
+  display: grid;
+  gap: 3px;
 }
 
-.bar-year {
-  fill: var(--ink-faint);
-  font: 500 9px var(--mono);
-}
-
-.average-line {
-  stroke: var(--ink);
-  stroke-width: 1.5;
-  stroke-dasharray: 6 5;
-  opacity: 0.55;
-}
-
-.average-label {
-  fill: var(--ink-soft);
-  font: 600 10px var(--sans);
-  letter-spacing: 0.04em;
-}
-
-.axis-line {
-  stroke: var(--ink);
-  stroke-width: 1.5;
-}
-
-.chart-key {
-  display: inline-flex;
+.month-line {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 86px 190px;
+  gap: 14px;
   align-items: center;
-  gap: 6px;
-  margin-left: auto;
+  padding: 5px 8px;
+  border-radius: var(--r-sm);
+}
+
+.month-line.has-extra {
+  background: rgba(109, 58, 99, 0.09);
+}
+
+.month-name {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.month-name i {
+  margin-left: 4px;
   color: var(--ink-faint);
-  font-size: 9px;
-  letter-spacing: 0.08em;
+  font: 9px var(--mono);
+  font-style: normal;
 }
 
-.chart-key i {
-  display: inline-block;
-  width: 13px;
-  height: 11px;
-  margin-left: 8px;
-  border-radius: 2px;
-  vertical-align: middle;
+.month-bar {
+  display: flex;
+  height: 16px;
+  border-radius: 3px;
+  background: rgba(36, 18, 49, 0.05);
+  overflow: hidden;
 }
 
-.chart-key .key-solid {
+.month-bar i {
+  display: block;
+  height: 100%;
+}
+
+.bar-base {
   background: var(--marigold);
 }
 
-.chart-key .key-hatch {
+.bar-extra {
+  background: var(--plum);
+}
+
+.bar-extra.estimated {
   background: repeating-linear-gradient(
     45deg,
-    var(--marigold),
-    var(--marigold) 3px,
-    var(--marigold-skin) 3px,
-    var(--marigold-skin) 6px
+    var(--plum),
+    var(--plum) 3px,
+    rgba(255, 255, 255, 0.55) 3px,
+    rgba(255, 255, 255, 0.55) 6px
   );
+}
+
+.month-amount {
+  color: var(--ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.month-note {
+  color: var(--plum);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.month-note em {
+  margin-left: 6px;
+  color: var(--ink-faint);
+  font-size: 9px;
+  font-style: normal;
 }
 
 /* --- start date and running cost -------------------------------------- */
@@ -2644,15 +2673,14 @@ figcaption {
 }
 
 .leak-evidence em {
-  color: var(--ember);
+  color: var(--ember-deep);
   font-size: 12px;
   font-style: normal;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 660px) {
-  .chart-key { display: none; }
-  .bar-value { font-size: 13px; }
-  .bar-month { font-size: 13px; }
+@media (max-width: 900px) {
+  .month-line { grid-template-columns: 48px minmax(0, 1fr) 80px; gap: 10px; }
+  .month-note { grid-column: 2 / -1; }
 }
