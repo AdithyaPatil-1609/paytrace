@@ -26,7 +26,7 @@ const screens: { id: Screen; number: string; label: string }[] = [
 ];
 
 export function Dashboard({ dataset }: DashboardProps) {
-  const [screen, setScreen] = useState<Screen>("list");
+  const [screen, setScreen] = useState<Screen>("annual");
   const [simulated, setSimulated] = useState(false);
   const [revoked, setRevoked] = useState<string[]>([]);
   const [kept, setKept] = useState<string[]>([]);

@@ -37,9 +37,6 @@ export function AnnualDashboard({
 
   let travelled = 0;
 
-  // One row per month, read top to bottom. Nothing can overlap, and every
-  // extra gets its name written beside it rather than under a tick.
-  const base = months[0]?.base ?? 0;
   const widest = Math.max(...months.map((month) => month.total), 1);
 
   return (
@@ -103,54 +100,23 @@ export function AnnualDashboard({
 
         <figure className="bars-figure">
           <figcaption>What leaves each month</figcaption>
-
-          <p className="strip-lead">
-            <strong>{formatINR(base)}</strong> leaves every month, the same each time. Four months carry something
-            extra on top.
-          </p>
-
-          <div className="month-strip">
-            {months.map((month) => {
-              const extra = month.segments[0];
-              return (
-                <div className={extra ? "month-line has-extra" : "month-line"} key={month.key}>
-                  <span className="month-name">
-                    {month.label}
-                    <i>{month.key.slice(2, 4)}</i>
-                  </span>
-
-                  <div className="month-bar">
-                    <i className="bar-base" style={{ width: `${(month.base / widest) * 100}%` }} />
-                    {month.segments.map((segment) => (
-                      <i
-                        key={segment.label}
-                        className={segment.kind === "irregular" ? "bar-extra estimated" : "bar-extra"}
-                        style={{ width: `${(segment.amount / widest) * 100}%` }}
-                      />
-                    ))}
+          <div className="month-chart">
+            {months.map((month) => (
+              <div
+                className="month-col"
+                key={month.key}
+                tabIndex={0}
+                aria-label={`${month.label} ${month.key.slice(0, 4)}, ${formatINR(month.total)}`}
+              >
+                <div className="month-plot">
+                  <div className="month-col-bar" style={{ height: `${(month.total / widest) * 100}%` }}>
+                    <span className="month-tip">{formatINR(month.total)}</span>
                   </div>
-
-                  <b className="month-amount">{formatINR(month.total)}</b>
-
-                  <span className="month-note">
-                    {extra ? (
-                      <>
-                        + {extra.label} {formatINR(extra.amount)}
-                        {extra.kind === "irregular" && <em>date estimated</em>}
-                      </>
-                    ) : (
-                      ""
-                    )}
-                  </span>
                 </div>
-              );
-            })}
+                <span className="month-col-label">{month.label}</span>
+              </div>
+            ))}
           </div>
-
-          <p className="viz-note">
-            Electricity sits inside the monthly figure at its median, because the bill itself varies. The twelve months
-            add to {formatINR(year)}.
-          </p>
         </figure>
       </div>
 
