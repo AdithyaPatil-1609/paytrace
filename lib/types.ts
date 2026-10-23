@@ -160,6 +160,10 @@ export type Commitment = {
   annualCost: number;
   debitCount: number;
   firstCharge: string;
+  /** When the autopay began: the mandate's own date when there is one. */
+  startedOn: string;
+  /** Everything this commitment has taken so far, across the fixture. */
+  spentToDate: number;
   lastCharge: string;
   nextCharge?: string;
   lastOpened?: string;

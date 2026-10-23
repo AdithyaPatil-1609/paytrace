@@ -602,6 +602,9 @@ function CancelPaths({
                 <strong>{item.merchant}</strong>
                 <span>{monthlyCost(item)}</span>
                 <small className="path-mode">{modeLabel(item)}</small>
+                <small className="path-spent">
+                  Since {formatDate(item.startedOn)} · {formatINR(item.spentToDate)} taken
+                </small>
                 {item.mandateRef && <small>Mandate: {item.mandateRef}</small>}
               </div>
               <div className="path-copy">
@@ -683,6 +686,8 @@ function DetailPanel({ item, asOf, onClose }: { item: Commitment; asOf: string; 
           <Fact label="Rhythm" value={item.cadence} />
           <Fact label="Instrument" value={item.instrument} />
           <Fact label="Debits seen" value={String(item.debitCount)} />
+          <Fact label="Paying since" value={formatDate(item.startedOn)} />
+          <Fact label="Spent so far" value={formatINR(item.spentToDate)} />
           <Fact label="Next charge" value={formatDate(item.nextCharge)} />
           <Fact label="Last opened" value={item.lastOpened ? formatDate(item.lastOpened) : "No record"} />
           <Fact label="Opens in 12 months" value={item.opensLast12Months === undefined ? "—" : String(item.opensLast12Months)} />
