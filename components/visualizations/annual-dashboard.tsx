@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { groupByCategory, monthlyForecast, unusedTotal, yearlyTotal } from "@/lib/analysis";
 import { spendGroupLabels } from "@/lib/engine";
-import { formatCompactINR, formatINR } from "@/lib/format";
+import { formatINR } from "@/lib/format";
 import type { Commitment, SpendGroup } from "@/lib/types";
 
 /** Donut geometry: one ring, drawn as stroked arcs on a single circle. */
@@ -16,11 +16,6 @@ const sliceColor: Record<SpendGroup, string> = {
   utilities: "var(--plum)",
   insurance: "var(--sage)"
 };
-
-/* Chart frame. Room at the bottom for the month and what lands on it. */
-const BW = 780;
-const BH = 320;
-const BPAD = { top: 40, right: 18, bottom: 70, left: 66 };
 
 export function AnnualDashboard({
   items,
@@ -42,17 +37,10 @@ export function AnnualDashboard({
 
   let travelled = 0;
 
-  // The base run is identical every month, so one line explains the whole floor.
+  // One row per month, read top to bottom. Nothing can overlap, and every
+  // extra gets its name written beside it rather than under a tick.
   const base = months[0]?.base ?? 0;
-  const peak = Math.max(...months.map((month) => month.total));
-  const ceiling = Math.ceil(peak / 5000) * 5000;
-  const plotW = BW - BPAD.left - BPAD.right;
-  const plotH = BH - BPAD.top - BPAD.bottom;
-  const slot = plotW / months.length;
-  const barW = slot * 0.56;
-  const yOf = (value: number) => BPAD.top + plotH - (value / ceiling) * plotH;
-  const gridValues = [0, ceiling / 2, ceiling];
-  const extras = months.filter((month) => month.segments.length > 0);
+  const widest = Math.max(...months.map((month) => month.total), 1);
 
   return (
     <section className="viz-block">
@@ -114,110 +102,54 @@ export function AnnualDashboard({
         </figure>
 
         <figure className="bars-figure">
-          <figcaption>
-            What leaves each month
-            <span className="chart-key">
-              <i className="key-base" /> the usual run
-              <i className="key-extra" /> something extra
-            </span>
-          </figcaption>
+          <figcaption>What leaves each month</figcaption>
 
-          <svg viewBox={`0 0 ${BW} ${BH}`} className="forecast-chart" role="img" aria-label="Forecast debits by month">
-            <defs>
-              <pattern id="estimate-hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-                <rect width="6" height="6" fill="var(--plum)" />
-                <line x1="0" y1="0" x2="0" y2="6" stroke="var(--paper-lift)" strokeWidth="2.4" />
-              </pattern>
-            </defs>
+          <p className="strip-lead">
+            <strong>{formatINR(base)}</strong> leaves every month, the same each time. Four months carry something
+            extra on top.
+          </p>
 
-            {gridValues.map((value) => (
-              <g key={value}>
-                <line x1={BPAD.left} x2={BW - BPAD.right} y1={yOf(value)} y2={yOf(value)} className="grid-line" />
-                <text x={BPAD.left - 12} y={yOf(value) + 4} className="axis-label" textAnchor="end">
-                  {value === 0 ? "0" : formatCompactINR(value)}
-                </text>
-              </g>
-            ))}
-
-            {months.map((month, index) => {
-              const x = BPAD.left + index * slot + (slot - barW) / 2;
-              const baseTop = yOf(month.base);
-              let stackTop = baseTop;
-
+          <div className="month-strip">
+            {months.map((month) => {
+              const extra = month.segments[0];
               return (
-                <g key={month.key}>
-                  <rect x={x} y={baseTop} width={barW} height={BPAD.top + plotH - baseTop} rx="2" className="seg-base">
-                    <title>{`${month.label}: ${formatINR(month.total)} — the usual ${formatINR(month.base)}${
-                      month.segments.length ? `, plus ${month.segments.map((s) => `${s.label} ${formatINR(s.amount)}`).join(", ")}` : ""
-                    }`}</title>
-                  </rect>
-
-                  {month.segments.map((segment) => {
-                    const height = (segment.amount / ceiling) * plotH;
-                    stackTop -= height;
-                    return (
-                      <rect
-                        key={segment.label}
-                        x={x}
-                        y={stackTop}
-                        width={barW}
-                        height={Math.max(height, 2)}
-                        rx="2"
-                        className="seg-extra"
-                        fill={segment.kind === "irregular" ? "url(#estimate-hatch)" : "var(--plum)"}
-                      >
-                        <title>{`${segment.label}: ${formatINR(segment.amount)}${
-                          segment.kind === "irregular" ? " — date estimated" : ""
-                        }`}</title>
-                      </rect>
-                    );
-                  })}
-
-                  <text x={x + barW / 2} y={stackTop - 10} className="bar-value" textAnchor="middle">
-                    {formatCompactINR(month.total)}
-                  </text>
-                  <text x={x + barW / 2} y={BH - 44} className="bar-month" textAnchor="middle">
+                <div className={extra ? "month-line has-extra" : "month-line"} key={month.key}>
+                  <span className="month-name">
                     {month.label}
-                  </text>
-                  {month.segments.map((segment, position) => (
-                    <text
-                      key={segment.label}
-                      x={x + barW / 2}
-                      y={BH - 30 + position * 12}
-                      className="bar-extra"
-                      textAnchor="middle"
-                    >
-                      + {segment.label}
-                    </text>
-                  ))}
-                </g>
+                    <i>{month.key.slice(2, 4)}</i>
+                  </span>
+
+                  <div className="month-bar">
+                    <i className="bar-base" style={{ width: `${(month.base / widest) * 100}%` }} />
+                    {month.segments.map((segment) => (
+                      <i
+                        key={segment.label}
+                        className={segment.kind === "irregular" ? "bar-extra estimated" : "bar-extra"}
+                        style={{ width: `${(segment.amount / widest) * 100}%` }}
+                      />
+                    ))}
+                  </div>
+
+                  <b className="month-amount">{formatINR(month.total)}</b>
+
+                  <span className="month-note">
+                    {extra ? (
+                      <>
+                        + {extra.label} {formatINR(extra.amount)}
+                        {extra.kind === "irregular" && <em>date estimated</em>}
+                      </>
+                    ) : (
+                      ""
+                    )}
+                  </span>
+                </div>
               );
             })}
-
-            {/* the floor: what leaves in a month with nothing extra on it */}
-            <line x1={BPAD.left} x2={BW - BPAD.right} y1={yOf(base)} y2={yOf(base)} className="base-line" />
-            <text x={BPAD.left + 6} y={yOf(base) - 9} className="base-label">
-              every month · {formatINR(base)}
-            </text>
-
-            <line
-              x1={BPAD.left}
-              x2={BW - BPAD.right}
-              y1={BPAD.top + plotH}
-              y2={BPAD.top + plotH}
-              className="axis-line"
-            />
-          </svg>
+          </div>
 
           <p className="viz-note">
-            The solid block is the run that leaves every single month — {formatINR(base)}, the same each time. Only the
-            darker caps on top differ:{" "}
-            {extras
-              .slice(0, 3)
-              .map((month) => `${month.label} carries ${month.segments.map((segment) => segment.label).join(" and ")}`)
-              .join(", ")}
-            . Electricity sits in the base at its median, since the bill itself varies. The twelve months add to{" "}
-            {formatINR(year)}.
+            Electricity sits inside the monthly figure at its median, because the bill itself varies. The twelve months
+            add to {formatINR(year)}.
           </p>
         </figure>
       </div>

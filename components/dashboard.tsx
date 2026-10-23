@@ -29,7 +29,7 @@ export function Dashboard({ dataset }: DashboardProps) {
   const [screen, setScreen] = useState<Screen>("annual");
   const [simulated, setSimulated] = useState(false);
   const [revoked, setRevoked] = useState<string[]>([]);
-  const [paused, setPaused] = useState<string[]>([]);
+  const [kept, setKept] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [demoStep, setDemoStep] = useState<DemoStep>("idle");
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -106,11 +106,16 @@ export function Dashboard({ dataset }: DashboardProps) {
 
   function confirmRevoke(id: string) {
     setRevoked((current) => (current.includes(id) ? current : [...current, id]));
-    setPaused((current) => current.filter((entry) => entry !== id));
+    setKept((current) => current.filter((entry) => entry !== id));
   }
 
-  function takePause(id: string) {
-    setPaused((current) => (current.includes(id) ? current : [...current, id]));
+  /** Accepting the warning settles it: the row stops being flagged. */
+  function keepIt(id: string) {
+    setKept((current) => (current.includes(id) ? current : [...current, id]));
+  }
+
+  function flagAgain(id: string) {
+    setKept((current) => current.filter((entry) => entry !== id));
   }
 
   return (
@@ -209,9 +214,10 @@ export function Dashboard({ dataset }: DashboardProps) {
               items={active}
               allItems={detected}
               revoked={revoked}
-              paused={paused}
+              kept={kept}
               onConfirm={confirmRevoke}
-              onPause={takePause}
+              onKeep={keepIt}
+              onFlagAgain={flagAgain}
               highlightId={highlightId}
             />
           )}
@@ -558,17 +564,19 @@ function CancelPaths({
   items,
   allItems,
   revoked,
-  paused,
+  kept,
   onConfirm,
-  onPause,
+  onKeep,
+  onFlagAgain,
   highlightId
 }: {
   items: Commitment[];
   allItems: Commitment[];
   revoked: string[];
-  paused: string[];
+  kept: string[];
   onConfirm: (id: string) => void;
-  onPause: (id: string) => void;
+  onKeep: (id: string) => void;
+  onFlagAgain: (id: string) => void;
   highlightId?: string | null;
 }) {
   const stoppedRows = allItems.filter((item) => revoked.includes(item.id));
@@ -590,11 +598,11 @@ function CancelPaths({
       )}
       <section className="path-list">
         {items.map((item) => {
-          const isIssue = ["unused", "silent", "trial"].includes(item.kind);
-          const isPaused = paused.includes(item.id);
+          const isKept = kept.includes(item.id);
+          const isIssue = ["unused", "silent", "trial"].includes(item.kind) && !isKept;
           return (
             <article
-              className={`path-card ${isIssue ? "issue" : ""} ${isPaused ? "paused" : ""} ${highlightId === item.id ? "is-spotlit" : ""}`}
+              className={`path-card ${isIssue ? "issue" : ""} ${isKept ? "kept" : ""} ${highlightId === item.id ? "is-spotlit" : ""}`}
               data-row={item.id}
               key={item.id}
             >
@@ -628,10 +636,11 @@ function CancelPaths({
                     <strong>Watch for:</strong> {item.trap}
                   </p>
                 )}
-                {isPaused && (
-                  <p className="pause-result">
-                    Offer taken. Mandate after it · <strong>still Active</strong>, and the year has not moved by one
-                    rupee. {item.trap} Only a revoke stops the money.
+                {isKept && (
+                  <p className="kept-note">
+                    Kept. The warning is settled and the mandate stays <strong>Active</strong>, so the year is
+                    unchanged.{" "}
+                    <button onClick={() => onFlagAgain(item.id)}>Flag it again</button>
                   </p>
                 )}
               </div>
@@ -640,17 +649,17 @@ function CancelPaths({
                   <span className="no-action">No revoke control</span>
                 ) : (
                   <>
-                    {item.trap && !isPaused && (
-                      <button className="pause-button" onClick={() => onPause(item.id)}>
-                        {offerLabel(item)}
+                    {isIssue && (
+                      <button className="keep-button" onClick={() => onKeep(item.id)}>
+                        Keep it
                       </button>
                     )}
-                    <button onClick={() => onConfirm(item.id)}>
-                      {item.cancelMode === "normal" ? "Confirm the revoke" : "Mark it handled"} <i>→</i>
+                    <button className="danger-button" onClick={() => onConfirm(item.id)}>
+                      {item.cancelMode === "normal" ? "Cancel the autopay" : "Mark it handled"} <i>→</i>
                     </button>
                     <small>
                       {item.cancelMode === "normal"
-                        ? `Confirming drops the year by ${formatINR(item.annualCost)}.`
+                        ? `Cancelling drops the year by ${formatINR(item.annualCost)}.`
                         : "This does not change the year. The amount due remains."}
                     </small>
                   </>
@@ -775,25 +784,7 @@ function modeLabel(item: Commitment) {
   return "TWO TRACKS";
 }
 
-/**
- * What the merchant will put in front of her instead of a cancellation.
- * Taken from the trap recorded in the dictionary, so the button offers the
- * same thing the real retention flow would.
- */
-function offerLabel(item: Commitment) {
-  const trap = (item.trap ?? "").toLowerCase();
-  if (trap.includes("pause")) return "Accept the 2-month pause";
-  if (trap.includes("cheaper plan")) return "Take the cheaper plan";
-  if (trap.includes("free month")) return "Take the free month";
-  if (trap.includes("low price")) return "Take 3 months cheaper";
-  if (trap.includes("survey")) return "Cancel inside the app";
-  if (trap.includes("storage")) return "Take the storage offer";
-  if (trap.includes("downgrade")) return "Downgrade the plan";
-  if (trap.includes("mobile-only")) return "Switch to mobile-only";
-  if (trap.includes("pressing-1")) return "Reply to the operator";
-  if (trap.includes("reminder")) return "Keep just the reminder";
-  return "Take their offer instead";
-}
+
 
 function monthlyCost(item: Commitment) {
   if (item.cadence === "annual") return "once a year";
