@@ -25,6 +25,16 @@ export type Mechanism =
   | "emi_ach"
   | "none";
 
+/** The four ways money leaves, for the annual composition chart. "Unused" is
+    a status, not a spend group, so it is deliberately not one of these. */
+export type SpendGroup = "subscriptions" | "utilities" | "insurance" | "debt";
+
+/** How much we trust the next-charge date. Never invent one. */
+export type DateConfidence = "confirmed" | "estimated" | "unknown";
+
+/** One dated charge, for the price-history chart. */
+export type PricePoint = { date: string; amount: number };
+
 /** How the cancel screen behaves for this row. */
 export type CancelMode = "normal" | "warn" | "explain" | "block" | "exclude" | "fixture";
 
@@ -178,6 +188,10 @@ export type Commitment = {
   trap?: string;
   mandateRef?: string;
   mandateStatus?: string;
+  spendGroup: SpendGroup;
+  dateConfidence: DateConfidence;
+  /** Every dated debit, oldest first. The price chart is drawn from this. */
+  priceSeries: PricePoint[];
   /** True once the simulated pause is taken: the money has not stopped. */
   paused?: boolean;
   inDictionary: boolean;

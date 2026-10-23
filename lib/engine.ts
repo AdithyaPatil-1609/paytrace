@@ -5,12 +5,14 @@ import type {
   Commitment,
   CommitmentKind,
   Dataset,
+  DateConfidence,
   DictionaryEntry,
   EvidenceRow,
   Instrument,
   Mechanism,
   NoticeRow,
   Signal,
+  SpendGroup,
   StatementRow
 } from "./types";
 
@@ -112,6 +114,21 @@ function projectYear(cadence: Cadence, pattern: AmountPattern, amounts: number[]
   if (cadence === "annual") return latest;
   if (pattern === "variable") return Math.round(median(amounts)) * multiplierFor(cadence);
   return latest * multiplierFor(cadence);
+}
+
+/** The spend group answers "where does the money go", not "should it stop". */
+function spendGroupFor(mechanism: Mechanism, category: string): SpendGroup {
+  if (mechanism === "emi_ach") return "debt";
+  if (mechanism === "enach" || category === "insurance") return "insurance";
+  if (mechanism === "bbps" || mechanism === "neft_standing") return "utilities";
+  return "subscriptions";
+}
+
+/** A varying amount or an uneven date is never presented as a firm date. */
+function confidenceFor(cadence: Cadence, pattern: AmountPattern): DateConfidence {
+  if (cadence === "irregular") return "unknown";
+  if (pattern === "variable") return "estimated";
+  return "confirmed";
 }
 
 function bucketFor(kind: CommitmentKind, mechanism: Mechanism): Bucket {
@@ -290,6 +307,9 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
       trap: entry?.trap || undefined,
       mandateRef: mandate?.mandateRef,
       mandateStatus: mandate?.status,
+      spendGroup: spendGroupFor(mechanism, entry?.category ?? ""),
+      dateConfidence: confidenceFor(cadence, pattern),
+      priceSeries: rows.map((row) => ({ date: row.date, amount: row.debit ?? 0 })),
       inDictionary: Boolean(entry)
     });
   }
@@ -341,6 +361,13 @@ function statusFor(signals: Signal[], kind: CommitmentKind) {
   if (signals.includes("annual_next_date")) return "Annual payment";
   return "In use";
 }
+
+export const spendGroupLabels: Record<SpendGroup, string> = {
+  subscriptions: "Subscriptions and apps",
+  utilities: "Utilities and maintenance",
+  insurance: "Insurance",
+  debt: "Loan"
+};
 
 export const bucketLabels: Record<Bucket, string> = {
   unused: "Unused",

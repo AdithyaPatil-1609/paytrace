@@ -7,6 +7,10 @@ import { toCsv } from "@/lib/csv";
 import { bucketCopy, bucketLabels, detectCommitments } from "@/lib/engine";
 import { formatDate, formatINR } from "@/lib/format";
 import type { Commitment, Dataset } from "@/lib/types";
+import { AnnualDashboard } from "@/components/visualizations/annual-dashboard";
+import { PriceHistory } from "@/components/visualizations/price-history";
+import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
+import { UnusedSavings } from "@/components/visualizations/unused-savings";
 
 type DashboardProps = { dataset: Dataset };
 type Screen = "annual" | "list" | "language" | "issues" | "paths";
@@ -118,6 +122,7 @@ export function Dashboard({ dataset }: DashboardProps) {
               leakage={leakage}
               debt={debt}
               stoppedValue={stoppedValue}
+              asOf={dataset.asOf}
               onOpen={setOpenId}
             />
           )}
@@ -134,7 +139,15 @@ export function Dashboard({ dataset }: DashboardProps) {
           )}
           {screen === "language" && <PlainLanguage items={active} onOpen={setOpenId} />}
           {screen === "issues" && (
-            <Issues items={issues} total={total} leakage={leakage} hike={hike} onOpen={setOpenId} />
+            <Issues
+              items={issues}
+              allItems={active}
+              total={total}
+              leakage={leakage}
+              hike={hike}
+              onOpen={setOpenId}
+              onGoToCancel={() => setScreen("paths")}
+            />
           )}
           {screen === "paths" && (
             <CancelPaths
@@ -172,6 +185,7 @@ function AnnualView({
   leakage,
   debt,
   stoppedValue,
+  asOf,
   onOpen
 }: {
   items: Commitment[];
@@ -179,6 +193,7 @@ function AnnualView({
   leakage: number;
   debt: number;
   stoppedValue: number;
+  asOf: string;
   onOpen: (id: string) => void;
 }) {
   const split = splitByBucket(items);
@@ -216,6 +231,9 @@ function AnnualView({
         </p>
       )}
 
+      <AnnualDashboard items={items} asOf={asOf} onOpen={onOpen} />
+
+      <h2 className="viz-heading">The same year, split by what to do about it</h2>
       <section className="bucket-list">
         {split.map((group) => (
           <article className="bucket-card" key={group.bucket} data-bucket={group.bucket}>
@@ -319,6 +337,9 @@ function AllPayments({
         and no mandate behind it, so the grouping drops it. Open any row above to see the rule that kept it.
       </p>
 
+      <h2 className="viz-heading">What is due next</h2>
+      <RenewalCalendar items={items} onOpen={onOpen} />
+
       <section className="simulation-card">
         <div>
           <p>SIMULATE NEW AUTOPAY</p>
@@ -381,16 +402,20 @@ function PlainLanguage({ items, onOpen }: { items: Commitment[]; onOpen: (id: st
 
 function Issues({
   items,
+  allItems,
   total,
   leakage,
   hike,
-  onOpen
+  onOpen,
+  onGoToCancel
 }: {
   items: Commitment[];
+  allItems: Commitment[];
   total: number;
   leakage: number;
   hike: number;
   onOpen: (id: string) => void;
+  onGoToCancel: () => void;
 }) {
   return (
     <>
@@ -423,6 +448,12 @@ function Issues({
           </button>
         ))}
       </section>
+      <h2 className="viz-heading">The price that moved</h2>
+      <PriceHistory items={allItems} onOpen={onOpen} />
+
+      <h2 className="viz-heading">What stopping them would be worth</h2>
+      <UnusedSavings items={allItems} onOpen={onOpen} onGoToCancel={onGoToCancel} />
+
       <p className="screen-footnote">
         Not on this page: Netflix, Google One, Prime, JioHotstar, insurance, electricity, society, and the loan.
         Electricity&apos;s changing amount and society&apos;s uneven dates are discovery signals, not waste.
