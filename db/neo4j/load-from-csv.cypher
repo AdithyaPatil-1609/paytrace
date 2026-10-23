@@ -79,23 +79,24 @@ MERGE (md)-[:ON_ACCOUNT]->(a)
 MERGE (m:Merchant {brand: row.brand})
 MERGE (md)-[:FOR]->(m);
 
-// NOTE: Merchant is keyed by brand, and the dictionary holds two rows for
-// Spotify and two for Netflix (the plain descriptor and the PAYPAL * one).
-// Both rows MERGE onto one Merchant node, so the later row's product and
-// one_liner win. Priya's year stays clean only because parser-fixtures.csv
-// is never loaded here. Key Merchant by pattern if that ever changes.
+// The dictionary row's wording lives on the Pattern, not the Merchant.
+// Merchant is keyed by brand, and the dictionary holds two rows each for
+// Spotify and Netflix (the plain descriptor and the PAYPAL * one), so copy
+// written onto Merchant would let the later row overwrite the earlier one.
+// scripts/seed-neo4j.ts writes the same shape.
 LOAD CSV WITH HEADERS FROM 'file:///merchant-dictionary.csv' AS row
 MERGE (m:Merchant {brand: row.brand})
-SET m.product = row.product,
-    m.category = row.category,
-    m.one_liner = row.one_liner,
-    m.mechanism = row.mechanism,
-    m.cancel_mode = row.cancel_mode,
-    m.stop_the_service = row.stop_the_service,
-    m.stop_the_money = row.stop_the_money,
-    m.trap = row.trap,
-    m.if_they_stay_silent = row.if_they_stay_silent
 MERGE (pat:Pattern {pattern: row.pattern})
+SET pat.brand = row.brand,
+    pat.product = row.product,
+    pat.category = row.category,
+    pat.one_liner = row.one_liner,
+    pat.mechanism = row.mechanism,
+    pat.cancel_mode = row.cancel_mode,
+    pat.stop_the_service = row.stop_the_service,
+    pat.stop_the_money = row.stop_the_money,
+    pat.trap = row.trap,
+    pat.if_they_stay_silent = row.if_they_stay_silent
 MERGE (pat)-[:MATCHES]->(m);
 
 LOAD CSV WITH HEADERS FROM 'file:///usage.csv' AS row

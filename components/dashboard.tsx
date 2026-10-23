@@ -7,6 +7,7 @@ import { toCsv } from "@/lib/csv";
 import { bucketCopy, bucketLabels, detectCommitments } from "@/lib/engine";
 import { formatDate, formatINR } from "@/lib/format";
 import type { Commitment, Dataset } from "@/lib/types";
+import type { SourceInfo } from "@/db/neo4j/dataset";
 import { AnnualDashboard } from "@/components/visualizations/annual-dashboard";
 import { PriceHistory } from "@/components/visualizations/price-history";
 import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
@@ -14,7 +15,7 @@ import { UnusedSavings } from "@/components/visualizations/unused-savings";
 import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
 import { DemoOverlay, type DemoStep } from "@/components/demo-runner";
 
-type DashboardProps = { dataset: Dataset };
+type DashboardProps = { dataset: Dataset; source: SourceInfo };
 type Screen = "annual" | "list" | "language" | "issues" | "paths";
 
 const screens: { id: Screen; number: string; label: string }[] = [
@@ -25,7 +26,7 @@ const screens: { id: Screen; number: string; label: string }[] = [
   { id: "annual", number: "05", label: "Annual" }
 ];
 
-export function Dashboard({ dataset }: DashboardProps) {
+export function Dashboard({ dataset, source }: DashboardProps) {
   const [screen, setScreen] = useState<Screen>("list");
   const [simulated, setSimulated] = useState(false);
   const [revoked, setRevoked] = useState<string[]>([]);
@@ -127,6 +128,10 @@ export function Dashboard({ dataset }: DashboardProps) {
         <p>
           PROTOTYPE <i>·</i> SYNTHETIC MESSAGES ONLY
         </p>
+        <span className={source.kind === "neo4j" ? "source-badge live" : "source-badge"}>
+          <i />
+          {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV fixture"}
+        </span>
         <div className="bar-actions">
           <button className="run-demo" onClick={demoStep === "idle" || demoStep === "done" ? startDemo : endDemo}>
             {demoStep === "idle" || demoStep === "done" ? "▶ Run the demo" : "■ Stop the run"}
@@ -181,6 +186,8 @@ export function Dashboard({ dataset }: DashboardProps) {
               debt={debt}
               stoppedValue={stoppedValue}
               asOf={dataset.asOf}
+              source={source}
+              detected={detected.length}
               onOpen={setOpenId}
             />
           )}
@@ -239,6 +246,63 @@ export function Dashboard({ dataset }: DashboardProps) {
   );
 }
 
+/**
+ * Says where the rows came from. When Neo4j is serving, it shows what the
+ * graph holds and compares the graph's own commitment count with what the
+ * engine derived from the same rows.
+ */
+function SourcePanel({ source, detected }: { source: SourceInfo; detected: number }) {
+  if (source.kind !== "neo4j") {
+    return (
+      <section className="source-panel">
+        <header>
+          <strong>Running on the CSV fixture</strong>
+          <span>No Neo4j connection configured</span>
+        </header>
+        <p>
+          Every row on these screens was read from <code>data/raw/*.csv</code>. Add a connection to{" "}
+          <code>.env.local</code> and run <code>npm run seed</code> to serve the same screens from the graph.
+        </p>
+      </section>
+    );
+  }
+
+  const agrees = source.counts.commitments === detected;
+  return (
+    <section className="source-panel live">
+      <header>
+        <strong>Running on Neo4j</strong>
+        <span>
+          {source.host ?? "graph"} · database {source.database ?? "neo4j"}
+        </span>
+      </header>
+      <div className="source-counts">
+        <Count label="Payments" value={source.counts.payments} />
+        <Count label="Messages" value={source.counts.messages} />
+        <Count label="Mandates" value={source.counts.mandates} />
+        <Count label="Dictionary patterns" value={source.counts.patterns} />
+        <Count label="Commitments in graph" value={source.counts.commitments} />
+      </div>
+      <p>
+        Every payment, message and mandate on these screens was queried from the graph above. The engine grouped those
+        rows into <strong>{detected}</strong> commitments
+        {agrees
+          ? ", the same number the graph derives with its own Cypher — two independent passes over the same evidence agreeing."
+          : `, while the graph's own Cypher derives ${source.counts.commitments}. The gap is worth reading before the demo.`}
+      </p>
+    </section>
+  );
+}
+
+function Count({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="source-count">
+      <strong>{value}</strong>
+      <span>{label}</span>
+    </div>
+  );
+}
+
 function ScreenHeader({ number, eyebrow, title, copy }: { number: string; eyebrow: string; title: string; copy: string }) {
   return (
     <header className="screen-header">
@@ -258,6 +322,8 @@ function AnnualView({
   debt,
   stoppedValue,
   asOf,
+  source,
+  detected,
   onOpen
 }: {
   items: Commitment[];
@@ -266,6 +332,8 @@ function AnnualView({
   debt: number;
   stoppedValue: number;
   asOf: string;
+  source: SourceInfo;
+  detected: number;
   onOpen: (id: string) => void;
 }) {
   const split = splitByBucket(items);
@@ -302,6 +370,8 @@ function AnnualView({
           A revoke confirmed on screen 4 has taken <strong>{formatINR(stoppedValue)}</strong> out of the year.
         </p>
       )}
+
+      <SourcePanel source={source} detected={detected} />
 
       <AnnualDashboard items={items} asOf={asOf} onOpen={onOpen} />
 

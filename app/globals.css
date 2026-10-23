@@ -410,7 +410,6 @@ button {
   display: grid;
   grid-template-columns: 0.85fr 1.15fr;
   gap: 18px;
-  align-items: start;
 }
 
 .donut-figure,
@@ -561,6 +560,14 @@ figcaption {
   color: var(--ink-faint);
   font-size: 9px;
   text-align: center;
+}
+
+.viz-note {
+  margin: 16px 0 0;
+  max-width: 66ch;
+  color: var(--ink-faint);
+  font-size: 11px;
+  line-height: 1.55;
 }
 
 .viz-empty {
@@ -2547,71 +2554,102 @@ figcaption {
   color: #fff3ef;
 }
 
-/* --- the month chart -------------------------------------------------- */
+/* --- the month list --------------------------------------------------- */
 
-.month-chart {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 6px;
-  align-items: end;
-  margin-top: 36px;
+.strip-lead {
+  margin: 0 0 16px;
+  max-width: 60ch;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
-.month-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 0;
-}
-
-.month-col:focus-visible {
-  outline: 1px solid var(--ink);
-  outline-offset: 3px;
-}
-
-.month-plot {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  width: 100%;
-  height: 132px;
-}
-
-.month-col-bar {
-  position: relative;
-  width: 100%;
-  max-width: 18px;
-  min-height: 2px;
-  background: var(--ink);
-}
-
-.month-tip {
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 6px);
-  transform: translateX(-50%);
-  padding: 2px 6px;
-  border: 1px solid var(--rule-firm);
-  border-radius: 3px;
-  background: var(--paper-lift);
+.strip-lead strong {
   color: var(--ink);
-  font-size: 11px;
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
 }
 
-.month-col:hover .month-tip,
-.month-col:focus-visible .month-tip {
-  opacity: 1;
+.month-strip {
+  display: grid;
+  gap: 3px;
 }
 
-.month-col-label {
-  margin-top: 8px;
+.month-line {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 86px 190px;
+  gap: 14px;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: var(--r-sm);
+}
+
+.month-line.has-extra {
+  background: rgba(109, 58, 99, 0.09);
+}
+
+.month-name {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.month-name i {
+  margin-left: 4px;
   color: var(--ink-faint);
-  font-size: 10px;
-  letter-spacing: 0.04em;
+  font: 9px var(--mono);
+  font-style: normal;
+}
+
+.month-bar {
+  display: flex;
+  height: 16px;
+  border-radius: 3px;
+  background: rgba(36, 18, 49, 0.05);
+  overflow: hidden;
+}
+
+.month-bar i {
+  display: block;
+  height: 100%;
+}
+
+.bar-base {
+  background: var(--marigold);
+}
+
+.bar-extra {
+  background: var(--plum);
+}
+
+.bar-extra.estimated {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--plum),
+    var(--plum) 3px,
+    rgba(255, 255, 255, 0.55) 3px,
+    rgba(255, 255, 255, 0.55) 6px
+  );
+}
+
+.month-amount {
+  color: var(--ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.month-note {
+  color: var(--plum);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.month-note em {
+  margin-left: 6px;
+  color: var(--ink-faint);
+  font-size: 9px;
+  font-style: normal;
 }
 
 /* --- start date and running cost -------------------------------------- */
@@ -2642,3 +2680,128 @@ figcaption {
   font-variant-numeric: tabular-nums;
 }
 
+@media (max-width: 900px) {
+  .month-line { grid-template-columns: 48px minmax(0, 1fr) 80px; gap: 10px; }
+  .month-note { grid-column: 2 / -1; }
+}
+
+/* --- where the data came from ---------------------------------------- */
+
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid var(--rule-firm);
+  border-radius: 20px;
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.source-badge i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+
+.source-badge.live {
+  border-color: var(--sage);
+  background: rgba(79, 122, 98, 0.12);
+  color: #2f5744;
+}
+
+.source-badge.live i {
+  background: var(--sage);
+  box-shadow: 0 0 0 3px rgba(79, 122, 98, 0.22);
+}
+
+.source-panel {
+  margin: 28px 0 8px;
+  padding: 20px 22px;
+  border: 1px solid var(--rule-firm);
+  border-left: 3px solid var(--ink-faint);
+  border-radius: var(--r-lg);
+  background: var(--paper-lift);
+}
+
+.source-panel.live {
+  border-left-color: var(--sage);
+  background: rgba(79, 122, 98, 0.08);
+}
+
+.source-panel header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.source-panel header strong {
+  color: var(--ink);
+  font: 600 19px var(--serif);
+  letter-spacing: -0.02em;
+}
+
+.source-panel header span {
+  color: var(--ink-faint);
+  font: 10px var(--mono);
+}
+
+.source-panel p {
+  margin: 0;
+  max-width: 76ch;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.source-panel p strong {
+  color: var(--ink);
+}
+
+.source-panel code {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--paper-sink);
+  font: 10px var(--mono);
+}
+
+.source-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.source-count {
+  min-width: 96px;
+  padding: 10px 14px;
+  border: 1px solid rgba(79, 122, 98, 0.3);
+  border-radius: var(--r-sm);
+  background: var(--paper-lift);
+}
+
+.source-count strong {
+  display: block;
+  color: #2f5744;
+  font: 600 22px var(--serif);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.source-count span {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-faint);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .source-badge { display: none; }
+}
