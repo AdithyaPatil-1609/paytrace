@@ -630,8 +630,8 @@ function CancelPaths({
                 )}
                 {isPaused && (
                   <p className="pause-result">
-                    Pause taken. Mandate after pause · <strong>Active</strong>. The year has not moved by one rupee.
-                    Only a revoke stops the money.
+                    Offer taken. Mandate after it · <strong>still Active</strong>, and the year has not moved by one
+                    rupee. {item.trap} Only a revoke stops the money.
                   </p>
                 )}
               </div>
@@ -640,9 +640,9 @@ function CancelPaths({
                   <span className="no-action">No revoke control</span>
                 ) : (
                   <>
-                    {item.mechanism === "upi_autopay" && !isPaused && (
+                    {item.trap && !isPaused && (
                       <button className="pause-button" onClick={() => onPause(item.id)}>
-                        Accept the 2-month pause
+                        {offerLabel(item)}
                       </button>
                     )}
                     <button onClick={() => onConfirm(item.id)}>
@@ -769,7 +769,30 @@ function modeLabel(item: Commitment) {
   if (item.cancelMode === "block") return "DEBT · NO CANCEL";
   if (item.cancelMode === "warn") return "OBLIGATION · DECIDE CAREFULLY";
   if (item.cancelMode === "explain") return "THE AMOUNT DUE REMAINS";
+  if (item.kind === "unused") return "UNUSED · STILL CHARGING";
+  if (item.kind === "silent") return "PRICE ROSE · NO NOTICE";
+  if (item.kind === "trial") return "TRIAL BECAME PAID";
   return "TWO TRACKS";
+}
+
+/**
+ * What the merchant will put in front of her instead of a cancellation.
+ * Taken from the trap recorded in the dictionary, so the button offers the
+ * same thing the real retention flow would.
+ */
+function offerLabel(item: Commitment) {
+  const trap = (item.trap ?? "").toLowerCase();
+  if (trap.includes("pause")) return "Accept the 2-month pause";
+  if (trap.includes("cheaper plan")) return "Take the cheaper plan";
+  if (trap.includes("free month")) return "Take the free month";
+  if (trap.includes("low price")) return "Take 3 months cheaper";
+  if (trap.includes("survey")) return "Cancel inside the app";
+  if (trap.includes("storage")) return "Take the storage offer";
+  if (trap.includes("downgrade")) return "Downgrade the plan";
+  if (trap.includes("mobile-only")) return "Switch to mobile-only";
+  if (trap.includes("pressing-1")) return "Reply to the operator";
+  if (trap.includes("reminder")) return "Keep just the reminder";
+  return "Take their offer instead";
 }
 
 function monthlyCost(item: Commitment) {
