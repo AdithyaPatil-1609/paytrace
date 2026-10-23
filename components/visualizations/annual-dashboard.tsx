@@ -17,10 +17,10 @@ const sliceColor: Record<SpendGroup, string> = {
   insurance: "var(--sage)"
 };
 
-/* Bar chart frame. Generous left gutter so the money axis is readable. */
-const BW = 760;
-const BH = 300;
-const BPAD = { top: 34, right: 16, bottom: 52, left: 62 };
+/* Chart frame. Room at the bottom for the month and what lands on it. */
+const BW = 780;
+const BH = 320;
+const BPAD = { top: 40, right: 18, bottom: 70, left: 66 };
 
 export function AnnualDashboard({
   items,
@@ -42,16 +42,17 @@ export function AnnualDashboard({
 
   let travelled = 0;
 
-  // A rounded ceiling makes the gridline labels land on whole numbers.
+  // The base run is identical every month, so one line explains the whole floor.
+  const base = months[0]?.base ?? 0;
   const peak = Math.max(...months.map((month) => month.total));
   const ceiling = Math.ceil(peak / 5000) * 5000;
   const plotW = BW - BPAD.left - BPAD.right;
   const plotH = BH - BPAD.top - BPAD.bottom;
   const slot = plotW / months.length;
-  const barW = slot * 0.58;
+  const barW = slot * 0.56;
   const yOf = (value: number) => BPAD.top + plotH - (value / ceiling) * plotH;
-  const gridValues = [0, ceiling / 4, ceiling / 2, (ceiling * 3) / 4, ceiling];
-  const tallest = months.reduce((best, month) => (month.total > best.total ? month : best), months[0]);
+  const gridValues = [0, ceiling / 2, ceiling];
+  const extras = months.filter((month) => month.segments.length > 0);
 
   return (
     <section className="viz-block">
@@ -116,16 +117,16 @@ export function AnnualDashboard({
           <figcaption>
             What leaves each month
             <span className="chart-key">
-              <i className="key-solid" /> scheduled
-              <i className="key-hatch" /> estimate
+              <i className="key-base" /> the usual run
+              <i className="key-extra" /> something extra
             </span>
           </figcaption>
 
           <svg viewBox={`0 0 ${BW} ${BH}`} className="forecast-chart" role="img" aria-label="Forecast debits by month">
             <defs>
-              <pattern id="estimate-hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-                <rect width="7" height="7" fill="var(--marigold-skin)" />
-                <line x1="0" y1="0" x2="0" y2="7" stroke="var(--marigold)" strokeWidth="4" />
+              <pattern id="estimate-hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                <rect width="6" height="6" fill="var(--plum)" />
+                <line x1="0" y1="0" x2="0" y2="6" stroke="var(--paper-lift)" strokeWidth="2.4" />
               </pattern>
             </defs>
 
@@ -138,49 +139,66 @@ export function AnnualDashboard({
               </g>
             ))}
 
-            {/* what a typical month looks like, so a tall bar has a reference */}
-            <line
-              x1={BPAD.left}
-              x2={BW - BPAD.right}
-              y1={yOf(monthlyAverage)}
-              y2={yOf(monthlyAverage)}
-              className="average-line"
-            />
-            <text x={BW - BPAD.right} y={yOf(monthlyAverage) - 8} className="average-label" textAnchor="end">
-              average month · {formatINR(monthlyAverage)}
-            </text>
-
             {months.map((month, index) => {
               const x = BPAD.left + index * slot + (slot - barW) / 2;
-              const top = yOf(month.total);
-              const isTallest = month.key === tallest.key;
+              const baseTop = yOf(month.base);
+              let stackTop = baseTop;
+
               return (
                 <g key={month.key}>
-                  <rect
-                    x={x}
-                    y={top}
-                    width={barW}
-                    height={Math.max(BPAD.top + plotH - top, 2)}
-                    rx="3"
-                    className={`forecast-bar${isTallest ? " peak" : ""}`}
-                    fill={month.estimated ? "url(#estimate-hatch)" : "var(--marigold)"}
-                  >
-                    <title>{`${month.label}: ${formatINR(month.total)}${month.estimated ? " (estimate)" : ""}`}</title>
+                  <rect x={x} y={baseTop} width={barW} height={BPAD.top + plotH - baseTop} rx="2" className="seg-base">
+                    <title>{`${month.label}: ${formatINR(month.total)} — the usual ${formatINR(month.base)}${
+                      month.segments.length ? `, plus ${month.segments.map((s) => `${s.label} ${formatINR(s.amount)}`).join(", ")}` : ""
+                    }`}</title>
                   </rect>
-                  <text x={x + barW / 2} y={top - 9} className="bar-value" textAnchor="middle">
+
+                  {month.segments.map((segment) => {
+                    const height = (segment.amount / ceiling) * plotH;
+                    stackTop -= height;
+                    return (
+                      <rect
+                        key={segment.label}
+                        x={x}
+                        y={stackTop}
+                        width={barW}
+                        height={Math.max(height, 2)}
+                        rx="2"
+                        className="seg-extra"
+                        fill={segment.kind === "irregular" ? "url(#estimate-hatch)" : "var(--plum)"}
+                      >
+                        <title>{`${segment.label}: ${formatINR(segment.amount)}${
+                          segment.kind === "irregular" ? " — date estimated" : ""
+                        }`}</title>
+                      </rect>
+                    );
+                  })}
+
+                  <text x={x + barW / 2} y={stackTop - 10} className="bar-value" textAnchor="middle">
                     {formatCompactINR(month.total)}
                   </text>
-                  <text x={x + barW / 2} y={BH - 30} className="bar-month" textAnchor="middle">
+                  <text x={x + barW / 2} y={BH - 44} className="bar-month" textAnchor="middle">
                     {month.label}
                   </text>
-                  {(index === 0 || month.label === "Jan") && (
-                    <text x={x + barW / 2} y={BH - 14} className="bar-year" textAnchor="middle">
-                      {month.key.slice(0, 4)}
+                  {month.segments.map((segment, position) => (
+                    <text
+                      key={segment.label}
+                      x={x + barW / 2}
+                      y={BH - 30 + position * 12}
+                      className="bar-extra"
+                      textAnchor="middle"
+                    >
+                      + {segment.label}
                     </text>
-                  )}
+                  ))}
                 </g>
               );
             })}
+
+            {/* the floor: what leaves in a month with nothing extra on it */}
+            <line x1={BPAD.left} x2={BW - BPAD.right} y1={yOf(base)} y2={yOf(base)} className="base-line" />
+            <text x={BPAD.left + 6} y={yOf(base) - 9} className="base-label">
+              every month · {formatINR(base)}
+            </text>
 
             <line
               x1={BPAD.left}
@@ -192,9 +210,14 @@ export function AnnualDashboard({
           </svg>
 
           <p className="viz-note">
-            Each month holds the debits actually due that month, not the year divided by twelve — which is why{" "}
-            {tallest.label} stands out: an annual renewal lands on top of the usual monthly run. A hatched bar contains
-            a varying amount or an uneven date. The twelve add to {formatINR(year)}.
+            The solid block is the run that leaves every single month — {formatINR(base)}, the same each time. Only the
+            darker caps on top differ:{" "}
+            {extras
+              .slice(0, 3)
+              .map((month) => `${month.label} carries ${month.segments.map((segment) => segment.label).join(" and ")}`)
+              .join(", ")}
+            . Electricity sits in the base at its median, since the bill itself varies. The twelve months add to{" "}
+            {formatINR(year)}.
           </p>
         </figure>
       </div>

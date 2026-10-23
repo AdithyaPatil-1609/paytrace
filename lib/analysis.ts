@@ -76,11 +76,22 @@ export function groupByCategory(items: Commitment[]): CategorySlice[] {
     .sort((a, b) => b.total - a.total);
 }
 
+export type ForecastSegment = {
+  label: string;
+  amount: number;
+  /** base repeats every month. The others land only occasionally. */
+  kind: "base" | "annual" | "irregular";
+};
+
 export type ForecastMonth = {
   key: string;
   label: string;
   total: number;
-  /** True when any row in this month is a varying amount or an uneven date. */
+  /** The run that leaves in a plain month, identical across the year. */
+  base: number;
+  /** Only the occasional extras, so a tall bar can explain itself. */
+  segments: ForecastSegment[];
+  /** True when a segment's date is a projection rather than a schedule. */
   estimated: boolean;
 };
 
@@ -94,9 +105,10 @@ function addMonths(date: Date, count: number) {
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /**
- * The next twelve months of scheduled debits, built from each commitment's
- * own rhythm. Deliberately not annualCost / 12: an annual renewal lands in
- * one month, and an irregular transfer lands on its own spacing.
+ * The next twelve months of scheduled debits, split into the run that repeats
+ * every month and the extras that land on top of it. Deliberately not
+ * annualCost / 12: an annual renewal belongs to one month, and an irregular
+ * transfer lands on its own spacing.
  */
 export function monthlyForecast(items: Commitment[], asOf: string): ForecastMonth[] {
   const start = addMonths(new Date(Date.parse(asOf)), 1);
@@ -108,49 +120,56 @@ export function monthlyForecast(items: Commitment[], asOf: string): ForecastMont
       key: `${when.getUTCFullYear()}-${String(when.getUTCMonth() + 1).padStart(2, "0")}`,
       label: MONTH_NAMES[when.getUTCMonth()],
       total: 0,
+      base: 0,
+      segments: [],
       estimated: false
     });
   }
 
   const indexOf = new Map(months.map((month, position) => [month.key, position]));
 
-  const place = (position: number, amount: number, estimated: boolean) => {
+  const add = (position: number, segment: ForecastSegment) => {
     const month = months[position];
     if (!month) return;
-    month.total += amount;
-    if (estimated) month.estimated = true;
+    month.total += segment.amount;
+    if (segment.kind === "base") month.base += segment.amount;
+    else month.segments.push(segment);
+    if (segment.kind === "irregular") month.estimated = true;
   };
 
   for (const item of items) {
-    const estimated = item.dateConfidence !== "confirmed";
-
     if (item.cadence === "annual") {
-      // One charge, on its renewal month, if that month falls in the window.
       if (!item.nextCharge) continue;
-      const key = item.nextCharge.slice(0, 7);
-      const position = indexOf.get(key);
-      if (position !== undefined) place(position, item.amount, estimated);
+      const position = indexOf.get(item.nextCharge.slice(0, 7));
+      if (position !== undefined) add(position, { label: item.merchant, amount: item.amount, kind: "annual" });
       continue;
     }
 
     if (item.cadence === "irregular") {
-      // Spread the observed spacing forward, and mark every month an estimate.
       const spacing = Math.max(1, Math.round(12 / Math.max(item.debitCount, 1)));
       for (let position = spacing - 1; position < 12; position += spacing) {
-        place(position, item.amount, true);
+        add(position, { label: item.merchant, amount: item.amount, kind: "irregular" });
       }
       continue;
     }
 
     if (item.cadence === "quarterly") {
-      for (let position = 2; position < 12; position += 3) place(position, item.amount, estimated);
+      for (let position = 2; position < 12; position += 3) {
+        add(position, { label: item.merchant, amount: item.amount, kind: "annual" });
+      }
       continue;
     }
 
-    for (let position = 0; position < 12; position += 1) place(position, item.amount, estimated);
+    for (let position = 0; position < 12; position += 1) {
+      add(position, { label: item.merchant, amount: item.amount, kind: "base" });
+    }
   }
 
-  return months.map((month) => ({ ...month, total: Math.round(month.total) }));
+  return months.map((month) => ({
+    ...month,
+    total: Math.round(month.total),
+    base: Math.round(month.base)
+  }));
 }
 
 export type PriceHike = {
