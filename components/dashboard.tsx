@@ -1,12 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { withSimulatedAutopay } from "@/data/simulation";
 import { hikeAmount, isSilentPriceHike, issueItems, splitByBucket, yearlyTotal } from "@/lib/analysis";
 import { toCsv } from "@/lib/csv";
 import { bucketCopy, bucketLabels, detectCommitments } from "@/lib/engine";
 import { formatDate, formatINR } from "@/lib/format";
 import type { Commitment, Dataset } from "@/lib/types";
+import { AnnualDashboard } from "@/components/visualizations/annual-dashboard";
+import { PriceHistory } from "@/components/visualizations/price-history";
+import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
+import { UnusedSavings } from "@/components/visualizations/unused-savings";
+import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
+import { DemoOverlay, type DemoStep } from "@/components/demo-runner";
 
 type DashboardProps = { dataset: Dataset };
 type Screen = "annual" | "list" | "language" | "issues" | "paths";
@@ -25,6 +31,8 @@ export function Dashboard({ dataset }: DashboardProps) {
   const [revoked, setRevoked] = useState<string[]>([]);
   const [paused, setPaused] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [demoStep, setDemoStep] = useState<DemoStep>("idle");
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   // Detection runs over the fixture rows, so simulating an autopay means
   // adding rows and detecting again, not appending a finished commitment.
@@ -33,6 +41,8 @@ export function Dashboard({ dataset }: DashboardProps) {
     [dataset, simulated]
   );
 
+  // The year before Simulate, so the screen can show the move.
+  const baseline = useMemo(() => yearlyTotal(detectCommitments(dataset)), [dataset]);
   const active = detected.filter((item) => !revoked.includes(item.id));
   const total = yearlyTotal(active);
   const fullYear = yearlyTotal(detected);
@@ -43,9 +53,55 @@ export function Dashboard({ dataset }: DashboardProps) {
   const debt = yearlyTotal(active.filter((item) => item.bucket === "debt"));
   const openItem = active.find((item) => item.id === openId) ?? null;
 
+  const newItem = active.find((item) => item.signals.includes("new"));
+  const hikeItem = active.find((item) => item.signals.includes("silent_hike"));
+  const zombieItem = active
+    .filter((item) => item.kind === "unused" && item.cancelMode === "normal")
+    .sort((a, b) => b.annualCost - a.annualCost)[0];
+
+  // Bring whatever the run is talking about into view.
+  useEffect(() => {
+    if (!highlightId) return;
+    const target = document.querySelector(`[data-row="${highlightId}"]`);
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightId, screen]);
+
+  function startDemo() {
+    setSimulated(true);
+    setScreen("list");
+    setHighlightId("headspace-plus");
+    setDemoStep("autopay");
+  }
+
+  function advanceDemo() {
+    if (demoStep === "autopay") {
+      setScreen("issues");
+      setHighlightId(hikeItem?.id ?? null);
+      setDemoStep("price");
+      return;
+    }
+    if (demoStep === "price") {
+      setHighlightId(zombieItem?.id ?? null);
+      setDemoStep("unused");
+      return;
+    }
+    if (demoStep === "unused") {
+      setScreen("paths");
+      setHighlightId(zombieItem?.id ?? null);
+      setDemoStep("cancel");
+    }
+  }
+
+  function endDemo() {
+    setDemoStep("done");
+    setHighlightId(null);
+  }
+
   function resetSimulation() {
     setSimulated(false);
     setRevoked((current) => current.filter((id) => id !== "headspace-plus"));
+    setDemoStep("idle");
+    setHighlightId(null);
   }
 
   function confirmRevoke(id: string) {
@@ -67,6 +123,9 @@ export function Dashboard({ dataset }: DashboardProps) {
           PROTOTYPE <i>·</i> SYNTHETIC MESSAGES ONLY
         </p>
         <div className="bar-actions">
+          <button className="run-demo" onClick={demoStep === "idle" || demoStep === "done" ? startDemo : endDemo}>
+            {demoStep === "idle" || demoStep === "done" ? "▶ Run the demo" : "■ Stop the run"}
+          </button>
           <button className="export-csv" onClick={() => downloadCsv(active)}>
             ↓ Export CSV
           </button>
@@ -116,6 +175,7 @@ export function Dashboard({ dataset }: DashboardProps) {
               leakage={leakage}
               debt={debt}
               stoppedValue={stoppedValue}
+              asOf={dataset.asOf}
               onOpen={setOpenId}
             />
           )}
@@ -123,15 +183,26 @@ export function Dashboard({ dataset }: DashboardProps) {
             <AllPayments
               items={active}
               total={total}
+              baseline={baseline}
               simulated={simulated}
               onSimulate={() => setSimulated(true)}
               onReset={resetSimulation}
               onOpen={setOpenId}
+              highlightId={highlightId}
             />
           )}
           {screen === "language" && <PlainLanguage items={active} onOpen={setOpenId} />}
           {screen === "issues" && (
-            <Issues items={issues} total={total} leakage={leakage} hike={hike} onOpen={setOpenId} />
+            <Issues
+              items={issues}
+              allItems={active}
+              total={total}
+              leakage={leakage}
+              hike={hike}
+              onOpen={setOpenId}
+              onGoToCancel={() => setScreen("paths")}
+              highlightId={highlightId}
+            />
           )}
           {screen === "paths" && (
             <CancelPaths
@@ -141,10 +212,21 @@ export function Dashboard({ dataset }: DashboardProps) {
               paused={paused}
               onConfirm={confirmRevoke}
               onPause={takePause}
+              highlightId={highlightId}
             />
           )}
         </section>
       </div>
+
+      <DemoOverlay
+        step={demoStep}
+        newItem={newItem}
+        hikeItem={hikeItem}
+        zombieItem={zombieItem}
+        onAdvance={advanceDemo}
+        onDecline={endDemo}
+        onFinish={endDemo}
+      />
 
       {openItem && <DetailPanel item={openItem} asOf={dataset.asOf} onClose={() => setOpenId(null)} />}
     </main>
@@ -169,6 +251,7 @@ function AnnualView({
   leakage,
   debt,
   stoppedValue,
+  asOf,
   onOpen
 }: {
   items: Commitment[];
@@ -176,6 +259,7 @@ function AnnualView({
   leakage: number;
   debt: number;
   stoppedValue: number;
+  asOf: string;
   onOpen: (id: string) => void;
 }) {
   const split = splitByBucket(items);
@@ -213,6 +297,12 @@ function AnnualView({
         </p>
       )}
 
+      <AnnualDashboard items={items} asOf={asOf} onOpen={onOpen} />
+
+      <h2 className="viz-heading">The month on the fridge door</h2>
+      <PaymentCalendar items={items} asOf={asOf} onOpen={onOpen} />
+
+      <h2 className="viz-heading">The same year, split by what to do about it</h2>
       <section className="bucket-list">
         {split.map((group) => (
           <article className="bucket-card" key={group.bucket} data-bucket={group.bucket}>
@@ -245,17 +335,21 @@ function AnnualView({
 function AllPayments({
   items,
   total,
+  baseline,
   simulated,
   onSimulate,
   onReset,
-  onOpen
+  onOpen,
+  highlightId
 }: {
   items: Commitment[];
   total: number;
+  baseline: number;
   simulated: boolean;
   onSimulate: () => void;
   onReset: () => void;
   onOpen: (id: string) => void;
+  highlightId?: string | null;
 }) {
   return (
     <>
@@ -269,6 +363,11 @@ function AllPayments({
         <div>
           <span>YEAR OF EVERYTHING</span>
           <strong>{formatINR(total)}</strong>
+          {simulated && baseline !== total && (
+            <p className="year-delta">
+              <s>{formatINR(baseline)}</s> → <b>{formatINR(total)}</b> after one new autopay
+            </p>
+          )}
           <small>{items.length} recurring commitments from statement lines and payment messages.</small>
         </div>
         <div className="year-note">
@@ -290,7 +389,16 @@ function AllPayments({
         </div>
         <div className="payment-rows">
           {items.map((item) => (
-            <button className="payment-row" key={item.id} onClick={() => onOpen(item.id)}>
+            <button
+              className={[
+                "payment-row",
+                item.signals.includes("new") ? "is-new" : "",
+                highlightId === item.id ? "is-spotlit" : ""
+              ].join(" ").trim()}
+              data-row={item.id}
+              key={item.id}
+              onClick={() => onOpen(item.id)}
+            >
               <strong>{item.rawNarration}</strong>
               <span>{monthlyCost(item)}</span>
               <b>{formatINR(item.annualCost)}</b>
@@ -304,6 +412,9 @@ function AllPayments({
         credit-card repayment, and YouTube&apos;s ₹1 authorisation. Each is a statement line with no second debit
         and no mandate behind it, so the grouping drops it. Open any row above to see the rule that kept it.
       </p>
+
+      <h2 className="viz-heading">What is due next</h2>
+      <RenewalCalendar items={items} onOpen={onOpen} />
 
       <section className="simulation-card">
         <div>
@@ -367,16 +478,22 @@ function PlainLanguage({ items, onOpen }: { items: Commitment[]; onOpen: (id: st
 
 function Issues({
   items,
+  allItems,
   total,
   leakage,
   hike,
-  onOpen
+  onOpen,
+  onGoToCancel,
+  highlightId
 }: {
   items: Commitment[];
+  allItems: Commitment[];
   total: number;
   leakage: number;
   hike: number;
   onOpen: (id: string) => void;
+  onGoToCancel: () => void;
+  highlightId?: string | null;
 }) {
   return (
     <>
@@ -400,7 +517,12 @@ function Issues({
           <span>MESSAGE</span>
         </div>
         {items.map((item) => (
-          <button className="issue-row" key={item.id} onClick={() => onOpen(item.id)}>
+          <button
+            className={highlightId === item.id ? "issue-row is-spotlit" : "issue-row"}
+            data-row={item.id}
+            key={item.id}
+            onClick={() => onOpen(item.id)}
+          >
             <strong>{item.merchant}</strong>
             <p>{item.issue}</p>
             <span>{monthlyCost(item)}</span>
@@ -409,6 +531,12 @@ function Issues({
           </button>
         ))}
       </section>
+      <h2 className="viz-heading">The price that moved</h2>
+      <PriceHistory items={allItems} onOpen={onOpen} />
+
+      <h2 className="viz-heading">What stopping them would be worth</h2>
+      <UnusedSavings items={allItems} onOpen={onOpen} onGoToCancel={onGoToCancel} />
+
       <p className="screen-footnote">
         Not on this page: Netflix, Google One, Prime, JioHotstar, insurance, electricity, society, and the loan.
         Electricity&apos;s changing amount and society&apos;s uneven dates are discovery signals, not waste.
@@ -432,7 +560,8 @@ function CancelPaths({
   revoked,
   paused,
   onConfirm,
-  onPause
+  onPause,
+  highlightId
 }: {
   items: Commitment[];
   allItems: Commitment[];
@@ -440,6 +569,7 @@ function CancelPaths({
   paused: string[];
   onConfirm: (id: string) => void;
   onPause: (id: string) => void;
+  highlightId?: string | null;
 }) {
   const stoppedRows = allItems.filter((item) => revoked.includes(item.id));
   const saved = stoppedRows.reduce((sum, item) => sum + item.annualCost, 0);
@@ -463,7 +593,11 @@ function CancelPaths({
           const isIssue = ["unused", "silent", "trial"].includes(item.kind);
           const isPaused = paused.includes(item.id);
           return (
-            <article className={`path-card ${isIssue ? "issue" : ""} ${isPaused ? "paused" : ""}`} key={item.id}>
+            <article
+              className={`path-card ${isIssue ? "issue" : ""} ${isPaused ? "paused" : ""} ${highlightId === item.id ? "is-spotlit" : ""}`}
+              data-row={item.id}
+              key={item.id}
+            >
               <div className="path-name">
                 <strong>{item.merchant}</strong>
                 <span>{monthlyCost(item)}</span>

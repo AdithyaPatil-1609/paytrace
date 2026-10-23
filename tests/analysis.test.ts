@@ -1,7 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { withSimulatedAutopay } from "../data/simulation";
-import { groupByKind, isSilentPriceHike, isTrialConverted, isZombie, splitByBucket, unusedTotal, yearlyTotal } from "../lib/analysis";
+import {
+  detectPriceHikes,
+  groupByCategory,
+  groupByKind,
+  isSilentPriceHike,
+  isTrialConverted,
+  isZombie,
+  monthlyForecast,
+  potentialSavings,
+  splitByBucket,
+  unusedTotal,
+  upcomingRenewals,
+  yearlyTotal
+} from "../lib/analysis";
 import { detectCommitments } from "../lib/engine";
 import { loadFixtures, loadParserFixtures } from "../lib/fixtures";
 
@@ -130,4 +143,60 @@ test("17. every commitment carries its evidence and its cancel copy", () => {
     assert.ok(item.stopService.length > 0, `${item.id} has no service step`);
     assert.ok(item.inDictionary, `${item.id} is not in the dictionary`);
   }
+});
+
+// Acceptance checks from the visualization guide.
+
+test("18. the year splits into the four spend groups without losing a rupee", () => {
+  const slices = groupByCategory(commitments);
+  const by = (group: string) => slices.find((slice) => slice.group === group)?.total;
+  assert.equal(by("debt"), 102000);
+  assert.equal(by("utilities"), 39600);
+  assert.equal(by("insurance"), 14400);
+  assert.equal(by("subscriptions"), 43138);
+  assert.equal(slices.reduce((sum, slice) => sum + slice.total, 0), 199138);
+});
+
+test("19. the twelve-month forecast adds to the year and is not annualCost/12", () => {
+  const months = monthlyForecast(commitments, dataset.asOf);
+  assert.equal(months.length, 12);
+  assert.equal(months.reduce((sum, month) => sum + month.total, 0), 199138);
+  // A flat year/12 would make every month identical; the annual renewals must not.
+  assert.equal(new Set(months.map((month) => month.total)).size > 1, true);
+});
+
+test("20. the Spotify hike reads +20 a month, 16.8%, 240 a year", () => {
+  const hike = detectPriceHikes(commitments).find((entry) => entry.item.id === "spotify")!;
+  assert.equal(hike.from, 119);
+  assert.equal(hike.to, 139);
+  assert.equal(hike.delta, 20);
+  assert.equal(hike.percent, 16.8);
+  assert.equal(hike.annualExtra, 240);
+  assert.equal(hike.noticed, false);
+});
+
+test("21. the price chart is drawn from real dated debits", () => {
+  const spotify = find("spotify");
+  assert.equal(spotify.priceSeries.length, 12);
+  assert.equal(spotify.priceSeries[0].amount, 119);
+  assert.equal(spotify.priceSeries[11].amount, 139);
+  assert.equal(spotify.priceSeries.every((point) => /^\d{4}-\d{2}-\d{2}$/.test(point.date)), true);
+});
+
+test("22. the what-if totals 27,936 and never offers insurance or the loan", () => {
+  const { eligible } = potentialSavings(commitments, []);
+  const all = potentialSavings(commitments, eligible.map((item) => item.id));
+  assert.equal(all.saved, 27936);
+  assert.equal(all.revisedYear, 199138 - 27936);
+  assert.equal(eligible.some((item) => item.id === "hdfc-life" || item.id === "home-loan"), false);
+});
+
+test("23. no unconfirmed date is ever plotted", () => {
+  const renewals = upcomingRenewals(commitments);
+  const society = renewals.find((row) => row.item.id === "society")!;
+  assert.equal(society.date, undefined);
+  assert.equal(society.confidence, "unknown");
+  // A varying bill keeps its date but is labelled an estimate.
+  assert.equal(find("bescom").dateConfidence, "estimated");
+  assert.equal(find("amazon-prime").dateConfidence, "confirmed");
 });
