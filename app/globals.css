@@ -2554,7 +2554,7 @@ figcaption {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 6px;
   align-items: end;
-  margin-top: 26px;
+  margin-top: 36px;
 }
 
 .month-col {
