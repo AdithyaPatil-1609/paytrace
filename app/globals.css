@@ -2052,3 +2052,340 @@ figcaption {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- the guided run ------------------------------------------------- */
+
+.run-demo {
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: 9px 15px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.run-demo:hover {
+  background: var(--marigold-deep);
+}
+
+.demo-alert {
+  position: fixed;
+  right: 26px;
+  bottom: 26px;
+  z-index: 60;
+  width: min(380px, calc(100vw - 32px));
+  padding: 22px 24px;
+  border: 1px solid var(--ink);
+  border-radius: var(--r-lg);
+  background: var(--paper-lift);
+  box-shadow: 0 20px 44px -18px rgba(36, 18, 49, 0.55);
+  animation: demo-in 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes demo-in {
+  from { transform: translateY(14px); opacity: 0; }
+}
+
+.demo-kicker {
+  margin: 0;
+  color: var(--marigold-deep);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.demo-alert h2,
+.demo-modal h2 {
+  margin: 10px 0 10px;
+  color: var(--ink);
+  font: 600 22px/1.2 var(--serif);
+  letter-spacing: -0.025em;
+}
+
+.demo-body {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.demo-body strong {
+  color: var(--ember);
+}
+
+.demo-caveat {
+  margin: 12px 0 0;
+  padding: 11px 13px;
+  border-left: 2px solid var(--marigold);
+  background: var(--marigold-skin);
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.demo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.demo-quit {
+  border: 0;
+  background: none;
+  color: var(--ink-faint);
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.demo-progress {
+  display: flex;
+  gap: 5px;
+  margin-top: 16px;
+}
+
+.demo-progress i {
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--paper-sink);
+}
+
+.demo-progress i.on {
+  background: var(--marigold);
+}
+
+.demo-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(36, 18, 49, 0.42);
+  animation: fade 0.18s ease;
+}
+
+.demo-modal {
+  width: min(520px, 100%);
+  padding: 30px 32px;
+  border-radius: var(--r-lg);
+  background: var(--paper-lift);
+  box-shadow: 0 30px 60px -20px rgba(36, 18, 49, 0.6);
+  animation: demo-in 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.demo-modal h2 {
+  font-size: 28px;
+}
+
+/* what the run is pointing at */
+.is-spotlit {
+  position: relative;
+  animation: spotlight 1.4s ease-in-out 2;
+}
+
+.payment-row.is-spotlit,
+.issue-row.is-spotlit {
+  box-shadow: inset 3px 0 0 var(--marigold), 0 0 0 2px var(--marigold);
+}
+
+.path-card.is-spotlit {
+  border-color: var(--marigold);
+  box-shadow: 0 0 0 2px var(--marigold), var(--lift-shadow);
+}
+
+@keyframes spotlight {
+  50% { background-color: var(--marigold-skin); }
+}
+
+/* --- the fridge calendar --------------------------------------------- */
+
+.fridge {
+  padding: 22px;
+  border: 1px solid var(--rule-firm);
+  border-radius: var(--r-lg);
+  background: var(--paper-lift);
+  box-shadow: var(--lift-shadow);
+}
+
+.fridge-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.fridge-head strong {
+  display: block;
+  color: var(--ink);
+  font: 600 24px var(--serif);
+  letter-spacing: -0.03em;
+}
+
+.fridge-head span {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fridge-nav {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.fridge-nav button {
+  border: 1px solid var(--rule-firm);
+  border-radius: var(--r-sm);
+  padding: 7px 12px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.fridge-nav button:hover:not(:disabled) {
+  border-color: var(--marigold);
+  color: var(--marigold-deep);
+}
+
+.fridge-nav button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.fridge-weekdays,
+.fridge-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.fridge-weekdays {
+  margin-bottom: 7px;
+}
+
+.fridge-weekdays span {
+  color: var(--ink-faint);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.fridge-day {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 92px;
+  padding: 7px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.fridge-day.empty {
+  border: 0;
+  background: transparent;
+}
+
+.fridge-day > b {
+  color: var(--ink-faint);
+  font: 500 11px var(--mono);
+}
+
+.fridge-day.has-notes {
+  background: var(--paper-sink);
+}
+
+.fridge-day.has-notes > b {
+  color: var(--ink);
+}
+
+/* each debit is a note stuck to the door */
+.note {
+  display: grid;
+  gap: 1px;
+  border: 0;
+  border-radius: 3px;
+  padding: 5px 6px;
+  background: var(--marigold-skin);
+  box-shadow: 0 1px 2px rgba(36, 18, 49, 0.18);
+  text-align: left;
+  cursor: pointer;
+  transform: rotate(-0.6deg);
+  transition: transform 0.12s;
+}
+
+.fridge-day .note:nth-child(odd) {
+  transform: rotate(0.7deg);
+}
+
+.note:hover {
+  transform: rotate(0deg) scale(1.04);
+}
+
+.note span {
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.note i {
+  color: var(--ink-soft);
+  font: 9px var(--mono);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.note-unused {
+  background: var(--ember-skin);
+}
+
+.note-unused span {
+  color: var(--ember);
+}
+
+.note-debt {
+  background: #e4dced;
+}
+
+.note-bills {
+  background: #dfe8e2;
+}
+
+.fridge-foot {
+  margin: 16px 0 0;
+  max-width: 76ch;
+  color: var(--ink-faint);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .fridge-day { min-height: 76px; }
+  .note span { font-size: 8px; }
+}
+
+@media (max-width: 660px) {
+  .demo-alert { right: 12px; left: 12px; bottom: 12px; width: auto; padding: 18px; }
+  .fridge { padding: 14px; }
+  .fridge-head { display: block; }
+  .fridge-nav { margin-top: 12px; }
+  .fridge-weekdays { display: none; }
+  .fridge-grid { grid-template-columns: repeat(2, 1fr); }
+  .fridge-day { min-height: 0; }
+  .fridge-day.empty { display: none; }
+}
