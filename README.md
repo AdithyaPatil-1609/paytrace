@@ -1,6 +1,6 @@
 # Paytrace
 
-Paytrace reads one synthetic year of statements, SMS, and email and turns it into five screens: the year, every payment, the merchant string in plain language, the rows that changed or went unused, and a cancel path for each one. It never connects to a bank, a phone, or a mailbox, and it never sends a revoke. It shows the path. The person still takes the step.
+Paytrace reads one synthetic year of statements, SMS, and email and turns it into five screens: every payment, the merchant string in plain language, the rows that changed or went unused, a cancel path for each one, and the year. It never connects to a bank, a phone, or a mailbox, and it never sends a revoke. It shows the path. The person still takes the step.
 
 Priya Demo is invented. Arclight Bank is invented. The as-of date is 22 October 2026.
 
@@ -22,11 +22,11 @@ Credits are never commitments, and YouTube's ₹1 authorisation is attached to Y
 
 ## The five screens
 
-1. **Annual** – the next twelve months split five ways, with the unused part and the EMI called out separately.
-2. **All payments** – every row with the raw bank string, the month, the year, and whether the message was SMS or email. Simulate new autopay lives here.
-3. **Plain language** – the dictionary match, and what the string actually is. An unmatched string stays unknown rather than being guessed at.
-4. **Issues** – only the rows that changed or went unused, with the full year still on screen as context.
-5. **Cancel paths** – two tracks per row, stop the service then stop the money, and a line for when the merchant never replies. The gym's two-month pause leaves the mandate active and the year unchanged; only a confirmed revoke moves the number. The loan has no revoke control.
+1. **All payments** – every row with the raw bank string, the month, the year, and whether the message was SMS or email. Simulate new autopay lives here.
+2. **Plain language** – the dictionary match, and what the string actually is. An unmatched string stays unknown rather than being guessed at.
+3. **Issues** – only the rows that changed or went unused, with the full year still on screen as context.
+4. **Cancel paths** – two tracks per row, stop the service then stop the money, and a line for when the merchant never replies. The gym's two-month pause leaves the mandate active and the year unchanged; only a confirmed revoke moves the number. The loan has no revoke control.
+5. **Annual** – the next twelve months split five ways, with the unused part and the EMI called out separately.
 
 Any row on any screen opens a detail panel: the statement lines that proved it, the notices beside it (and a price-change count of **none** where that absence is the finding), last opened, the mandate, and the sentence explaining why the grouping kept it.
 
@@ -44,7 +44,7 @@ One export, CSV only: `↓ Export CSV` writes every visible commitment with its 
 - `lib/` – the CSV reader, the fixture loader, the detection engine, and the analysis helpers.
 - `components/` – the five-screen prototype, the detail panel, and the CSV export.
 - `db/neo4j/` – the graph schema, seed, driver, and query. Detection is the source of truth in this build; the graph is kept because the product after this one reads real statements, and it already models person, account, narration, merchant, commitment, notice, and mandate.
-- `tests/` – seventeen checks, including the nine the brief says the prototype is done when it passes.
+- `tests/` – twenty-four checks, including the nine the brief says the prototype is done when it passes.
 
 ## Run locally
 

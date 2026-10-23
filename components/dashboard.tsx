@@ -18,15 +18,15 @@ type DashboardProps = { dataset: Dataset };
 type Screen = "annual" | "list" | "language" | "issues" | "paths";
 
 const screens: { id: Screen; number: string; label: string }[] = [
-  { id: "annual", number: "01", label: "Annual" },
-  { id: "list", number: "02", label: "All payments" },
-  { id: "language", number: "03", label: "Plain language" },
-  { id: "issues", number: "04", label: "Issues" },
-  { id: "paths", number: "05", label: "Cancel paths" }
+  { id: "list", number: "01", label: "All payments" },
+  { id: "language", number: "02", label: "Plain language" },
+  { id: "issues", number: "03", label: "Issues" },
+  { id: "paths", number: "04", label: "Cancel paths" },
+  { id: "annual", number: "05", label: "Annual" }
 ];
 
 export function Dashboard({ dataset }: DashboardProps) {
-  const [screen, setScreen] = useState<Screen>("annual");
+  const [screen, setScreen] = useState<Screen>("list");
   const [simulated, setSimulated] = useState(false);
   const [revoked, setRevoked] = useState<string[]>([]);
   const [kept, setKept] = useState<string[]>([]);
@@ -274,7 +274,7 @@ function AnnualView({
   return (
     <>
       <ScreenHeader
-        number="1"
+        number="5"
         eyebrow="THE YEAR"
         title="The next twelve months, on one screen"
         copy="Every commitment projected forward and split five ways. The unused part is the money that should move. The loan sits apart from both: it is a debt, not a subscription."
@@ -299,7 +299,7 @@ function AnnualView({
 
       {stoppedValue > 0 && (
         <p className="revoke-banner">
-          A revoke confirmed on screen 5 has taken <strong>{formatINR(stoppedValue)}</strong> out of the year.
+          A revoke confirmed on screen 4 has taken <strong>{formatINR(stoppedValue)}</strong> out of the year.
         </p>
       )}
 
@@ -360,7 +360,7 @@ function AllPayments({
   return (
     <>
       <ScreenHeader
-        number="2"
+        number="1"
         eyebrow="ALL OF THEM"
         title="Every periodic payment, on one page"
         copy="This is the whole book before any judgement. Monthly rows show the amount that leaves each month and the amount across the year. Electricity changes amount, and society has uneven dates. Both still belong here."
@@ -451,7 +451,7 @@ function PlainLanguage({ items, onOpen }: { items: Commitment[]; onOpen: (id: st
   return (
     <>
       <ScreenHeader
-        number="3"
+        number="2"
         eyebrow="PLAIN LANGUAGE"
         title="The bank string, in words a person knows"
         copy="Every match comes from the hand-written dictionary in data/raw. Paytrace does not guess the merchant, and the longest matching pattern wins, so PayPal Spotify never collapses into Spotify."
@@ -504,7 +504,7 @@ function Issues({
   return (
     <>
       <ScreenHeader
-        number="4"
+        number="3"
         eyebrow="CHANGES, ISSUES, UNUSED"
         title="Only what deserves your attention"
         copy="The list screen is the whole book. This page is the part that should change what she does. The full year stays visible so flags are not mistaken for her entire financial life."
@@ -585,7 +585,7 @@ function CancelPaths({
   return (
     <>
       <ScreenHeader
-        number="5"
+        number="4"
         eyebrow="HOW TO STOP EACH ONE"
         title="A cancel path for every autopay"
         copy="A normal path has two tracks: stop the service, then stop the money. Every path also says what to do when the merchant never replies, because the revoke does not need their answer. The loan has no revoke control."
