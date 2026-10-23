@@ -128,7 +128,11 @@ export function AnnualDashboard({
           </header>
           <div className="bucket-rows">
             {listed.map((item) => (
-              <button key={item.id} onClick={() => onOpen(item.id)}>
+              <button
+                className={item.signals.includes("new") ? "is-new" : ""}
+                key={item.id}
+                onClick={() => onOpen(item.id)}
+              >
                 <span>{item.merchant}</span>
                 <b>{formatINR(item.annualCost)}</b>
               </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { withSimulatedAutopay } from "@/data/simulation";
+import { simulatedNotices, withSimulatedAutopay } from "@/data/simulation";
 import { hikeAmount, isSilentPriceHike, issueItems, splitByBucket, yearlyTotal } from "@/lib/analysis";
 import { toCsv } from "@/lib/csv";
 import { bucketCopy, bucketLabels, detectCommitments } from "@/lib/engine";
@@ -13,7 +13,7 @@ import { PriceHistory } from "@/components/visualizations/price-history";
 import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
 import { UnusedSavings } from "@/components/visualizations/unused-savings";
 import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
-import { DemoOverlay, type DemoStep } from "@/components/demo-runner";
+import { AutopayNotice } from "@/components/demo-runner";
 
 type DashboardProps = { dataset: Dataset; source: SourceInfo };
 type Screen = "annual" | "list" | "language" | "issues" | "paths";
@@ -32,7 +32,7 @@ export function Dashboard({ dataset, source }: DashboardProps) {
   const [revoked, setRevoked] = useState<string[]>([]);
   const [kept, setKept] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [demoStep, setDemoStep] = useState<DemoStep>("idle");
+  const [noticeOpen, setNoticeOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
   // Detection runs over the fixture rows, so simulating an autopay means
@@ -55,12 +55,9 @@ export function Dashboard({ dataset, source }: DashboardProps) {
   const openItem = active.find((item) => item.id === openId) ?? null;
 
   const newItem = active.find((item) => item.signals.includes("new"));
-  const hikeItem = active.find((item) => item.signals.includes("silent_hike"));
-  const zombieItem = active
-    .filter((item) => item.kind === "unused" && item.cancelMode === "normal")
-    .sort((a, b) => b.annualCost - a.annualCost)[0];
+  const autopayMessage = simulatedNotices.find((notice) => notice.eventType === "mandate_created") ?? simulatedNotices[0];
 
-  // Bring whatever the run is talking about into view.
+  // Bring the new row into view once the message has been applied.
   useEffect(() => {
     if (!highlightId) return;
     const target = document.querySelector(`[data-row="${highlightId}"]`);
@@ -71,37 +68,18 @@ export function Dashboard({ dataset, source }: DashboardProps) {
     setSimulated(true);
     setScreen("list");
     setHighlightId("headspace-plus");
-    setDemoStep("autopay");
+    setNoticeOpen(true);
   }
 
-  function advanceDemo() {
-    if (demoStep === "autopay") {
-      setScreen("issues");
-      setHighlightId(hikeItem?.id ?? null);
-      setDemoStep("price");
-      return;
-    }
-    if (demoStep === "price") {
-      setHighlightId(zombieItem?.id ?? null);
-      setDemoStep("unused");
-      return;
-    }
-    if (demoStep === "unused") {
-      setScreen("paths");
-      setHighlightId(zombieItem?.id ?? null);
-      setDemoStep("cancel");
-    }
-  }
-
-  function endDemo() {
-    setDemoStep("done");
+  function dismissNotice() {
+    setNoticeOpen(false);
     setHighlightId(null);
   }
 
   function resetSimulation() {
     setSimulated(false);
     setRevoked((current) => current.filter((id) => id !== "headspace-plus"));
-    setDemoStep("idle");
+    setNoticeOpen(false);
     setHighlightId(null);
   }
 
@@ -121,30 +99,33 @@ export function Dashboard({ dataset, source }: DashboardProps) {
 
   return (
     <main className="paytrace-shell">
-      <header className="product-bar">
-        <div className="wordmark">
-          <span>p</span>paytrace
-        </div>
-        <p>
-          PROTOTYPE <i>·</i> SYNTHETIC MESSAGES ONLY
-        </p>
-        <span className={source.kind === "neo4j" ? "source-badge live" : "source-badge"}>
-          <i />
-          {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV fixture"}
-        </span>
-        <div className="bar-actions">
-          <button className="run-demo" onClick={demoStep === "idle" || demoStep === "done" ? startDemo : endDemo}>
-            {demoStep === "idle" || demoStep === "done" ? "▶ Run the demo" : "■ Stop the run"}
-          </button>
-          <button className="export-csv" onClick={() => downloadCsv(active)}>
-            ↓ Export CSV
-          </button>
-          <div className="persona">
-            <b>PD</b>
-            <span>Priya Demo</span>
+      <div className="product-chrome">
+        <header className="product-bar">
+          <div className="wordmark">
+            <span>p</span>paytrace
           </div>
-        </div>
-      </header>
+          <p>
+            PROTOTYPE <i>·</i> SYNTHETIC MESSAGES ONLY
+          </p>
+          <span className={source.kind === "neo4j" ? "source-badge live" : "source-badge"}>
+            <i />
+            {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV fixture"}
+          </span>
+          <div className="bar-actions">
+            <button className="run-demo" onClick={startDemo}>
+              ▶ Run the demo
+            </button>
+            <button className="export-csv" onClick={() => downloadCsv(active)}>
+              ↓ Export CSV
+            </button>
+            <div className="persona">
+              <b>PD</b>
+              <span>Priya Demo</span>
+            </div>
+          </div>
+        </header>
+        <EvidenceStrip source={source} />
+      </div>
 
       <div className="app-layout">
         <aside className="side-nav">
@@ -231,14 +212,13 @@ export function Dashboard({ dataset, source }: DashboardProps) {
         </section>
       </div>
 
-      <DemoOverlay
-        step={demoStep}
-        newItem={newItem}
-        hikeItem={hikeItem}
-        zombieItem={zombieItem}
-        onAdvance={advanceDemo}
-        onDecline={endDemo}
-        onFinish={endDemo}
+      <AutopayNotice
+        open={noticeOpen}
+        channel={autopayMessage.channel.toUpperCase()}
+        sender={autopayMessage.sender}
+        message={autopayMessage.text}
+        item={newItem}
+        onDismiss={dismissNotice}
       />
 
       {openItem && <DetailPanel item={openItem} asOf={dataset.asOf} onClose={() => setOpenId(null)} />}
@@ -247,59 +227,81 @@ export function Dashboard({ dataset, source }: DashboardProps) {
 }
 
 /**
- * Says where the rows came from. When Neo4j is serving, it shows what the
- * graph holds and compares the graph's own commitment count with what the
- * engine derived from the same rows.
+ * Stays under the product bar on every screen. It reports the live source
+ * only: Neo4j counts come from the graph, and the fixture state never
+ * claims those rows were read from Neo4j.
  */
-function SourcePanel({ source, detected }: { source: SourceInfo; detected: number }) {
-  if (source.kind !== "neo4j") {
+function EvidenceStrip({ source }: { source: SourceInfo }) {
+  if (source.kind === "neo4j") {
+    const host = source.host ?? "the configured host";
+    const database = source.database ?? "neo4j";
     return (
-      <section className="source-panel">
-        <header>
-          <strong>Running on the CSV fixture</strong>
-          <span>No Neo4j connection configured</span>
-        </header>
-        <p>
-          Every row on these screens was read from <code>data/raw/*.csv</code>. Add a connection to{" "}
-          <code>.env.local</code> and run <code>npm run seed</code> to serve the same screens from the graph.
+      <section className="evidence-strip live" aria-label="Neo4j evidence graph">
+        <p className="evidence-mark">NEO4J</p>
+        <p className="evidence-copy">
+          All five screens are read from the evidence graph at <code>{host}</code>, database <code>{database}</code>.
+          Detection still runs in the app over those rows, so the graph and the screens agree.
         </p>
+        <dl className="evidence-counts">
+          <div>
+            <dt>Payments</dt>
+            <dd>{source.counts.payments}</dd>
+          </div>
+          <div>
+            <dt>Messages</dt>
+            <dd>{source.counts.messages}</dd>
+          </div>
+          <div>
+            <dt>Mandates</dt>
+            <dd>{source.counts.mandates}</dd>
+          </div>
+          <div>
+            <dt>Patterns</dt>
+            <dd>{source.counts.patterns}</dd>
+          </div>
+          <div>
+            <dt>Commitments</dt>
+            <dd>{source.counts.commitments}</dd>
+          </div>
+        </dl>
       </section>
     );
   }
 
-  const agrees = source.counts.commitments === detected;
   return (
-    <section className="source-panel live">
-      <header>
-        <strong>Running on Neo4j</strong>
-        <span>
-          {source.host ?? "graph"} · database {source.database ?? "neo4j"}
-        </span>
-      </header>
-      <div className="source-counts">
-        <Count label="Payments" value={source.counts.payments} />
-        <Count label="Messages" value={source.counts.messages} />
-        <Count label="Mandates" value={source.counts.mandates} />
-        <Count label="Dictionary patterns" value={source.counts.patterns} />
-        <Count label="Commitments in graph" value={source.counts.commitments} />
-      </div>
-      <p>
-        Every payment, message and mandate on these screens was queried from the graph above. The engine grouped those
-        rows into <strong>{detected}</strong> commitments
-        {agrees
-          ? ", the same number the graph derives with its own Cypher — two independent passes over the same evidence agreeing."
-          : `, while the graph's own Cypher derives ${source.counts.commitments}. The gap is worth reading before the demo.`}
+    <section className="evidence-strip" aria-label="CSV fixture">
+      <p className="evidence-mark">CSV FIXTURE</p>
+      <p className="evidence-copy">
+        These screens are on the CSV fixture because Neo4j is not connected. Copy <code>.env.example</code> to{" "}
+        <code>.env.local</code>, then <code>npm run seed</code>.
       </p>
     </section>
   );
 }
 
-function Count({ label, value }: { label: string; value: number }) {
+/**
+ * Annual-only proof. The strip already names the source, so this panel only
+ * compares the graph's commitment count with the rows detection found.
+ */
+function SourcePanel({ source, detected }: { source: SourceInfo; detected: number }) {
+  if (source.kind !== "neo4j") return null;
+
+  const inGraph = source.counts.commitments;
+  const agrees = inGraph === detected;
   return (
-    <div className="source-count">
-      <strong>{value}</strong>
-      <span>{label}</span>
-    </div>
+    <section className="source-panel live">
+      <header>
+        <strong>Commitments</strong>
+        <span>
+          graph {inGraph} · detected {detected}
+        </span>
+      </header>
+      <p>
+        {agrees
+          ? "The graph's own Cypher and detection in the app counted the same commitments from these rows."
+          : `The graph's own Cypher counts ${inGraph} commitments. Detection in the app found ${detected} from the same rows. The gap is worth reading before the demo.`}
+      </p>
+    </section>
   );
 }
 
@@ -394,7 +396,11 @@ function AnnualView({
             </div>
             <div className="bucket-rows">
               {group.rows.map((item) => (
-                <button key={item.id} onClick={() => onOpen(item.id)}>
+                <button
+                  className={item.signals.includes("new") ? "is-new" : ""}
+                  key={item.id}
+                  onClick={() => onOpen(item.id)}
+                >
                   <span>{item.merchant}</span>
                   <b>{formatINR(item.annualCost)}</b>
                 </button>
@@ -533,7 +539,11 @@ function PlainLanguage({ items, onOpen }: { items: Commitment[]; onOpen: (id: st
           <span>WHAT IT ACTUALLY IS</span>
         </div>
         {items.map((item) => (
-          <button className="language-row" key={item.id} onClick={() => onOpen(item.id)}>
+          <button
+            className={item.signals.includes("new") ? "language-row is-new" : "language-row"}
+            key={item.id}
+            onClick={() => onOpen(item.id)}
+          >
             <code>{item.rawNarration}</code>
             <strong>
               {item.merchant}
@@ -615,6 +625,11 @@ function Issues({
 
       <p className="screen-footnote">
         Not on this page: Netflix, Google One, Prime, JioHotstar, insurance, electricity, society, and the loan.
+        {allItems.some((item) => item.signals.includes("new")) &&
+          ` ${allItems
+            .filter((item) => item.signals.includes("new"))
+            .map((item) => item.merchant)
+            .join(", ")} was just detected. Nothing is wrong with it, so it is not listed here. `}
         Electricity&apos;s changing amount and society&apos;s uneven dates are discovery signals, not waste.
       </p>
     </>
@@ -672,7 +687,7 @@ function CancelPaths({
           const isIssue = ["unused", "silent", "trial"].includes(item.kind) && !isKept;
           return (
             <article
-              className={`path-card ${isIssue ? "issue" : ""} ${isKept ? "kept" : ""} ${highlightId === item.id ? "is-spotlit" : ""}`}
+              className={`path-card ${isIssue ? "issue" : ""} ${isKept ? "kept" : ""} ${item.signals.includes("new") ? "is-new" : ""} ${highlightId === item.id ? "is-spotlit" : ""}`}
               data-row={item.id}
               key={item.id}
             >
