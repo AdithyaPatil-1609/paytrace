@@ -11,9 +11,22 @@
  * Spotify and Netflix, so putting the copy on Merchant lets the later row
  * overwrite the earlier one.
  */
+
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { getNeo4jDriver, hasNeo4jConfig } from "../db/neo4j/client";
+import {
+  AS_OF,
+  readDictionary,
+  readMandates,
+  readNotifications,
+  readStatement,
+  readUsage
+} from "../lib/fixtures";
 
+// Imports are hoisted, so this runs after db/neo4j/client is loaded. That is
+// fine: client.ts reads process.env inside hasNeo4jConfig() and
+// getNeo4jDriver(), which are only called from main(), below.
 /**
  * Next.js loads .env.local for the app, but this script runs on plain node,
  * so it reads the file itself. No dependency, and no version requirement on
@@ -40,17 +53,6 @@ function loadEnvLocal() {
 }
 
 loadEnvLocal();
-
-const { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } = await import("../db/neo4j/client");
-import {
-  AS_OF,
-  readDictionary,
-  readMandates,
-  readNotifications,
-  readStatement,
-  readUsage
-} from "../lib/fixtures";
-
 const CONSTRAINTS = [
   "CREATE CONSTRAINT pay_person_persona IF NOT EXISTS FOR (n:Person) REQUIRE n.persona IS UNIQUE",
   "CREATE CONSTRAINT pay_account_id IF NOT EXISTS FOR (n:Account) REQUIRE n.account_id IS UNIQUE",
@@ -63,6 +65,8 @@ const CONSTRAINTS = [
 ];
 
 async function main() {
+  const neo4jDatabase = process.env.NEO4J_DATABASE || "neo4j";
+
   if (!hasNeo4jConfig()) {
     console.error(
       "No Neo4j connection found. Copy .env.example to .env.local and fill in NEO4J_URI, NEO4J_USERNAME and NEO4J_PASSWORD."
