@@ -33,6 +33,8 @@ export function Dashboard({ dataset }: DashboardProps) {
     [dataset, simulated]
   );
 
+  // The year before Simulate, so the screen can show the move.
+  const baseline = useMemo(() => yearlyTotal(detectCommitments(dataset)), [dataset]);
   const active = detected.filter((item) => !revoked.includes(item.id));
   const total = yearlyTotal(active);
   const fullYear = yearlyTotal(detected);
@@ -123,6 +125,7 @@ export function Dashboard({ dataset }: DashboardProps) {
             <AllPayments
               items={active}
               total={total}
+              baseline={baseline}
               simulated={simulated}
               onSimulate={() => setSimulated(true)}
               onReset={resetSimulation}
@@ -245,6 +248,7 @@ function AnnualView({
 function AllPayments({
   items,
   total,
+  baseline,
   simulated,
   onSimulate,
   onReset,
@@ -252,6 +256,7 @@ function AllPayments({
 }: {
   items: Commitment[];
   total: number;
+  baseline: number;
   simulated: boolean;
   onSimulate: () => void;
   onReset: () => void;
@@ -269,6 +274,11 @@ function AllPayments({
         <div>
           <span>YEAR OF EVERYTHING</span>
           <strong>{formatINR(total)}</strong>
+          {simulated && baseline !== total && (
+            <p className="year-delta">
+              <s>{formatINR(baseline)}</s> → <b>{formatINR(total)}</b> after one new autopay
+            </p>
+          )}
           <small>{items.length} recurring commitments from statement lines and payment messages.</small>
         </div>
         <div className="year-note">
@@ -290,7 +300,11 @@ function AllPayments({
         </div>
         <div className="payment-rows">
           {items.map((item) => (
-            <button className="payment-row" key={item.id} onClick={() => onOpen(item.id)}>
+            <button
+              className={item.signals.includes("new") ? "payment-row is-new" : "payment-row"}
+              key={item.id}
+              onClick={() => onOpen(item.id)}
+            >
               <strong>{item.rawNarration}</strong>
               <span>{monthlyCost(item)}</span>
               <b>{formatINR(item.annualCost)}</b>

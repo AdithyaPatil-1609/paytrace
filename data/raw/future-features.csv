@@ -1,0 +1,29 @@
+when,feature,description,workflow
+next build,Second person,"Another synthetic persona, with their own statements and messages.",Switch persona. Screen 1 through screen 4 recompute from that fixture.
+next build,Link an SMS to its statement line,One debit that arrived as both an SMS and a statement line is counted once.,"Match amount, date, and reference. Screen 1 shows one charge with both sources."
+next build,Name an unknown string,She can supply a name the dictionary does not have.,An unknown row on screen 2 takes the name she types. It sticks for her data and is marked user-supplied.
+next build,Dictionary browser,The hand-written patterns behind screen 2 can be opened and read.,Open the pattern list. Each pattern is the one screen 2 uses to name a string.
+next build,"Mandate registered, never charged",A mandate that exists but has not debited yet is still a commitment.,It appears on screen 1 as not yet debiting. No red highlight until a charge arrives.
+next build,Two subscriptions of the same kind,"Two music apps, or the same service twice, are called out together.",Screen 3 flags the overlap.
+next build,A hike that came with a notice,"A price rise that did have an email or SMS is still shown, at lower severity than a silent one.",Screen 3 shows the rise and the notice. It is not marked silent.
+next build,Renewal inside 30 days,An annual charge due soon is easier to see than a monthly debit.,Annual rows on screen 1 sort upward and show the renewal date.
+next build,Charge after she marked it stopped,A debit that posts after a stop is a new issue.,Screen 3 flags it. Screen 4 opens on the dispute step.
+next build,Intro price ending,"Three cheap months, then the real price, is a different event from a mid-plan silent hike.","Screen 3 labels it as an intro price ending, not as a silent hike."
+next build,Per-day cost on a zombie,A gym still charging can be shown as a daily cost next to the last visit.,Screen 3 shows the year and the per-day figure beside last opened.
+next build,Last 12 months beside the forecast,What already left and what is committed next are different numbers.,"Screen 1 shows the trailing year and the next-12-month projection, labeled separately."
+next build,Calendar of upcoming debits,"She can see what leaves this month, including annuals that have not hit yet.",A strip on screen 1 lists the debits due this month.
+next build,Tickable cancel steps,She can mark each step as she does it.,Screen 4 steps can be checked. The year changes only when the money-stop step is checked.
+next build,Grievance message she can copy,A filled message is ready when the merchant or the bank needs a written complaint.,"Screen 4 fills merchant, amount, date, and reference into a message she can copy."
+next build,Watch until the next debit date,"After a stop, Paytrace keeps looking for one more debit.",The row stays in a watch state on screen 1 until that date passes with no new debit.
+next build,Guided tour and plain-language year,"A short tour of the four screens, and a plainer wording of the year.",The tour walks screens 1 to 4. A plain-language switch rewrites the year on screen 1 in shorter sentences.
+next build,PDF statement upload,A synthetic PDF statement can be read as well as the CSV.,Text extracted from the PDF joins the same pipeline as the CSV and lands on the same four screens.
+next build,Larger merchant dictionary,"More hand-written patterns, so fewer strings stay unknown.",Screen 2 names more narrations. Unknowns still stay unknown until she names them.
+next build,Several small hikes as one creep,"Four small rises over time are one signal, not four separate hikes.",Screen 3 shows the compounded rise from the first price to the latest.
+next build,"Failed debit, then a retry",A failed debit followed by a successful one means the merchant is still trying.,Screen 3 shows the failed attempt and the retry together.
+next build,Share card of the annual number,"The year, and the unused part of it, can be shared as one card.","From screen 1 or screen 3, she exports a card with the year total and the flagged total."
+next build,More cancel versions,"Apple, fuller bill autopay, SIPs, BNPL, and insurance free-look each get a path.","Screen 4 gains those versions. A SIP is not a leak by default. BNPL is a debt, with no revoke, same idea as the loan."
+real product,Bank login and Account Aggregator,Live statements and mandates replace the synthetic fixture after consent.,She consents. The same four screens fill from the live feed. This is not in the prototype.
+real product,Household view,More than one person can sit on one year.,A household switch sums each person's four screens into one year. This is not in the prototype.
+real product,"Accounts, KYC, push, and a phone app","Sign-in, identity checks, reminders, and a native app.",Those wrap the same four screens. They are not in the prototype.
+not planned,A model that guesses merchants,The brief says a careful hand-built dictionary beats a model on the cases that matter.,"Not the translator. Screen 2 stays on the dictionary, plus a name she types herself."
+not planned,Actually revoking a live mandate,"Paytrace does not call a bank, NPCI, or a merchant to revoke.",Screen 4 remains the instructions. She revokes in her own UPI or card app.

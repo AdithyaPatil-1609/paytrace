@@ -1,0 +1,8 @@
+brief,where
+"Find every recurring commitment, including irregular amount or irregular interval",Screen 1 lists all 14. Electricity changes amount. Society changes date. One Swiggy order and one transfer to Rahul are not on the list.
+Use statements and payment notifications,"Screen 1 names the message source, SMS or SMS and email. Every row is also a line on the statement."
+Turn the merchant string into words a person recognises,"Screen 2. The match comes from the hand-written merchant_dictionary, which is what the brief asked for."
+"Catch a price increase, a trial turning into a paid plan, and a charge after use stopped","Screen 3. Spotify rose with no email. YouTube's trial became Rs 149. Gym, Canva, and FitApp are still charging after she stopped opening them."
+"The correct cancel path for each mechanism, including when the merchant does not respond","Screen 4 has one path per autopay. Each normal path ends with what to do if they stay silent. Insurance, bills, and the loan are different versions of that page."
+"An annual view of the total, and the month as well when the debit is monthly","Screen 1 sums the year to Rs 1,99,138 and shows the month beside it. Screen 3 sums the flagged part. Prime and JioHotstar stay once a year."
+Synthetic now. Real messages later.,"This workbook is the stand-in. The four screens do not change when a real SMS, a real mail, and a real statement replace these sheets."
