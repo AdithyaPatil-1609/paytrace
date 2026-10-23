@@ -41,7 +41,6 @@ function loadEnvLocal() {
 
 loadEnvLocal();
 
-const { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } = await import("../db/neo4j/client");
 import {
   AS_OF,
   readDictionary,
@@ -63,6 +62,8 @@ const CONSTRAINTS = [
 ];
 
 async function main() {
+  const { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } = await import("../db/neo4j/client");
+
   if (!hasNeo4jConfig()) {
     console.error(
       "No Neo4j connection found. Copy .env.example to .env.local and fill in NEO4J_URI, NEO4J_USERNAME and NEO4J_PASSWORD."
