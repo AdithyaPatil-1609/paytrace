@@ -45,7 +45,9 @@ export function DemoOverlay({
             <strong>{formatINR(zombieItem.annualCost)}</strong> over a year.
             {zombieItem.lastOpened
               ? ` It was last opened on ${formatDate(zombieItem.lastOpened)}, and ${zombieItem.debitCount} debits have posted since.`
-              : " There is no record of it being opened at all."}
+              : " There is no record of it being opened at all."}{" "}
+            Running since {formatDate(zombieItem.startedOn)}, it has already taken{" "}
+            <strong>{formatINR(zombieItem.spentToDate)}</strong>.
           </p>
           <p className="demo-caveat">
             Paytrace cannot cancel it for you. Choosing to stop opens the exact steps — stop the service, then stop the

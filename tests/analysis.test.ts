@@ -200,3 +200,20 @@ test("23. no unconfirmed date is ever plotted", () => {
   assert.equal(find("bescom").dateConfidence, "estimated");
   assert.equal(find("amazon-prime").dateConfidence, "confirmed");
 });
+
+test("24. every commitment knows when it started and what it has taken", () => {
+  const gym = find("fitline-gym");
+  // The mandate predates the first debit, so the mandate date is the start.
+  assert.equal(gym.startedOn, "2025-10-28");
+  assert.equal(gym.spentToDate, 18000);
+
+  const spotify = find("spotify");
+  // Seven months at 119 and five at 139.
+  assert.equal(spotify.spentToDate, 119 * 7 + 139 * 5);
+
+  for (const item of commitments) {
+    assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(item.startedOn), `${item.id} has no start date`);
+    assert.ok(item.spentToDate > 0, `${item.id} has spent nothing`);
+    assert.ok(item.startedOn <= item.firstCharge, `${item.id} starts after its first debit`);
+  }
+});

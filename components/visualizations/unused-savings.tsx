@@ -55,7 +55,8 @@ export function UnusedSavings({
                 </div>
                 <b>{formatINR(item.annualCost)}</b>
                 <button className="leak-evidence" onClick={() => onOpen(item.id)}>
-                  {item.lastOpened ? `last opened ${formatDate(item.lastOpened)}` : "no usage record"}
+                  <em>{formatINR(item.spentToDate)} already gone</em>
+                  {item.lastOpened ? `since ${formatDate(item.startedOn)}, last opened ${formatDate(item.lastOpened)}` : `since ${formatDate(item.startedOn)}, never opened`}
                 </button>
               </div>
             );

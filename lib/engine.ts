@@ -280,6 +280,8 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
       annualCost,
       debitCount: rows.length,
       firstCharge: dates[0],
+      startedOn: mandate?.createdOn ?? dates[0],
+      spentToDate: amounts.reduce((sum, value) => sum + value, 0),
       lastCharge: dates[dates.length - 1],
       nextCharge,
       lastOpened,

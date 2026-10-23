@@ -2389,3 +2389,270 @@ figcaption {
   .fridge-day { min-height: 0; }
   .fridge-day.empty { display: none; }
 }
+
+/* ---------------------------------------------------------------
+   Warnings carry real weight, and the forecast chart is readable
+   on its own. These come last so they win over the base rules.
+   --------------------------------------------------------------- */
+
+:root {
+  --ember: #9c2415;
+  --ember-deep: #76180d;
+  --ember-skin: #f1cdc4;
+  --ember-edge: rgba(156, 36, 21, 0.45);
+}
+
+/* the leak figure is the loudest thing on the annual screen */
+.annual-figure.accent {
+  border-color: var(--ember-deep);
+  background: var(--ember-deep);
+  box-shadow: 0 1px 0 rgba(36, 18, 49, 0.08), 0 12px 26px -14px rgba(118, 24, 13, 0.7);
+}
+
+.annual-figure.accent span {
+  color: #efb8ab;
+}
+
+.annual-figure.accent strong {
+  color: #fff4f0;
+}
+
+.annual-figure.accent small {
+  color: #e8bbb0;
+}
+
+.issue-metric.accent {
+  border-color: var(--ember-deep);
+  background: var(--ember-deep);
+}
+
+.issue-metric.accent strong {
+  color: #fff4f0;
+}
+
+.issue-metric.accent span {
+  color: #e8bbb0;
+}
+
+.kpi.alarm {
+  background: var(--ember-skin);
+}
+
+.kpi.alarm span {
+  color: var(--ember-deep);
+}
+
+.kpi.alarm strong {
+  color: var(--ember);
+}
+
+/* flagged rows: a solid red edge, and text dark enough to read as a warning */
+.issue-row {
+  border-top: 1px solid var(--ember-edge);
+  background: var(--ember-skin);
+  box-shadow: inset 3px 0 0 var(--ember);
+}
+
+.issue-row:hover {
+  background: #e9bbb0;
+}
+
+.issue-row strong {
+  color: var(--ember-deep);
+  font-weight: 700;
+}
+
+.issue-row p {
+  color: #5c3b33;
+}
+
+.issue-row span,
+.issue-row b {
+  color: #44231c;
+}
+
+.issue-row small {
+  color: #7a5349;
+}
+
+.bucket-card[data-bucket="unused"] {
+  border-color: var(--ember-edge);
+  border-left: 3px solid var(--ember);
+  background: var(--ember-skin);
+}
+
+.bucket-card[data-bucket="unused"] header span {
+  color: #5c3b33;
+}
+
+.path-card.issue {
+  border-color: var(--ember-edge);
+  border-left: 3px solid var(--ember);
+}
+
+.path-card.issue .path-name {
+  background: var(--ember-skin);
+}
+
+.path-card.issue .silent-line {
+  background: #e9bbb0;
+}
+
+.detail-block.flagged {
+  border-color: var(--ember-edge);
+  background: var(--ember-skin);
+}
+
+.detail-block.flagged p {
+  color: #5c3b33;
+}
+
+.badge.silent {
+  background: var(--ember-deep);
+  color: #fff4f0;
+}
+
+.trap {
+  color: var(--ember-deep) !important;
+  font-weight: 500;
+}
+
+.leak-track i,
+.bucket-card[data-bucket="unused"] .bucket-bar i,
+.price-dot.change {
+  fill: var(--ember);
+  background: var(--ember);
+}
+
+.change-line,
+.delta-label,
+.change-label {
+  stroke: var(--ember);
+  fill: var(--ember);
+}
+
+.change-line {
+  fill: none;
+}
+
+/* --- forecast chart -------------------------------------------------- */
+
+.forecast-chart {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.forecast-bar {
+  transition: opacity 0.12s;
+}
+
+.forecast-bar:hover {
+  opacity: 0.78;
+}
+
+.forecast-bar.peak {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.bar-value {
+  fill: var(--ink);
+  font: 600 11px var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-month {
+  fill: var(--ink-soft);
+  font: 500 11px var(--sans);
+}
+
+.bar-year {
+  fill: var(--ink-faint);
+  font: 500 9px var(--mono);
+}
+
+.average-line {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+  opacity: 0.55;
+}
+
+.average-label {
+  fill: var(--ink-soft);
+  font: 600 10px var(--sans);
+  letter-spacing: 0.04em;
+}
+
+.axis-line {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.chart-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--ink-faint);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.chart-key i {
+  display: inline-block;
+  width: 13px;
+  height: 11px;
+  margin-left: 8px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.chart-key .key-solid {
+  background: var(--marigold);
+}
+
+.chart-key .key-hatch {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--marigold),
+    var(--marigold) 3px,
+    var(--marigold-skin) 3px,
+    var(--marigold-skin) 6px
+  );
+}
+
+/* --- start date and running cost -------------------------------------- */
+
+.path-spent {
+  margin-top: 7px !important;
+  color: var(--ink-soft) !important;
+  font: 500 9px var(--sans) !important;
+  letter-spacing: 0;
+}
+
+.path-card.issue .path-spent {
+  color: var(--ember-deep) !important;
+  font-weight: 700 !important;
+}
+
+.leak-evidence {
+  display: grid;
+  gap: 2px;
+  line-height: 1.35;
+}
+
+.leak-evidence em {
+  color: var(--ember);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 660px) {
+  .chart-key { display: none; }
+  .bar-value { font-size: 13px; }
+  .bar-month { font-size: 13px; }
+}
