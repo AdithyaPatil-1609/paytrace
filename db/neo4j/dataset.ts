@@ -1,7 +1,9 @@
+import { analyzeCommitments } from "@/db/neo4j/analyze";
 import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "@/db/neo4j/client";
 import { AS_OF } from "@/lib/fixtures";
 import type {
   CancelMode,
+  Commitment,
   Dataset,
   DictionaryEntry,
   MandateRow,
@@ -18,9 +20,15 @@ export type SourceInfo = {
   host?: string;
   database?: string;
   counts: { payments: number; messages: number; mandates: number; patterns: number; commitments: number };
+  /** Why the CSV fixture is on screen, when Neo4j was expected. */
+  note?: string;
+  /** The analysis query answered. Screens use its commitments instead of lib/engine. */
+  analyzed?: boolean;
+  /** Sum of the annual costs the analysis query returned. */
+  yearTotal?: number;
 };
 
-export type LoadedDataset = { dataset: Dataset; source: SourceInfo };
+export type LoadedDataset = { dataset: Dataset; source: SourceInfo; commitments?: Commitment[] };
 
 /** Neo4j returns Integer and Date objects; both need unwrapping. */
 function num(value: unknown): number | undefined {
@@ -48,32 +56,35 @@ function text(value: unknown): string {
 }
 
 /**
- * Reads the evidence graph back into exactly the shape lib/engine expects.
- * Detection is identical whether the rows came from Neo4j or from the CSV
- * fixture, which is what keeps the tests meaningful against both.
+ * Reads the evidence graph back into the Dataset shape, then asks Cypher
+ * for the commitments the screens render. The CSV fallback still detects
+ * in lib/engine, which is what the tests cover.
  */
 export async function loadDatasetFromNeo4j(): Promise<LoadedDataset> {
   const driver = getNeo4jDriver();
   const session = driver.session({ database: neo4jDatabase });
 
   try {
-    const [payments, messages, mandates, patterns, usage, counts] = await Promise.all([
-      session.run("MATCH (p:Payment)-[:ON_ACCOUNT]->(a:Account) RETURN p, a ORDER BY p.date, p.txn_id"),
-      session.run("MATCH (m:Message) RETURN m ORDER BY m.sent_on, m.notice_id"),
-      session.run("MATCH (md:Mandate)-[:ON_ACCOUNT]->(a:Account) RETURN md, a.account_id AS account"),
-      session.run("MATCH (pat:Pattern) RETURN pat"),
-      session.run(
-        "MATCH (brand:Merchant) WHERE brand.opens_last_12_months IS NOT NULL RETURN brand"
-      ),
-      session.run(`
+    // One session can run one query at a time. Parallel runs make Aura refuse the read.
+    const payments = await session.run(
+      "MATCH (p:Payment)-[:ON_ACCOUNT]->(a:Account) RETURN p, a ORDER BY p.date, p.txn_id"
+    );
+    const messages = await session.run("MATCH (m:Message) RETURN m ORDER BY m.sent_on, m.notice_id");
+    const mandates = await session.run(
+      "MATCH (md:Mandate)-[:ON_ACCOUNT]->(a:Account) RETURN md, a.account_id AS account"
+    );
+    const patterns = await session.run("MATCH (pat:Pattern) RETURN pat");
+    const usage = await session.run(
+      "MATCH (brand:Merchant) WHERE brand.opens_last_12_months IS NOT NULL RETURN brand"
+    );
+    const counts = await session.run(`
         MATCH (p:Payment) WITH count(p) AS payments
         MATCH (m:Message) WITH payments, count(m) AS messages
         MATCH (md:Mandate) WITH payments, messages, count(md) AS mandates
         MATCH (pat:Pattern) WITH payments, messages, mandates, count(pat) AS patterns
         OPTIONAL MATCH (c:Commitment)
         RETURN payments, messages, mandates, patterns, count(c) AS commitments
-      `)
-    ]);
+      `);
 
     const statement: StatementRow[] = payments.records.map((record) => {
       const p = record.get("p").properties;
@@ -159,6 +170,30 @@ export async function loadDatasetFromNeo4j(): Promise<LoadedDataset> {
       }
     })();
 
+    const source: SourceInfo = {
+      kind: "neo4j",
+      host,
+      database: neo4jDatabase,
+      counts: {
+        payments: num(countRow?.get("payments")) ?? 0,
+        messages: num(countRow?.get("messages")) ?? 0,
+        mandates: num(countRow?.get("mandates")) ?? 0,
+        patterns: num(countRow?.get("patterns")) ?? 0,
+        commitments: num(countRow?.get("commitments")) ?? 0
+      }
+    };
+
+    let commitments: Commitment[] | undefined;
+    try {
+      commitments = await analyzeCommitments(session, AS_OF);
+      source.analyzed = commitments.length > 0;
+      source.yearTotal = commitments.reduce((sum, item) => sum + item.annualCost, 0);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn("Neo4j analysis query failed. Screens will detect from the rows instead:", message);
+      source.note = "The graph is connected, but the analysis query failed. These screens detected the rows in the app.";
+    }
+
     return {
       dataset: {
         asOf: AS_OF,
@@ -168,18 +203,8 @@ export async function loadDatasetFromNeo4j(): Promise<LoadedDataset> {
         mandates: mandateRows,
         dictionary
       },
-      source: {
-        kind: "neo4j",
-        host,
-        database: neo4jDatabase,
-        counts: {
-          payments: num(countRow?.get("payments")) ?? 0,
-          messages: num(countRow?.get("messages")) ?? 0,
-          mandates: num(countRow?.get("mandates")) ?? 0,
-          patterns: num(countRow?.get("patterns")) ?? 0,
-          commitments: num(countRow?.get("commitments")) ?? 0
-        }
-      }
+      source,
+      commitments
     };
   } finally {
     await session.close();

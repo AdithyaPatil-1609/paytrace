@@ -1,20 +1,19 @@
 # Paytrace
 
-Paytrace reads one synthetic year of statements, SMS, and email and turns it into five screens: the year, every payment, the merchant string in plain language, the rows that changed or went unused, and a cancel path for each one. It never connects to a bank, a phone, or a mailbox, and it never sends a revoke. It shows the path. The person still takes the step.
+Paytrace reads one synthetic year of statements, SMS, and email and turns it into four screens: every payment with its plain name, the rows that changed or went unused, a cancel path for each one, and the year. It never connects to a bank, a phone, or a mailbox, and it never sends a revoke. It shows the path. The person still takes the step.
 
 Priya Demo is invented. Arclight Bank is invented. The as-of date is 22 October 2026.
 
 ## Where the data comes from
 
 ```
-Neo4j (when configured)  ─┐
-                          ├─►  Dataset  ─►  lib/engine  ─►  the five screens
-data/raw/*.csv (fallback) ─┘
+Neo4j (when configured)  ─►  Cypher analysis  ─►  the four screens
+data/raw/*.csv (fallback) ─►  lib/engine      ─►  the four screens
 ```
 
-Both paths produce the same `Dataset` — statement lines, notices, mandates, usage and the merchant dictionary — and detection runs identically over either. That is what lets the same tests hold whichever source is serving.
+When Neo4j is up, a Cypher query decides the commitments: which rows are issues, what the year adds up to, and the cancel path on each row. The CSV fallback still detects those in `lib/engine.ts`. The tests cover that engine.
 
-The running app says which one it used: a badge in the top bar, and a panel on the annual screen listing what the graph holds. When Neo4j is serving, that panel also compares the graph's own Cypher-derived commitment count with what the TypeScript engine found from the same rows. Two independent passes over the same evidence should agree.
+The running app says which one it used: a badge in the top bar, and a line under it when the analysis query is what the screens are showing. The annual screen states the year that query returned.
 
 If Neo4j is configured but unreachable or empty, the app logs a warning and falls back to the CSV fixture rather than failing.
 
@@ -46,7 +45,7 @@ The dictionary's wording lives on `Pattern`, not `Merchant`. `Merchant` is keyed
 
 ## What is computed, not written down
 
-Nothing in the app names a merchant. `lib/engine.ts` derives every commitment:
+Nothing in the app names a merchant. The same rules run in Cypher when Neo4j is serving, and in `lib/engine.ts` on the CSV fallback:
 
 | Step | Rule |
 | --- | --- |
@@ -60,13 +59,12 @@ Nothing in the app names a merchant. `lib/engine.ts` derives every commitment:
 
 Credits are never commitments, and YouTube's ₹1 authorisation is attached to YouTube as evidence rather than counted as its own price.
 
-## The five screens
+## The four screens
 
-1. **Annual** — KPI cards, a category donut, the twelve months ahead as a list, the month on the fridge door, and the year split five ways.
-2. **All payments** — every row with the raw bank string, the month, the year and the message source. Simulate new autopay lives here.
-3. **Plain language** — the dictionary match, and what the string actually is. An unmatched string stays unknown rather than being guessed at.
-4. **Issues** — the rows that changed or went unused, the Spotify price history drawn from real dated debits, and a what-if savings selector.
-5. **Cancel paths** — two tracks per row, stop the service then stop the money, and a line for when the merchant never replies. A flagged row offers **Keep it**, which settles the warning, or **Cancel the autopay**, which drops the year. The loan has no revoke control.
+1. **All payments** — every row with the raw bank string, the plain name beside it, the month, the year and the message source. Simulate new autopay lives here.
+2. **Issues** — the rows that changed or went unused, the Spotify price history drawn from real dated debits, and a what-if savings selector.
+3. **Cancel paths** — two tracks per row, stop the service then stop the money, and a line for when the merchant never replies. A flagged row offers **Keep it**, which settles the warning, or **Cancel the autopay**, which drops the year. The loan has no revoke control.
+4. **Annual** — KPI cards, a category donut, the twelve months ahead as a list, the month on the fridge door, and the year split five ways.
 
 Any row on any screen opens a detail panel: the statement lines that proved it, the notices beside it, when the autopay started, what it has taken so far, and the sentence explaining why the grouping kept it.
 

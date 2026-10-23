@@ -70,7 +70,7 @@ export function PaymentCalendar({
   onOpen: (id: string) => void;
 }) {
   const start = new Date(Date.parse(asOf));
-  const [offset, setOffset] = useState(1); // open on next month: it is fully ahead
+  const [offset, setOffset] = useState(0);
   const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + offset, 1));
   const year = cursor.getUTCFullYear();
   const month = cursor.getUTCMonth();
@@ -97,8 +97,8 @@ export function PaymentCalendar({
             <button onClick={() => setOffset(offset - 1)} aria-label="Previous month">
               ‹
             </button>
-            <button onClick={() => setOffset(1)} disabled={offset === 1}>
-              Next month
+            <button onClick={() => setOffset(0)} disabled={offset === 0}>
+              This month
             </button>
             <button onClick={() => setOffset(offset + 1)} aria-label="Next month">
               ›
