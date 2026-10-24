@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { withSimulatedAutopay } from "@/data/simulation";
-import { hikeAmount, isSilentPriceHike, issueItems, splitByBucket, yearlyTotal } from "@/lib/analysis";
+import { hikeAmount, isSilentPriceHike, issueItems, keptLeakTotal, splitByBucket, yearlyTotal } from "@/lib/analysis";
 import { toCsv } from "@/lib/csv";
 import { bucketCopy, bucketLabels, detectCommitments } from "@/lib/engine";
 import { formatDate, formatINR } from "@/lib/format";
@@ -38,16 +38,21 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
     return detectCommitments(simulated ? withSimulatedAutopay(dataset) : dataset);
   }, [dataset, simulated, commitments]);
 
-  // The year before Simulate, so the screen can show the move.
-  const baseline = useMemo(
-    () => yearlyTotal(commitments && commitments.length > 0 ? commitments : detectCommitments(dataset)),
+  // The rows before Simulate: their total drives the before-and-after
+  // reading, and their ids tell Reset what the simulation added.
+  const baseDetected = useMemo(
+    () => (commitments && commitments.length > 0 ? commitments : detectCommitments(dataset)),
     [dataset, commitments]
   );
+  const baseline = yearlyTotal(baseDetected);
   const active = detected.filter((item) => !revoked.includes(item.id));
   const total = yearlyTotal(active);
   const fullYear = yearlyTotal(detected);
   const stoppedValue = fullYear - total;
-  const issues = issueItems(active);
+  // Keeping a row settles the warning across every screen, not just the one
+  // the decision was made on.
+  const issues = issueItems(active, kept);
+  const keptLeak = keptLeakTotal(active, kept);
   const leakage = yearlyTotal(active.filter((item) => item.kind === "unused"));
   const hike = active.filter(isSilentPriceHike).reduce((sum, item) => sum + hikeAmount(item), 0);
   const debt = yearlyTotal(active.filter((item) => item.bucket === "debt"));
@@ -55,7 +60,11 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
 
   function resetSimulation() {
     setSimulated(false);
-    setRevoked((current) => current.filter((id) => id !== "headspace-plus"));
+    // Forget any decision taken on a row that only the simulation created,
+    // found by id rather than by name: ids now carry account and descriptor.
+    const baseIds = new Set(baseDetected.map((item) => item.id));
+    setRevoked((current) => current.filter((id) => baseIds.has(id)));
+    setKept((current) => current.filter((id) => baseIds.has(id)));
   }
 
   function confirmRevoke(id: string) {
@@ -165,6 +174,7 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
               hike={hike}
               onOpen={setOpenId}
               onGoToCancel={() => setScreen("paths")}
+              keptLeak={keptLeak}
             />
           )}
           {screen === "paths" && (
@@ -488,7 +498,8 @@ function Issues({
   leakage,
   hike,
   onOpen,
-  onGoToCancel
+  onGoToCancel,
+  keptLeak
 }: {
   items: Commitment[];
   allItems: Commitment[];
@@ -497,6 +508,7 @@ function Issues({
   hike: number;
   onOpen: (id: string) => void;
   onGoToCancel: () => void;
+  keptLeak: number;
 }) {
   return (
     <>
@@ -508,7 +520,15 @@ function Issues({
       />
       <section className="issue-metrics">
         <Metric value={formatINR(total)} label="Everything on the list screen, this year." />
-        <Metric value={formatINR(leakage)} label="Still leaving for the gym, Canva, FitApp, and the caller tune." accent />
+        <Metric
+          value={formatINR(leakage)}
+          label={
+            keptLeak > 0
+              ? `Still leaving for things she does not use. ${formatINR(keptLeak)} of it is on rows she chose to keep, so it is accepted, not stopped.`
+              : "Still leaving for the gym, Canva, FitApp, and the caller tune."
+          }
+          accent
+        />
         <Metric value={formatINR(hike)} label="Spotify's silent hike. ₹119 became ₹139, with no price message." accent />
       </section>
       <section className="issues-table">

@@ -46,6 +46,27 @@ function slug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+/**
+ * An id has to identify one commitment, not one merchant. Grouping is per
+ * pattern and per account, so the id carries both: the same brand reached
+ * through a second account, or through a second descriptor such as
+ * PAYPAL *SPOTIFY, is a different commitment and must not share an id.
+ *
+ * The descriptor is only added for a brand the dictionary reaches by more
+ * than one pattern, so ordinary rows keep a readable id.
+ */
+function commitmentId(brand: string, pattern: string, accountId: string, ambiguousBrands: Set<string>) {
+  const brandSlug = slug(brand);
+  const accountSlug = slug(accountId);
+  if (!ambiguousBrands.has(brand)) return [brandSlug, accountSlug].filter(Boolean).join("-");
+
+  const patternSlug = slug(pattern);
+  const descriptor = patternSlug.startsWith(brandSlug)
+    ? patternSlug.slice(brandSlug.length).replace(/^-/, "")
+    : patternSlug;
+  return [brandSlug, descriptor, accountSlug].filter(Boolean).join("-");
+}
+
 function addYears(date: string, count: number) {
   const next = new Date(Date.parse(date));
   next.setUTCFullYear(next.getUTCFullYear() + count);
@@ -142,6 +163,7 @@ function bucketFor(kind: CommitmentKind, mechanism: Mechanism): Bucket {
 type Group = {
   key: string;
   narration: string;
+  accountId: string;
   entry?: DictionaryEntry;
   rows: StatementRow[];
   holds: StatementRow[];
@@ -167,13 +189,23 @@ function toEvidence(row: StatementRow): EvidenceRow {
  */
 export function detectCommitments(dataset: Dataset): Commitment[] {
   const { asOf, statement, notifications, usage, mandates, dictionary } = dataset;
+
+  const patternsPerBrand = new Map<string, number>();
+  for (const entry of dictionary) {
+    patternsPerBrand.set(entry.brand, (patternsPerBrand.get(entry.brand) ?? 0) + 1);
+  }
+  const ambiguousBrands = new Set(
+    [...patternsPerBrand.entries()].filter(([, count]) => count > 1).map(([brand]) => brand)
+  );
+
   const groups = new Map<string, Group>();
 
   for (const row of statement) {
     if (!row.debit || row.debit <= 0) continue; // Salary and card repayments are credits.
     const entry = matchDictionary(row.narration, dictionary);
     const key = `${entry ? entry.pattern : row.narration}|${row.accountId}`;
-    const group = groups.get(key) ?? { key, narration: row.narration, entry, rows: [], holds: [] };
+    const group =
+      groups.get(key) ?? { key, narration: row.narration, accountId: row.accountId, entry, rows: [], holds: [] };
     // The ₹1 hold belongs to its commitment as evidence, never as its own price.
     if (row.txnKind === "authorisation") group.holds.push(row);
     else group.rows.push(row);
@@ -266,7 +298,12 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
     const issue = buildIssue(signals, { lastOpened, previous, latest, openedDaysAgo });
 
     commitments.push({
-      id: slug(entry?.brand ?? group.narration),
+      id: commitmentId(
+        entry?.brand ?? group.narration,
+        entry?.pattern ?? group.narration,
+        group.accountId,
+        ambiguousBrands
+      ),
       rawNarration: group.narration,
       merchant: entry?.brand ?? group.narration,
       product: entry?.product ?? "Not in the dictionary yet",
