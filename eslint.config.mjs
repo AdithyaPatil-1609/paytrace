@@ -16,10 +16,12 @@ try {
   // typescript-eslint is absent. The core web vitals rules still apply.
 }
 
-export default [
+const config = [
   {
     ignores: [".next/**", "node_modules/**", "out/**", "build/**", "next-env.d.ts"]
   },
   ...nextCoreWebVitals,
   ...nextTypescript
 ];
+
+export default config;
