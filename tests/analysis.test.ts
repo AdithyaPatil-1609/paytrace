@@ -3,9 +3,11 @@ import test from "node:test";
 import { withSimulatedAutopay } from "../data/simulation";
 import {
   detectPriceHikes,
+  keptLeakTotal,
   groupByCategory,
   groupByKind,
   isSilentPriceHike,
+  issueItems,
   isTrialConverted,
   isZombie,
   monthlyForecast,
@@ -20,12 +22,13 @@ import { loadFixtures, loadParserFixtures } from "../lib/fixtures";
 
 const dataset = loadFixtures();
 const commitments = detectCommitments(dataset);
-const find = (id: string) => commitments.find((item) => item.id === id)!;
+/** Ids carry the account and descriptor now, so tests name the merchant. */
+const find = (merchant: string) => commitments.find((item) => item.merchant === merchant)!;
 
 // The nine checks the prototype is done when it passes.
 
 test("1. Spotify at 119, 119, 139, 139 with no price notice is a silent hike", () => {
-  const spotify = find("spotify");
+  const spotify = find("Spotify");
   assert.equal(spotify.amountPattern, "step");
   assert.equal(spotify.previousAmount, 119);
   assert.equal(spotify.amount, 139);
@@ -34,7 +37,7 @@ test("1. Spotify at 119, 119, 139, 139 with no price notice is a silent hike", (
 });
 
 test("2. the YouTube trial notice followed by 149 is a converted trial", () => {
-  const youtube = find("youtube");
+  const youtube = find("YouTube");
   assert.equal(isTrialConverted(youtube), true);
   assert.equal(youtube.amount, 149);
   // The one-rupee hold is evidence, never the price.
@@ -43,7 +46,7 @@ test("2. the YouTube trial notice followed by 149 is a converted trial", () => {
 });
 
 test("3. the monthly gym last opened eleven months ago is a zombie", () => {
-  const gym = find("fitline-gym");
+  const gym = find("FitLine Gym");
   assert.equal(gym.cadence, "monthly");
   assert.equal(isZombie(gym), true);
   assert.equal(gym.kind, "unused");
@@ -78,7 +81,7 @@ test("7. society on scattered dates is one irregular commitment", () => {
 });
 
 test("8. the loan narration is an obligation with no cancel action", () => {
-  const loan = find("home-loan");
+  const loan = find("Home loan");
   assert.equal(loan.kind, "debt");
   assert.equal(loan.cancelMode, "block");
   assert.equal(loan.canCancel, false);
@@ -109,13 +112,13 @@ test("12. every kind still has its own group", () => {
 });
 
 test("13. a recent open is not a zombie", () => {
-  assert.equal(isZombie(find("netflix")), false);
-  assert.equal(find("netflix").kind, "essential");
+  assert.equal(isZombie(find("Netflix")), false);
+  assert.equal(find("Netflix").kind, "essential");
 });
 
 test("14. simulating a new autopay detects Headspace and moves the year to 2,02,726", () => {
   const simulated = detectCommitments(withSimulatedAutopay(dataset));
-  const headspace = simulated.find((item) => item.id === "headspace-plus")!;
+  const headspace = simulated.find((item) => item.merchant === "Headspace Plus")!;
   assert.equal(headspace.amount, 299);
   assert.equal(headspace.annualCost, 3588);
   assert.equal(headspace.kind, "essential");
@@ -126,13 +129,13 @@ test("14. simulating a new autopay detects Headspace and moves the year to 2,02,
 });
 
 test("15. annual rows carry the next charge date and no monthly figure", () => {
-  assert.equal(find("amazon-prime").nextCharge, "2027-08-15");
-  assert.equal(find("jiohotstar").nextCharge, "2027-09-03");
-  assert.equal(find("amazon-prime").cadence, "annual");
+  assert.equal(find("Amazon Prime").nextCharge, "2027-08-15");
+  assert.equal(find("JioHotstar").nextCharge, "2027-09-03");
+  assert.equal(find("Amazon Prime").cadence, "annual");
 });
 
 test("16. revoking the gym drops the year by 18,000", () => {
-  const withoutGym = commitments.filter((item) => item.id !== "fitline-gym");
+  const withoutGym = commitments.filter((item) => item.merchant !== "FitLine Gym");
   assert.equal(yearlyTotal(commitments) - yearlyTotal(withoutGym), 18000);
 });
 
@@ -166,7 +169,7 @@ test("19. the twelve-month forecast adds to the year and is not annualCost/12", 
 });
 
 test("20. the Spotify hike reads +20 a month, 16.8%, 240 a year", () => {
-  const hike = detectPriceHikes(commitments).find((entry) => entry.item.id === "spotify")!;
+  const hike = detectPriceHikes(commitments).find((entry) => entry.item.merchant === "Spotify")!;
   assert.equal(hike.from, 119);
   assert.equal(hike.to, 139);
   assert.equal(hike.delta, 20);
@@ -176,7 +179,7 @@ test("20. the Spotify hike reads +20 a month, 16.8%, 240 a year", () => {
 });
 
 test("21. the price chart is drawn from real dated debits", () => {
-  const spotify = find("spotify");
+  const spotify = find("Spotify");
   assert.equal(spotify.priceSeries.length, 12);
   assert.equal(spotify.priceSeries[0].amount, 119);
   assert.equal(spotify.priceSeries[11].amount, 139);
@@ -188,26 +191,26 @@ test("22. the what-if totals 27,936 and never offers insurance or the loan", () 
   const all = potentialSavings(commitments, eligible.map((item) => item.id));
   assert.equal(all.saved, 27936);
   assert.equal(all.revisedYear, 199138 - 27936);
-  assert.equal(eligible.some((item) => item.id === "hdfc-life" || item.id === "home-loan"), false);
+  assert.equal(eligible.some((item) => item.merchant === "HDFC Life" || item.merchant === "Home loan"), false);
 });
 
 test("23. no unconfirmed date is ever plotted", () => {
   const renewals = upcomingRenewals(commitments);
-  const society = renewals.find((row) => row.item.id === "society")!;
+  const society = renewals.find((row) => row.item.merchant === "Society")!;
   assert.equal(society.date, undefined);
   assert.equal(society.confidence, "unknown");
   // A varying bill keeps its date but is labelled an estimate.
-  assert.equal(find("bescom").dateConfidence, "estimated");
-  assert.equal(find("amazon-prime").dateConfidence, "confirmed");
+  assert.equal(find("BESCOM").dateConfidence, "estimated");
+  assert.equal(find("Amazon Prime").dateConfidence, "confirmed");
 });
 
 test("24. every commitment knows when it started and what it has taken", () => {
-  const gym = find("fitline-gym");
+  const gym = find("FitLine Gym");
   // The mandate predates the first debit, so the mandate date is the start.
   assert.equal(gym.startedOn, "2025-10-28");
   assert.equal(gym.spentToDate, 18000);
 
-  const spotify = find("spotify");
+  const spotify = find("Spotify");
   // Seven months at 119 and five at 139.
   assert.equal(spotify.spentToDate, 119 * 7 + 139 * 5);
 
@@ -216,4 +219,51 @@ test("24. every commitment knows when it started and what it has taken", () => {
     assert.ok(item.spentToDate > 0, `${item.id} has spent nothing`);
     assert.ok(item.startedOn <= item.firstCharge, `${item.id} starts after its first debit`);
   }
+});
+
+// The three issues reported on 24 Oct.
+
+test("25. every commitment id is unique, and carries its account", () => {
+  const ids = commitments.map((item) => item.id);
+  assert.equal(new Set(ids).size, ids.length);
+  // The id names the account, so the same brand elsewhere cannot collide.
+  assert.equal(find("Spotify").id, "spotify-cc-priya-2291");
+  assert.equal(find("FitLine Gym").id, "fitline-gym-sav-priya-9912");
+});
+
+test("26. one merchant on two accounts stays two commitments", () => {
+  const extra = [1, 2, 3].map((n) => ({
+    txnId: `TXN-DUP-000${n}`,
+    persona: "priya",
+    date: `2026-0${n + 5}-16`,
+    accountId: "SAV-PRIYA-9912",
+    accountType: "savings",
+    narration: "NETFLIX.COM",
+    debit: 649,
+    reference: `DUP00000000${n}`,
+    channel: "UPI",
+    txnKind: "debit_purchase"
+  }));
+  const both = detectCommitments({ ...dataset, statement: [...dataset.statement, ...extra] });
+  const netflix = both.filter((item) => item.merchant === "Netflix");
+  assert.equal(netflix.length, 2);
+  assert.equal(new Set(netflix.map((item) => item.id)).size, 2);
+  // Cancelling one must not take the other with it.
+  const ids = both.map((item) => item.id);
+  assert.equal(new Set(ids).size, ids.length);
+});
+
+test("27. keeping a row settles it everywhere, without moving the year", () => {
+  const gym = find("FitLine Gym");
+  const before = issueItems(commitments);
+  const after = issueItems(commitments, [gym.id]);
+
+  assert.equal(before.some((item) => item.id === gym.id), true);
+  assert.equal(after.some((item) => item.id === gym.id), false);
+  assert.equal(after.length, before.length - 1);
+
+  // The money still leaves, so the year and the leak total do not move.
+  assert.equal(yearlyTotal(commitments), 199138);
+  assert.equal(unusedTotal(commitments), 27936);
+  assert.equal(keptLeakTotal(commitments, [gym.id]), 18000);
 });
