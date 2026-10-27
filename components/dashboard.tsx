@@ -1,6 +1,18 @@
+/**
+ * App shell only: top bar, side nav, which of the four screens is open.
+ * Screen UIs live in components/screens/. Detail drawer in components/detail/.
+ */
 "use client";
 
 import { useMemo, useState } from "react";
+import { EvidenceStrip } from "@/components/chrome/evidence-strip";
+import { DetailPanel } from "@/components/detail/detail-panel";
+import {
+  AllPaymentsScreen,
+  AnnualScreen,
+  CancelPathsScreen,
+  IssuesScreen
+} from "@/components/screens";
 import { withSimulatedAutopay } from "@/data/simulation";
 import { hikeAmount, isSilentPriceHike, issueItems, keptLeakTotal, splitByBucket, yearlyTotal } from "@/lib/analysis";
 import { toCsv } from "@/lib/csv";
@@ -8,11 +20,10 @@ import { bucketCopy, bucketLabels, detectCommitments } from "@/lib/engine";
 import { formatDate, formatINR } from "@/lib/format";
 import type { Commitment, Dataset } from "@/lib/types";
 import type { SourceInfo } from "@/db/neo4j/dataset";
-import { AnnualDashboard } from "@/components/visualizations/annual-dashboard";
-import { PriceHistory } from "@/components/visualizations/price-history";
-import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
-import { UnusedSavings } from "@/components/visualizations/unused-savings";
-import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
+import { hikeAmount, isSilentPriceHike, issueItems, yearlyTotal } from "@/lib/analysis";
+import { downloadCommitmentsCsv } from "@/lib/commitment-ui";
+import { detectCommitments } from "@/lib/engine";
+import type { Commitment, Dataset } from "@/lib/types";
 
 type DashboardProps = { dataset: Dataset; source: SourceInfo; commitments?: Commitment[] };
 type Screen = "annual" | "list" | "issues" | "paths";
@@ -72,7 +83,6 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
     setKept((current) => current.filter((entry) => entry !== id));
   }
 
-  /** Accepting the warning settles it: the row stops being flagged. */
   function keepIt(id: string) {
     setKept((current) => (current.includes(id) ? current : [...current, id]));
   }
@@ -96,7 +106,7 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
             {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV fixture"}
           </span>
           <div className="bar-actions">
-            <button className="export-csv" onClick={() => downloadCsv(active)}>
+            <button className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
               ↓ Export CSV
             </button>
             <div className="persona">
@@ -140,21 +150,8 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
             ))}
           </nav>
 
-          {screen === "annual" && (
-            <AnnualView
-              items={active}
-              total={total}
-              leakage={leakage}
-              debt={debt}
-              stoppedValue={stoppedValue}
-              asOf={dataset.asOf}
-              source={source}
-              detected={detected.length}
-              onOpen={setOpenId}
-            />
-          )}
           {screen === "list" && (
-            <AllPayments
+            <AllPaymentsScreen
               items={active}
               total={total}
               baseline={baseline}
@@ -166,7 +163,7 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
             />
           )}
           {screen === "issues" && (
-            <Issues
+            <IssuesScreen
               items={issues}
               allItems={active}
               total={total}
@@ -178,7 +175,7 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
             />
           )}
           {screen === "paths" && (
-            <CancelPaths
+            <CancelPathsScreen
               items={active}
               allItems={detected}
               revoked={revoked}
@@ -188,154 +185,24 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
               onFlagAgain={flagAgain}
             />
           )}
+          {screen === "annual" && (
+            <AnnualScreen
+              items={active}
+              total={total}
+              leakage={leakage}
+              debt={debt}
+              stoppedValue={stoppedValue}
+              asOf={dataset.asOf}
+              source={source}
+              detected={detected.length}
+              onOpen={setOpenId}
+            />
+          )}
         </section>
       </div>
 
-      {openItem && <DetailPanel item={openItem} asOf={dataset.asOf} onClose={() => setOpenId(null)} />}
-    </main>
-  );
-}
-
-/**
- * Stays under the product bar on every screen. It reports the live source
- * only: Neo4j counts come from the graph, and the fixture state never
- * claims those rows were read from Neo4j.
- */
-function EvidenceStrip({ source }: { source: SourceInfo }) {
-  if (source.kind === "neo4j") {
-    const host = source.host ?? "the configured host";
-    return (
-      <section className="evidence-strip live" aria-label="Neo4j evidence graph">
-        <p className="evidence-mark">Neo4j</p>
-        <p className="evidence-copy">
-          Evidence graph · <code>{host}</code>
-          {source.analyzed ? " · issues, the year, and cancel paths decided here" : ""}
-        </p>
-        <dl className="evidence-counts">
-          <div>
-            <dt>Payments</dt>
-            <dd>{source.counts.payments}</dd>
-          </div>
-          <div>
-            <dt>Messages</dt>
-            <dd>{source.counts.messages}</dd>
-          </div>
-          <div>
-            <dt>Mandates</dt>
-            <dd>{source.counts.mandates}</dd>
-          </div>
-          <div>
-            <dt>Patterns</dt>
-            <dd>{source.counts.patterns}</dd>
-          </div>
-          <div>
-            <dt>Commitments</dt>
-            <dd>{source.counts.commitments}</dd>
-          </div>
-        </dl>
-      </section>
-    );
-  }
-
-  return (
-    <section className="evidence-strip" aria-label="CSV fixture">
-      <p className="evidence-mark">CSV fixture</p>
-      <p className="evidence-copy">{source.note}</p>
-    </section>
-  );
-}
-
-/**
- * Annual-only proof. The strip already names the source, so this panel only
- * compares the graph's commitment count with the rows detection found.
- */
-function SourcePanel({ source, detected }: { source: SourceInfo; detected: number }) {
-  if (source.kind !== "neo4j") return null;
-
-  const inGraph = source.counts.commitments;
-  return (
-    <section className="source-panel live">
-      <header>
-        <strong>{source.analyzed ? "Decided in Neo4j" : "Commitments"}</strong>
-        <span>
-          {detected} on screen · {inGraph} commitment nodes
-        </span>
-      </header>
-      <p>
-        {source.analyzed && source.yearTotal !== undefined
-          ? `The issues, the cancel path on each row, and the year of ${formatINR(source.yearTotal)} came back from a Cypher query. This screen is showing that result.`
-          : `The graph holds ${inGraph} commitment nodes. Detection in the app found ${detected} from the rows it returned.`}
-      </p>
-    </section>
-  );
-}
-
-function ScreenHeader({ number, eyebrow, title, copy }: { number: string; eyebrow: string; title: string; copy: string }) {
-  return (
-    <header className="screen-header">
-      <p>
-        <span>SCREEN {number}</span> · {eyebrow}
-      </p>
-      <h1>{title}</h1>
-      <div>{copy}</div>
-    </header>
-  );
-}
-
-function AnnualView({
-  items,
-  total,
-  leakage,
-  debt,
-  stoppedValue,
-  asOf,
-  source,
-  detected,
-  onOpen
-}: {
-  items: Commitment[];
-  total: number;
-  leakage: number;
-  debt: number;
-  stoppedValue: number;
-  asOf: string;
-  source: SourceInfo;
-  detected: number;
-  onOpen: (id: string) => void;
-}) {
-  const split = splitByBucket(items);
-  const largest = Math.max(...split.map((group) => group.total), 1);
-
-  return (
-    <>
-      <ScreenHeader
-        number="4"
-        eyebrow="THE YEAR"
-        title="The next twelve months, on one screen"
-        copy="Every commitment projected forward and split five ways. The unused part is the money that should move. The loan sits apart from both: it is a debt, not a subscription."
-      />
-      <section className="annual-headline">
-        <article className="annual-figure">
-          <span>COMMITTED TO LEAVE</span>
-          <strong>{formatINR(total)}</strong>
-          <small>Over the next twelve months, across the savings account and the card.</small>
-        </article>
-        <article className="annual-figure accent">
-          <span>STILL DEBITING, NOT USED</span>
-          <strong>{formatINR(leakage)}</strong>
-          <small>The part of the year that a decision can remove.</small>
-        </article>
-        <article className="annual-figure muted">
-          <span>HOME-LOAN EMI</span>
-          <strong>{formatINR(debt)}</strong>
-          <small>This prototype has no cancel button for it.</small>
-        </article>
-      </section>
-
-      {stoppedValue > 0 && (
-        <p className="revoke-banner">
-          A revoke confirmed on screen 3 has taken <strong>{formatINR(stoppedValue)}</strong> out of the year.
-        </p>
+      {openItem && (
+        <DetailPanel item={openItem} asOf={dataset.asOf} source={source} onClose={() => setOpenId(null)} />
       )}
 
       <SourcePanel source={source} detected={detected} />
@@ -792,75 +659,4 @@ function Fact({ label, value }: { label: string; value: string }) {
       <strong>{value}</strong>
     </div>
   );
-}
-
-function modeLabel(item: Commitment) {
-  if (item.cancelMode === "block") return "DEBT · NO CANCEL";
-  if (item.cancelMode === "warn") return "OBLIGATION · DECIDE CAREFULLY";
-  if (item.cancelMode === "explain") return "THE AMOUNT DUE REMAINS";
-  if (item.kind === "unused") return "UNUSED · STILL CHARGING";
-  if (item.kind === "silent") return "PRICE ROSE · NO NOTICE";
-  if (item.kind === "trial") return "TRIAL BECAME PAID";
-  return "TWO TRACKS";
-}
-
-
-
-function monthlyCost(item: Commitment) {
-  if (item.cadence === "annual") return "once a year";
-  if (item.cadence === "irregular") return `${formatINR(item.amount)} each time`;
-  if (item.amountPattern === "variable") return `about ${formatINR(item.amount)}`;
-  return `${formatINR(item.amount)} / month`;
-}
-
-function downloadCsv(items: Commitment[]) {
-  const headers = [
-    "statement_narration",
-    "plain_name",
-    "what_it_is",
-    "instrument",
-    "cadence",
-    "amount_pattern",
-    "each_charge_inr",
-    "annual_cost_inr",
-    "bucket",
-    "signals",
-    "status",
-    "debits_seen",
-    "last_charge",
-    "next_charge",
-    "last_opened",
-    "message_source",
-    "stop_the_service",
-    "stop_the_money",
-    "if_they_stay_silent"
-  ];
-  const rows = items.map((item) => [
-    item.rawNarration,
-    item.merchant,
-    item.plainDescription,
-    item.instrument,
-    item.cadence,
-    item.amountPattern,
-    item.cadence === "annual" ? "" : item.amount,
-    item.annualCost,
-    item.bucket,
-    item.signals.join(" "),
-    item.status,
-    item.debitCount,
-    item.lastCharge,
-    item.nextCharge ?? "",
-    item.lastOpened ?? "",
-    item.source,
-    item.stopService,
-    item.stopMoney,
-    item.ifSilent
-  ]);
-  const blob = new Blob([toCsv(headers, rows)], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = "paytrace-commitments.csv";
-  anchor.click();
-  URL.revokeObjectURL(url);
 }
