@@ -42,9 +42,18 @@ export function isTrialConverted(item: Commitment) {
   return item.signals.includes("trial_converted");
 }
 
-/** Rows that deserve a decision: unused, a silent hike, or a converted trial. */
-export function issueItems(items: Commitment[]) {
-  return items.filter((item) => ["unused", "silent", "trial"].includes(item.kind));
+/**
+ * Rows that deserve a decision: unused, a silent hike, or a converted trial.
+ * A row the person has chosen to keep is settled, so it drops off this list
+ * on every screen that uses it, not just the one the choice was made on.
+ */
+export function issueItems(items: Commitment[], kept: string[] = []) {
+  return items.filter((item) => ["unused", "silent", "trial"].includes(item.kind) && !kept.includes(item.id));
+}
+
+/** The part of the leak that sits on rows the person decided to keep. */
+export function keptLeakTotal(items: Commitment[], kept: string[]) {
+  return yearlyTotal(items.filter((item) => kept.includes(item.id) && item.kind === "unused"));
 }
 
 /* ---------------------------------------------------------------

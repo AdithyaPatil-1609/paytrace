@@ -35,7 +35,13 @@ export function AnnualDashboard({
   const monthlyAverage = Math.round(year / 12);
   const listed = picked ? items.filter((item) => item.spendGroup === picked) : [];
 
-  let travelled = 0;
+  // Each arc starts where the ones before it finished.
+  const arcs = slices.map((slice, index) => ({
+    slice,
+    length: slice.share * CIRCUMFERENCE,
+    offset: slices.slice(0, index).reduce((sum, earlier) => sum + earlier.share * CIRCUMFERENCE, 0)
+  }));
+
 
   const widest = Math.max(...months.map((month) => month.total), 1);
 
@@ -54,10 +60,7 @@ export function AnnualDashboard({
           <div className="donut-wrap">
             <svg viewBox="0 0 200 200" role="img" aria-label="Annual spending by category">
               <circle cx="100" cy="100" r={RADIUS} className="donut-track" />
-              {slices.map((slice) => {
-                const length = slice.share * CIRCUMFERENCE;
-                const offset = travelled;
-                travelled += length;
+              {arcs.map(({ slice, length, offset }) => {
                 const active = picked === slice.group;
                 return (
                   <circle
