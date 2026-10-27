@@ -52,22 +52,33 @@ data/raw/*.csv  ─►  lib/engine.ts  ─►  the four screens
 
 If Neo4j is missing, empty, or unreachable, the app serves the CSV so a reviewer without Aura can still click around. The badge says **Reading CSV fixture** / offline. That path exists so the prototype does not die in a zip review — it is not the live product story. The tests cover `lib/engine.ts`; live mode covers the same rules in Cypher (`db/neo4j/analyze.ts`).
 
-## The graph
+### Run with local fixtures
 
+```bash
+git clone https://github.com/AdithyaPatil-1609/paytrace.git
+cd paytrace
+npm ci
+npm run dev
 ```
-(:Person)-[:HOLDS]->(:Account)<-[:ON_ACCOUNT]-(:Payment)-[:PAID_TO]->(:Merchant)
-                                      │                                  ▲
-                                 [:NOTIFIED_BY]                    [:MATCHES]
-                                      ▼                                  │
-                                 (:Message)-[:ABOUT]->(:Merchant)   (:Pattern)
 
-(:Payment)-[:AUTHORIZED_BY]->(:Mandate)-[:FOR]->(:Merchant)
-(:Payment)-[:GROUPED_INTO]->(:Commitment)-[:FOR]->(:Merchant)
+Open [http://localhost:3000](http://localhost:3000). No database or environment file is required for fixture mode. The application should display **Reading CSV fixture**.
+
+### Run with Neo4j
+
+After installing dependencies, create the local environment file:
+
+```bash
+cp .env.example .env.local
 ```
 
 Dictionary wording lives on `Pattern`, not `Merchant`. `Merchant` is keyed by brand; Spotify and Netflix each have a plain row and a `PAYPAL *` row.
 
-## What is computed, not written down
+| Variable | Required for Neo4j | Description |
+| --- | --- | --- |
+| `NEO4J_URI` | Yes | Connection URI, such as `neo4j+s://your-instance.databases.neo4j.io`. |
+| `NEO4J_USERNAME` | Yes | Database username. |
+| `NEO4J_PASSWORD` | Yes | Database password. |
+| `NEO4J_DATABASE` | No | Database name; defaults to `neo4j`. |
 
 Nothing in the app names a merchant by hand. Live mode runs these rules in Cypher; the offline fixture runs them in `lib/engine.ts`:
 
@@ -80,13 +91,13 @@ Nothing in the app names a merchant by hand. Live mode runs these rules in Cyphe
 | Year | Fixed and stepped rows project the latest charge forward; variable uses median; irregular sums what left; annual is charged once. |
 | Signals | `silent_hike` when a price steps up and no price-change message exists, `trial_converted` from a trial-ending notice, `zombie` after 90 days unopened. |
 
-## The four screens
+The graph connects people, accounts, payments, merchants, notifications, mandates, descriptor patterns, and derived commitments:
 
 1. **All payments** — every row with the raw bank string, the plain name, the month, the year, and the message source.
 2. **Issues** — silent hike, trial conversion, unused; Spotify price history from dated debits.
 3. **Cancel paths** — stop the service, stop the money, and what to do if they stay silent.
 4. **Annual** — year ahead, unused part, five-way split; panel states the Cypher year when live.
 
-## Verify
+## Scope and limitations
 
 `npm test` runs 24 checks. `npm run build` produces a production build.
