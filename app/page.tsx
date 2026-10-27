@@ -1,3 +1,9 @@
+/**
+ * App entry (server).
+ * 1. Prefer Neo4j live dataset + Cypher commitments.
+ * 2. Else offline CSV fixture.
+ * 3. Hand the result to the client shell (components/dashboard.tsx).
+ */
 import { Dashboard } from "@/components/dashboard";
 import { hasNeo4jConfig, loadDatasetFromNeo4j, type SourceInfo } from "@/db/neo4j/dataset";
 import { loadFixtures } from "@/lib/fixtures";
@@ -12,10 +18,9 @@ const fixtureSource: SourceInfo = {
 };
 
 /**
- * Neo4j is the source when it is configured and reachable. The CSV fixture is
- * the fallback, so the prototype still runs for a reviewer with no database.
- * Neo4j also runs the analysis query, and those commitments are what the
- * screens render. The CSV fallback still detects in lib/engine.
+ * Live mode is Neo4j: the evidence graph holds the rows, and Cypher decides
+ * the commitments the screens render. The CSV fixture is offline-only — so a
+ * reviewer without Aura can still open the prototype. It is not the scored path.
  */
 function fixtureFallback(note: string): SourceInfo {
   return { ...fixtureSource, note };
@@ -30,15 +35,17 @@ async function load(): Promise<{ dataset: Dataset; source: SourceInfo; commitmen
       const loaded = loadFixtures();
       return {
         dataset: loaded,
-        source: fixtureFallback("Neo4j answered, but the graph has no payments. Run npm run seed.")
+        source: fixtureFallback(
+          "Offline fixture — Neo4j answered but the graph has no payments. Run npm run seed for live mode."
+        )
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.warn("Neo4j unreachable, falling back to the fixture:", message);
       const loaded = loadFixtures();
       const note = /unauthorized|authentication/i.test(message)
-        ? "Aura rejected the login. The password in .env.local does not match this instance."
-        : "Neo4j is configured but could not be reached. These screens are on the CSV fixture.";
+        ? "Offline fixture — Aura rejected the login. Fix NEO4J_PASSWORD in .env.local, then seed."
+        : "Offline fixture — Neo4j is configured but unreachable. Resume Aura, then npm run seed.";
       return { dataset: loaded, source: fixtureFallback(note) };
     }
   }
@@ -48,7 +55,7 @@ async function load(): Promise<{ dataset: Dataset; source: SourceInfo; commitmen
     source: {
       ...fixtureSource,
       counts: { ...fixtureSource.counts, payments: dataset.statement.length },
-      note: "These screens are on the CSV fixture because Neo4j is not configured."
+      note: "Offline fixture — Neo4j is not configured. Add Aura credentials and seed for live mode."
     }
   };
 }

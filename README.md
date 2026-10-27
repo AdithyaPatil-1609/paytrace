@@ -1,58 +1,56 @@
 # Paytrace
 
-A recurring-payment visibility prototype that connects bank statements, payment notifications, and mandates to explain what will leave an account, what needs attention, and how to stop a payment.
+Bank lines, SMS, email, and mandates are separate systems today. The harm — a silent price hike, a trial that became a plan, an autopay still charging after she stopped opening it — only appears when those records fail to join. Paytrace models them as **linked evidence** and lets the graph decide what is still costing you and how to stop it.
 
-**Project status:** Prototype using synthetic data. No real bank, mailbox, or phone integrations. No payments or mandate revocations are executed.
+Priya Demo is invented. Arclight Bank is invented. The as-of date is 22 October 2026. The prototype shows a route to stop a payment. It never connects to a bank, and it never sends a revoke.
 
-## Problem statement
+## Where the code lives
 
-People set up autopay once and then lose track of it. Bank apps show cryptic lines such as `PAYPAL *SPOTIFY`. Prices increase without a corresponding notice, free trials become paid plans, and unused apps continue charging every month. Cancelling a service and revoking its payment permission are separate actions, with evidence spread across bank statements, SMS or email notifications, and the mandate that authorised the debit.
-
-Paytrace is designed for people with UPI Autopay, recurring card charges, or standing bank instructions who need a clear view of these commitments without manually reconstructing a year of transactions. It joins these sources in Neo4j to identify recurring payments, flag potential issues such as silent price increases or unused plans, project annual costs, and explain the cancellation steps for each payment mechanism. Synthetic usage records provide the evidence for unused-plan flags.
-
-The prototype uses one fictional person, **Priya Demo**, and one fictional bank, **Arclight Bank**. Calculations use a fixed reference date of **22 October 2026**. Paytrace shows the cancellation path; the person still takes the action.
-
-## Features
-
-- **Payment discovery:** Groups recurring debits and translates supported bank descriptors using a merchant dictionary.
-- **Issue detection:** Flags price increases without a matching notice, trial conversions, and plans with recorded inactivity.
-- **Annual forecasting:** Projects commitments and separates subscriptions, variable bills, irregular payments, and debt.
-- **Cancellation guidance:** Shows separate steps for stopping a service and its payment permission, including instructions for an unresponsive merchant.
-- **Evidence inspection:** Links payment details to supporting statement lines, notifications, and mandate information.
-- **Interactive scenarios:** Simulates a new autopay and reflects prototype keep or cancel decisions across pages.
-- **CSV export:** Downloads the currently active commitments.
-
-## Pages
-
-| Page | Route | Purpose |
-| --- | --- | --- |
-| All payments | `/` | View recurring payments, inspect evidence, and simulate a new autopay. |
-| Issues | `/issues` | Review flagged payments, price history, and potential savings. |
-| Cancel paths | `/cancel-paths` | Review cancellation instructions and record prototype decisions. |
-| Annual | `/annual` | Explore annual totals, spending categories, and payment calendars. |
-
-Each page supports direct navigation and browser history. The shared layout retains simulation and payment decisions during navigation. A full reload starts a fresh prototype session and reloads the data source.
-
-## Technology stack
-
-| Area | Technology |
+| Folder / file | Job |
 | --- | --- |
-| Application | Next.js App Router, React, TypeScript |
-| Graph storage and analysis | Neo4j, Cypher, Neo4j JavaScript driver |
-| Local data | CSV fixtures with a TypeScript detection engine |
-| Styling and charts | CSS, React components, SVG |
-| Validation | Node.js test runner, tsx, ESLint, TypeScript |
+| `app/page.tsx` | Server entry: load Neo4j or fall back to CSV, then render the shell |
+| `components/dashboard.tsx` | Shell only — top bar, side nav, which screen is open |
+| `components/screens/` | **One file per product screen** (01–04) |
+| `components/screens/all-payments.tsx` | Screen 01 — every recurring payment |
+| `components/screens/issues.tsx` | Screen 02 — silent hike, unused, trial |
+| `components/screens/cancel-paths.tsx` | Screen 03 — how to stop each one |
+| `components/screens/annual.tsx` | Screen 04 — the year ahead |
+| `components/chrome/` | Shared chrome: evidence strip, screen header, Neo4j source panel |
+| `components/detail/` | Side drawer + Evidence path (live Neo4j only) |
+| `components/visualizations/` | Charts used inside the screens |
+| `db/neo4j/` | Live graph: client, dataset read, Cypher analysis, schema/seed |
+| `scripts/seed-neo4j.ts` | `npm run seed` — write the fixture into Aura |
+| `lib/engine.ts` | Offline detection (CSV path; what the tests lock) |
+| `lib/analysis.ts` | Shared filters/totals used by screens |
+| `lib/types.ts` | Shared TypeScript shapes |
+| `data/raw/` | Synthetic CSV fixture |
 
-Dependency versions are defined in `package.json` and locked in `package-lock.json`.
+## Live mode is Neo4j
 
-## Quick start
+```
+Neo4j Aura (seeded)  ─►  Cypher analysis  ─►  the four screens
+```
 
-### Prerequisites
+Open `db/neo4j/` first: schema, seed, CSV-equivalent load, and the analysis query that decides commitments.
 
-- Node.js **20.9 or later**, as required by the installed Next.js version.
-- npm.
-- Git to clone the repository.
-- A Neo4j instance only if you want to run graph-backed analysis.
+When Aura is configured and seeded, Cypher decides which rows are issues, what the year adds up to, and the cancel path on each row. The top bar reads **Reading Neo4j**. The strip under it shows host and node counts. Each detail panel opens an **Evidence path** — `Payment -[:PAID_TO]-> Merchant`, messages on `ABOUT`, mandates on `AUTHORIZED_BY`, and a silent hike as a stepped amount with **no** `price_change` Message.
+
+### Run live
+
+1. Copy `.env.example` to `.env.local` — `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`. Aura URIs (`neo4j+s://…`) work.
+2. `npm install`
+3. `npm run seed` — writes the fixture through the Bolt driver (Aura blocks `file:///` imports).
+4. `npm run dev` — badge **Reading Neo4j**, Evidence path on every row.
+
+`db/neo4j/load-from-csv.cypher` is the same graph for a local Neo4j that can import files.
+
+## Offline fixture (not the scored path)
+
+```
+data/raw/*.csv  ─►  lib/engine.ts  ─►  the four screens
+```
+
+If Neo4j is missing, empty, or unreachable, the app serves the CSV so a reviewer without Aura can still click around. The badge says **Reading CSV fixture** / offline. That path exists so the prototype does not die in a zip review — it is not the live product story. The tests cover `lib/engine.ts`; live mode covers the same rules in Cypher (`db/neo4j/analyze.ts`).
 
 ### Run with local fixtures
 
@@ -73,7 +71,7 @@ After installing dependencies, create the local environment file:
 cp .env.example .env.local
 ```
 
-Set the following values for your instance:
+Dictionary wording lives on `Pattern`, not `Merchant`. `Merchant` is keyed by brand; Spotify and Netflix each have a plain row and a `PAYPAL *` row.
 
 | Variable | Required for Neo4j | Description |
 | --- | --- | --- |
@@ -82,120 +80,24 @@ Set the following values for your instance:
 | `NEO4J_PASSWORD` | Yes | Database password. |
 | `NEO4J_DATABASE` | No | Database name; defaults to `neo4j`. |
 
-**Use a dedicated demo database.** The seed script deletes existing nodes carrying Paytrace's labels (`Person`, `Account`, `Payment`, `Message`, `Mandate`, `Merchant`, `Pattern`, and `Commitment`) and their relationships before loading the fixture. It can affect unrelated records that use those labels.
+Nothing in the app names a merchant by hand. Live mode runs these rules in Cypher; the offline fixture runs them in `lib/engine.ts`:
 
-```bash
-npm run seed
-npm run dev
-```
-
-The application should display **Reading Neo4j**. Restart the development server after changing connection settings. Keep real credentials in `.env.local`, which is excluded from Git.
-
-The seed script loads data through the Neo4j driver and supports Aura connections. `db/neo4j/load-from-csv.cypher` provides an alternative for a local database configured with the CSV files in its import directory.
-
-## Architecture
-
-```text
-Synthetic statements + notifications + mandates + usage + merchant dictionary
-                                  |
-                   +--------------+--------------+
-                   |                             |
-             npm run seed                 Local CSV fixtures
-                   |                             |
-             Neo4j graph                  lib/engine.ts
-                   |                             |
-             Cypher analysis              TypeScript analysis
-                   |                             |
-                   +--------------+--------------+
-                                  |
-                         Shared dashboard state
-                                  |
-                  Payments / Issues / Cancel paths / Annual
-```
-
-When configured and reachable, Neo4j supplies the dataset and analysed commitments. Otherwise, the application reads `data/raw/` and detects commitments locally. An empty graph or a database connection failure also triggers the CSV fallback. The interface identifies the active source so a fallback is visible.
+| Step | Rule |
+| --- | --- |
+| Group | Narration matched against the hand-written dictionary, longest pattern wins, then grouped with the account. `PAYPAL *SPOTIFY` never collapses into `SPOTIFY`. |
+| Keep | Two debits, or one debit under a live mandate. One Swiggy order and one transfer to Rahul fail both tests and are dropped. |
+| Rhythm | Median gap between debits: weekly, monthly, quarterly, annual. If the gaps scatter by more than 35% of that median, the row is irregular. |
+| Amount | One price is fixed. One price then another that stays is a step. Anything else is variable. |
+| Year | Fixed and stepped rows project the latest charge forward; variable uses median; irregular sums what left; annual is charged once. |
+| Signals | `silent_hike` when a price steps up and no price-change message exists, `trial_converted` from a trial-ending notice, `zombie` after 90 days unopened. |
 
 The graph connects people, accounts, payments, merchants, notifications, mandates, descriptor patterns, and derived commitments:
 
-```text
-(Person)-[:HOLDS]->(Account)<-[:ON_ACCOUNT]-(Payment)-[:PAID_TO]->(Merchant)
-(Payment)-[:NOTIFIED_BY]->(Message)-[:ABOUT]->(Merchant)
-(Payment)-[:AUTHORIZED_BY]->(Mandate)-[:FOR]->(Merchant)
-(Payment)-[:GROUPED_INTO]->(Commitment)-[:FOR]->(Merchant)
-(Pattern)-[:MATCHES]->(Merchant)
-```
-
-Descriptor-specific wording and cancellation guidance live on `Pattern` nodes. This allows multiple descriptors for the same merchant to retain their own meaning.
-
-### Detection and forecasting
-
-The application uses explicit rules and a maintained merchant dictionary. It does not use a trained model to infer merchant identities.
-
-| Stage | Behaviour |
-| --- | --- |
-| Descriptor matching | Uses the longest matching dictionary pattern and groups payments by account and descriptor. |
-| Recurrence detection | Requires at least two debits, or one debit supported by a matching mandate record. |
-| Cadence detection | Uses gaps between payment dates to classify weekly, monthly, quarterly, annual, or irregular commitments. |
-| Amount classification | Distinguishes fixed charges, sustained price changes, and variable amounts. |
-| Annual projection | Uses the latest fixed or stepped charge, the median variable charge, observed irregular spending, or one annual charge. |
-| Issue detection | Checks price changes against available notices, trial-ending notices against recurring payments, and usage records against a 90-day inactivity threshold. |
-
-Credits, excluded purchases, and small authorisation holds are not counted as recurring costs. Variable bills and irregular payment dates remain valid commitments rather than being automatically labelled as waste.
-
-## Development and validation
-
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start the development server. |
-| `npm run build` | Compile and type-check a production build. |
-| `npm start` | Serve the production build; run `npm run build` first. |
-| `npm run lint` | Run ESLint. |
-| `npm test` | Run the fixture-based analysis tests. |
-| `npm run seed` | Replace Paytrace-labeled graph data with the synthetic fixture. |
-
-Run the standard checks before submitting changes:
-
-```bash
-npm run lint
-npm test
-npm run build
-```
-
-The current suite contains **27 tests** covering recurrence detection, descriptor separation, annual projections, issue flags, simulation, and decision handling. Fixture reference values include:
-
-| Check | Expected value |
-| --- | --- |
-| Annual commitments | ₹1,99,138 |
-| Annual cost of unused plans | ₹27,936 |
-| Spotify price increase | ₹119 → ₹139 per month; +₹20, approximately 16.8% |
-| Annual commitments after the new-autopay simulation | ₹2,02,726 |
-
-These are synthetic fixture expectations, not results from a live financial account. The test suite validates local analysis; it does not establish parity with a running Neo4j instance or replace browser testing.
-
-## Project structure
-
-```text
-app/                       Routes, layouts, metadata, and global styles
-  (dashboard)/             Shared dashboard layout and four page routes
-components/
-  dashboard.tsx            Shared state, navigation, export, and evidence UI
-  pages/                   Page-specific content
-  visualizations/          Forecast, calendar, price, and savings views
-data/
-  raw/                     Synthetic CSV inputs and reference fixtures
-  simulation.ts            New-autopay scenario
-db/neo4j/                  Driver, graph loading, schema, and Cypher analysis
-lib/                       CSV parsing, detection, analysis, formatting, and types
-scripts/seed-neo4j.ts       Demo graph seed script
-tests/analysis.test.ts      Analysis regression tests
-```
+1. **All payments** — every row with the raw bank string, the plain name, the month, the year, and the message source.
+2. **Issues** — silent hike, trial conversion, unused; Spotify price history from dated debits.
+3. **Cancel paths** — stop the service, stop the money, and what to do if they stay silent.
+4. **Annual** — year ahead, unused part, five-way split; panel states the Cypher year when live.
 
 ## Scope and limitations
 
-- All bundled financial records and usage data are synthetic. There is no live transaction ingestion or user-facing upload flow.
-- Keep and cancel actions change in-memory prototype state. They do not update bank mandates, cancel services, or persist across a full reload.
-- A missing price-change notice means no notice was found in the supplied dataset; it does not establish that a merchant never sent one.
-- Usage flags depend on the supplied usage records. Payment history alone cannot establish whether someone uses a service.
-- Forecasts are estimates based on observed patterns. Irregular payments have no confirmed next payment date.
-- Loans have no revoke control in the interface. Other obligations include mechanism-specific guidance; stopping a debit does not remove the underlying amount owed.
-- The repository is a demonstration, not a production service for handling real financial data.
+`npm test` runs 24 checks. `npm run build` produces a production build.
