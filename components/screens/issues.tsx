@@ -14,6 +14,7 @@ export function IssuesScreen({
   allItems,
   total,
   leakage,
+  keptLeak = 0,
   hike,
   onOpen,
   onGoToCancel
@@ -22,6 +23,8 @@ export function IssuesScreen({
   allItems: Commitment[];
   total: number;
   leakage: number;
+  /** Part of the leak sitting on rows the person chose to keep. */
+  keptLeak?: number;
   hike: number;
   onOpen: (id: string) => void;
   onGoToCancel: () => void;
@@ -36,7 +39,15 @@ export function IssuesScreen({
       />
       <section className="issue-metrics">
         <Metric value={formatINR(total)} label="Everything on the list screen, this year." />
-        <Metric value={formatINR(leakage)} label="Still leaving for the gym, Canva, FitApp, and the caller tune." accent />
+        <Metric
+          value={formatINR(leakage)}
+          label={
+            keptLeak > 0
+              ? `Still leaving for things she does not use. ${formatINR(keptLeak)} of it is on rows she chose to keep, so it is accepted, not stopped.`
+              : "Still leaving for the gym, Canva, FitApp, and the caller tune."
+          }
+          accent
+        />
         <Metric value={formatINR(hike)} label="Spotify's silent hike. ₹119 became ₹139, with no price message." accent />
       </section>
       <section className="issues-table">
