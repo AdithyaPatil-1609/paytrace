@@ -2782,3 +2782,337 @@ figcaption {
   .evidence-counts { margin-left: 0; }
   .source-badge { display: none; }
 }
+
+/* --- screen 00 · evidence graph ------------------------------------- */
+
+.side-nav > p.side-gap {
+  margin-top: 26px;
+}
+
+.graph-census {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 32px 0 18px;
+}
+
+.graph-census > div {
+  padding: 16px 18px;
+  border: 1px solid var(--rule-firm);
+  border-radius: var(--r-lg);
+  background: var(--paper-lift);
+  box-shadow: var(--lift-shadow);
+}
+
+.graph-census > div > span {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--ink-faint);
+  font: 500 10px var(--mono);
+  letter-spacing: 0.04em;
+}
+
+.graph-census ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.graph-census li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--marigold-skin);
+  font-size: 12px;
+}
+
+.graph-census li.rel {
+  background: var(--paper-sink);
+}
+
+.graph-census code {
+  font: 500 11px var(--mono);
+  color: var(--ink-soft);
+}
+
+.graph-census b {
+  font-variant-numeric: tabular-nums;
+}
+
+.graph-focus {
+  padding: 18px 18px 12px;
+  border: 1px solid var(--rule-firm);
+  border-radius: var(--r-lg);
+  background: var(--paper-lift);
+  box-shadow: var(--lift-shadow);
+}
+
+.graph-focus header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.graph-focus header strong {
+  font: 600 18px var(--serif);
+}
+
+.graph-focus header span {
+  color: var(--ink-faint);
+  font: 500 10px var(--mono);
+}
+
+.graph-focus svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 6px;
+}
+
+.graph-focus .edge {
+  stroke: var(--rule-firm);
+  stroke-width: 1.2;
+}
+
+.graph-focus .edge.missing {
+  stroke: var(--ember);
+  stroke-width: 1.6;
+  stroke-dasharray: 5 5;
+}
+
+.graph-focus .edge-label {
+  fill: var(--ink-faint);
+  paint-order: stroke;
+  stroke: var(--paper-lift);
+  stroke-width: 5px;
+  font: 500 10px var(--mono);
+  letter-spacing: 0.08em;
+}
+
+.graph-focus .node text {
+  font: 500 11px var(--mono);
+  fill: var(--ink);
+}
+
+.graph-focus .node.payment circle {
+  fill: var(--paper-sink);
+  stroke: var(--ink-soft);
+}
+
+.graph-focus .node.payment.raised circle {
+  fill: var(--ember-skin);
+  stroke: var(--ember);
+}
+
+.graph-focus .node.payment.raised text {
+  fill: var(--ember);
+}
+
+.graph-focus .node.pattern rect,
+.graph-focus .node.mandate rect {
+  fill: var(--paper);
+  stroke: var(--plum);
+}
+
+.graph-focus .node.message rect {
+  fill: var(--paper);
+  stroke: var(--sage);
+}
+
+.graph-focus .node.message.missing rect {
+  fill: var(--ember-skin);
+  stroke: var(--ember);
+  stroke-dasharray: 5 4;
+}
+
+.graph-focus .node.message.missing text {
+  fill: var(--ember);
+}
+
+.graph-focus .node.merchant circle {
+  fill: var(--marigold);
+  stroke: var(--marigold-deep);
+}
+
+.graph-focus .node.merchant text {
+  font: 700 12px var(--sans);
+  fill: var(--ink);
+}
+
+.graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.graph-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--ink-soft);
+  background: var(--paper-sink);
+}
+
+.graph-legend i.raised {
+  border-color: var(--ember);
+  background: var(--ember-skin);
+}
+
+.graph-legend i.dash {
+  width: 22px;
+  height: 0;
+  border: 0;
+  border-top: 2px dashed var(--ember);
+  border-radius: 0;
+}
+
+.graph-findings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.graph-finding {
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  border: 1px solid var(--rule-firm);
+  border-top: 3px solid var(--marigold);
+  border-radius: var(--r-lg);
+  background: var(--paper-lift);
+  box-shadow: var(--lift-shadow);
+}
+
+.graph-finding.ember {
+  border-top-color: var(--ember);
+}
+
+.graph-finding.plum {
+  border-top-color: var(--plum);
+}
+
+.graph-finding header {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.graph-finding header b {
+  font: 700 30px var(--serif);
+  letter-spacing: -0.04em;
+}
+
+.graph-finding h3 {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.graph-finding ul {
+  flex: 1;
+  margin: 14px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.graph-finding li {
+  padding: 9px 0;
+  border-top: 1px solid var(--rule);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.graph-finding li strong {
+  display: block;
+  font-size: 13px;
+}
+
+.graph-finding li span {
+  color: var(--ink-soft);
+}
+
+.graph-finding li code {
+  font: 500 11px var(--mono);
+}
+
+.graph-finding li.graph-total strong {
+  font: 700 22px var(--serif);
+  color: var(--marigold-deep);
+}
+
+.graph-finding details summary {
+  color: var(--ink-faint);
+  font: 500 10px var(--mono);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.graph-finding pre {
+  overflow-x: auto;
+  margin: 10px 0 0;
+  padding: 12px;
+  border-radius: var(--r-sm);
+  background: var(--ink);
+  color: var(--paper-lift);
+  font: 400 10.5px/1.55 var(--mono);
+  white-space: pre;
+}
+
+.graph-handoff,
+.graph-offline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 32px;
+  padding: 20px 22px;
+  border: 1px solid var(--rule-firm);
+  border-radius: var(--r-lg);
+  background: var(--paper-lift);
+}
+
+.graph-handoff p {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.graph-offline {
+  display: block;
+}
+
+.graph-offline p,
+.graph-offline ol {
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.graph-offline code {
+  font: 500 12px var(--mono);
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .graph-census,
+  .graph-findings {
+    grid-template-columns: 1fr;
+  }
+}

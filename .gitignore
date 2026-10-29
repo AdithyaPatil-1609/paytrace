@@ -7,3 +7,6 @@ coverage/
 # local env — never commit real credentials
 .env
 .env*.local
+
+# demo recordings (npm run demo)
+work/demo/

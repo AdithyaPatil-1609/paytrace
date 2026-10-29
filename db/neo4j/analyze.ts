@@ -1,4 +1,5 @@
-import type { Session } from "neo4j-driver";
+import type { Transaction } from "neo4j-driver";
+import { commitmentId, describeIssue, describeRecurring, instrumentByMechanism, RULES, statusFor, type Rules } from "@/lib/rules";
 import type {
   AmountPattern,
   Bucket,
@@ -8,30 +9,19 @@ import type {
   CommitmentKind,
   DateConfidence,
   EvidenceRow,
-  Instrument,
   Mechanism,
   NoticeRow,
   Signal,
   SpendGroup
 } from "@/lib/types";
 
-const instrumentByMechanism: Record<Mechanism, Instrument> = {
-  upi_autopay: "UPI Autopay",
-  card_recurring: "Card",
-  play_store: "Store plan",
-  enach: "eNACH",
-  bbps: "Bill autopay",
-  neft_standing: "Standing transfer",
-  vas: "Operator pack",
-  emi_ach: "Loan",
-  none: "Card"
-};
-
 /**
  * The decisions the screens used to make in TypeScript, asked of the graph.
  * Longest dictionary pattern wins, then the same keep / rhythm / amount / year
- * / signal rules as lib/engine.ts. The mapper only turns the query's columns
- * into the commitment shape the screens already render.
+ * / signal rules as lib/engine.ts. Every threshold arrives as $rules from
+ * lib/rules.ts, the same object the TypeScript engine reads, so the two cannot
+ * be tuned apart. The mapper only turns the query's columns into the
+ * commitment shape the screens already render.
  */
 const ANALYSIS = `
 MATCH (p:Payment)-[:ON_ACCOUNT]->(a:Account)
@@ -98,16 +88,16 @@ WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, uniqueAmounts, st
           ELSE sqrt(reduce(s = 0.0, g IN gaps | s + (toFloat(g) - gapMedian) * (toFloat(g) - gapMedian)) / size(gaps))
      END AS gapSpread
 WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gapMedian, amountPattern, gapSpread,
-     size(gaps) >= 2 AND gapMedian > 0 AND gapSpread / gapMedian > 0.35 AS irregular
+     size(gaps) >= 2 AND gapMedian > 0 AND gapSpread / gapMedian > $rules.irregularSpread AS irregular
 WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gapMedian, amountPattern,
      CASE
        WHEN size(gaps) = 0 AND toLower(coalesce(md.frequency, 'monthly')) = 'annual' THEN 'annual'
        WHEN size(gaps) = 0 AND toLower(coalesce(md.frequency, 'monthly')) = 'irregular' THEN 'irregular'
        WHEN size(gaps) = 0 THEN 'monthly'
        WHEN irregular THEN 'irregular'
-       WHEN gapMedian <= 10 THEN 'weekly'
-       WHEN gapMedian <= 45 THEN 'monthly'
-       WHEN gapMedian <= 135 THEN 'quarterly'
+       WHEN gapMedian <= $rules.weeklyMaxGap THEN 'weekly'
+       WHEN gapMedian <= $rules.monthlyMaxGap THEN 'monthly'
+       WHEN gapMedian <= $rules.quarterlyMaxGap THEN 'quarterly'
        ELSE 'annual'
      END AS cadence
 OPTIONAL MATCH (msg:Message)
@@ -128,7 +118,7 @@ WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gap
      coalesce(pat.mechanism, md.mechanism, 'none') AS mechanism,
      coalesce(pat.cancel_mode, 'normal') AS cancelMode,
      (amountPattern = 'step' AND previous IS NOT NULL AND latest > previous AND NOT hasPrice) AS silentHike,
-     ((openedDays IS NOT NULL AND openedDays > 90) OR neverOpened) AS zombie
+     ((openedDays IS NOT NULL AND openedDays > $rules.zombieDays) OR neverOpened) AS zombie
 WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gapMedian, amountPattern, cadence, notices,
      hasPrice, hasTrial, openedDays, neverOpened, latest, previous, mechanism, cancelMode, silentHike, zombie,
      [signal IN
@@ -171,6 +161,7 @@ RETURN
   coalesce(pat.product, 'Not in the dictionary yet') AS product,
   coalesce(pat.category, 'unknown') AS category,
   patternKey AS pattern,
+  CASE WHEN m IS NULL THEN 0 ELSE COUNT { (m)<-[:MATCHES]-(:Pattern) } END AS brandPatterns,
   charges[0].narration AS rawNarration,
   a.account_id AS accountId,
   mechanism,
@@ -187,7 +178,7 @@ RETURN
   CASE
     WHEN cadence = 'irregular' THEN null
     WHEN cadence = 'annual' THEN toString(charges[size(charges) - 1].date + duration({years: 1}))
-    ELSE toString(charges[size(charges) - 1].date + duration({days: toInteger(round(CASE WHEN size(gaps) = 0 THEN 30.0 ELSE gapMedian END))}))
+    ELSE toString(charges[size(charges) - 1].date + duration({days: toInteger(round(CASE WHEN size(gaps) = 0 THEN toFloat($rules.defaultGapDays) ELSE gapMedian END))}))
   END AS nextCharge,
   CASE WHEN m IS NULL OR m.last_opened IS NULL THEN null ELSE toString(m.last_opened) END AS lastOpened,
   openedDays,
@@ -266,10 +257,6 @@ function text(value: unknown): string {
   return value === null || value === undefined ? "" : String(value);
 }
 
-function slug(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
 function asBool(value: unknown) {
   return value === true;
 }
@@ -313,62 +300,24 @@ function noticesOf(value: unknown): NoticeRow[] {
     .sort((a, b) => a.sentOn.localeCompare(b.sentOn));
 }
 
-function money(value: number) {
-  return Number.isInteger(value) ? String(value) : String(value);
-}
-
-/** Same sentences as lib/engine.ts, filled with the numbers Cypher returned. */
-function whyRecurring(count: number, cadence: Cadence, pattern: AmountPattern, gapCentre: number, gapMin?: number, gapMax?: number, mandate?: boolean) {
-  if (count < 2 && mandate) {
-    return "One debit so far, under a mandate that is still active. The mandate is what makes it recurring.";
-  }
-  const rhythm =
-    cadence === "irregular"
-      ? `${count} debits on uneven dates, ${gapMin} to ${gapMax} days apart`
-      : `${count} debits about ${gapCentre} days apart`;
-  const shape =
-    pattern === "fixed"
-      ? "the same amount every time"
-      : pattern === "step"
-        ? "one amount, then a second amount that stayed"
-        : "a different amount each time";
-  return `${rhythm}, ${shape}. The interval holds, so the grouping keeps it.`;
-}
-
-function issueFor(signals: Signal[], context: { lastOpened?: string; previous?: number; latest: number; openedDays?: number }) {
-  if (signals.includes("silent_hike")) {
-    return `₹${money(context.previous ?? context.latest)} became ₹${money(context.latest)}. Debit messages exist. A price-change message does not.`;
-  }
-  if (signals.includes("trial_converted")) return "A trial-ending notice, then the paid price. The ₹1 hold is not the price.";
-  if (signals.includes("zombie")) {
-    return context.lastOpened
-      ? `Last opened ${context.lastOpened}, about ${Math.floor((context.openedDays ?? 0) / 30)} months ago. The charge did not stop.`
-      : "Never opened in the last twelve months. A pack she did not go looking for.";
-  }
-  return undefined;
-}
-
-function statusFor(signals: Signal[], kind: CommitmentKind) {
-  if (kind === "debt") return "Loan repayment";
-  if (signals.includes("zombie")) return "Stopped using it";
-  if (signals.includes("silent_hike")) return "Price changed without a notice";
-  if (signals.includes("trial_converted")) return "Trial became paid";
-  if (signals.includes("obligation")) return "Obligation";
-  if (signals.includes("variable_amount")) return "Variable bill";
-  if (signals.includes("irregular_interval")) return "Irregular dates";
-  if (signals.includes("new")) return "New autopay";
-  if (signals.includes("annual_next_date")) return "Annual payment";
-  return "In use";
-}
-
 function mechanismOf(value: string): Mechanism {
   const known: Mechanism[] = ["upi_autopay", "card_recurring", "play_store", "enach", "bbps", "neft_standing", "vas", "emi_ach", "none"];
   return known.includes(value as Mechanism) ? (value as Mechanism) : "none";
 }
 
-/** Runs the analysis query. Throws if the graph cannot answer it. */
-export async function analyzeCommitments(session: Session, asOf: string): Promise<Commitment[]> {
-  const result = await session.run(ANALYSIS, { asOf });
+/** Anything that can run Cypher: a session, or a transaction Simulate rolls back. */
+export type CypherRunner = Pick<Transaction, "run">;
+
+/**
+ * Runs the analysis query. Throws if the graph cannot answer it. `rules` is
+ * only overridden by tests, to prove the thresholds reach the query.
+ */
+export async function analyzeCommitments(
+  runner: CypherRunner,
+  asOf: string,
+  rules: Rules = RULES
+): Promise<Commitment[]> {
+  const result = await runner.run(ANALYSIS, { asOf, rules });
   return result.records.map((record) => {
     const merchant = text(record.get("merchant"));
     const signals = asStrings(record.get("signals"));
@@ -382,26 +331,26 @@ export async function analyzeCommitments(session: Session, asOf: string): Promis
     const lastOpened = record.get("lastOpened") ? text(record.get("lastOpened")) : undefined;
     const debitCount = num(record.get("debitCount")) ?? 0;
     const evidence = rowsOf(record.get("evidence"), account);
-    const issueText = issueFor(signals, {
+    const issueText = describeIssue(signals, {
       lastOpened,
       previous,
       latest: evidence.at(-1)?.amount ?? num(record.get("amount")) ?? 0,
-      openedDays
+      openedDaysAgo: openedDays
     });
-    const why = whyRecurring(
-      debitCount,
+    const why = describeRecurring({
+      count: debitCount,
       cadence,
-      amountPattern,
-      num(record.get("gapCentre")) ?? 0,
-      num(record.get("gapMin")),
-      num(record.get("gapMax")),
-      asBool(record.get("hasMandate"))
-    );
+      pattern: amountPattern,
+      gapCentre: num(record.get("gapCentre")) ?? 0,
+      gapMin: num(record.get("gapMin")),
+      gapMax: num(record.get("gapMax")),
+      mandate: asBool(record.get("hasMandate"))
+    });
     const cancelMode = (text(record.get("cancelMode")) || "normal") as CancelMode;
     const notices = noticesOf(record.get("noticeRows"));
 
     return {
-      id: slug(merchant),
+      id: commitmentId(merchant, text(record.get("pattern")), account, (num(record.get("brandPatterns")) ?? 0) > 1),
       rawNarration: text(record.get("rawNarration")),
       merchant,
       product: text(record.get("product")),

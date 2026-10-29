@@ -1,5 +1,6 @@
 import { analyzeCommitments } from "@/db/neo4j/analyze";
 import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "@/db/neo4j/client";
+import { loadGraphFacts, type GraphFacts } from "@/db/neo4j/graph";
 import { AS_OF } from "@/lib/fixtures";
 import type {
   CancelMode,
@@ -28,7 +29,7 @@ export type SourceInfo = {
   yearTotal?: number;
 };
 
-export type LoadedDataset = { dataset: Dataset; source: SourceInfo; commitments?: Commitment[] };
+export type LoadedDataset = { dataset: Dataset; source: SourceInfo; commitments?: Commitment[]; graph?: GraphFacts };
 
 /** Neo4j returns Integer and Date objects; both need unwrapping. */
 function num(value: unknown): number | undefined {
@@ -57,8 +58,9 @@ function text(value: unknown): string {
 
 /**
  * Reads the evidence graph back into the Dataset shape, then asks Cypher
- * for the commitments the screens render. The CSV fallback still detects
- * in lib/engine, which is what the tests cover.
+ * for the commitments the screens render, and for the relationship findings
+ * Screen 00 shows. The CSV fallback detects in lib/engine; tests/cypher.test.ts
+ * holds the two engines to the same answer.
  */
 export async function loadDatasetFromNeo4j(): Promise<LoadedDataset> {
   const driver = getNeo4jDriver();
@@ -194,6 +196,14 @@ export async function loadDatasetFromNeo4j(): Promise<LoadedDataset> {
       source.note = "The graph is connected, but the analysis query failed. These screens detected the rows in the app.";
     }
 
+    let graph: GraphFacts | undefined;
+    try {
+      graph = await loadGraphFacts(session, AS_OF);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn("Neo4j graph findings failed. Screen 00 will say so:", message);
+    }
+
     return {
       dataset: {
         asOf: AS_OF,
@@ -204,7 +214,8 @@ export async function loadDatasetFromNeo4j(): Promise<LoadedDataset> {
         dictionary
       },
       source,
-      commitments
+      commitments,
+      graph
     };
   } finally {
     await session.close();
