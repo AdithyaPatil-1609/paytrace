@@ -13,6 +13,8 @@ export function AllPaymentsScreen({
   total,
   baseline,
   simulated,
+  simulating,
+  simulatedIn,
   onSimulate,
   onReset,
   onOpen,
@@ -22,6 +24,9 @@ export function AllPaymentsScreen({
   total: number;
   baseline: number;
   simulated: boolean;
+  simulating: boolean;
+  /** Who decided the simulated rows: Cypher in a rolled-back transaction, or the fixture engine. */
+  simulatedIn?: "neo4j" | "app";
   onSimulate: () => void;
   onReset: () => void;
   onOpen: (id: string) => void;
@@ -102,7 +107,9 @@ export function AllPaymentsScreen({
           <h2>{simulated ? "Headspace is now being tracked" : "See what a new autopay looks like"}</h2>
           <span>
             {simulated
-              ? "One statement line, one UPI mandate, and two SMS were added to the fixture. Detection found Headspace on its own. A second click will not duplicate it."
+              ? simulatedIn === "neo4j"
+                ? "One Payment, one UPI Mandate, and two Messages were written to Neo4j inside a transaction. The analysis query found Headspace on its own, then the transaction rolled back — the stored graph is unchanged."
+                : "One statement line, one UPI mandate, and two SMS were added to the fixture. Detection found Headspace on its own. A second click will not duplicate it."
               : "One click appends the rows a new mandate leaves behind: ₹299 on 22 Oct 2026, a UPI Autopay mandate, and the SMS. Detection then runs again."}
           </span>
         </div>
@@ -111,8 +118,8 @@ export function AllPaymentsScreen({
             Reset simulation
           </button>
         ) : (
-          <button className="primary-button" onClick={onSimulate}>
-            Simulate new autopay <i>→</i>
+          <button className="primary-button" onClick={onSimulate} disabled={simulating}>
+            {simulating ? "Asking the graph…" : "Simulate new autopay"} <i>→</i>
           </button>
         )}
       </section>

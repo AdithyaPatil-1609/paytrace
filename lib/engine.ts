@@ -8,29 +8,17 @@ import type {
   DateConfidence,
   DictionaryEntry,
   EvidenceRow,
-  Instrument,
   Mechanism,
   NoticeRow,
   Signal,
   SpendGroup,
   StatementRow
 } from "./types";
+import { commitmentId, describeIssue, describeRecurring, instrumentByMechanism, RULES, statusFor } from "./rules";
 
 const DAY = 24 * 60 * 60 * 1000;
 /** A service unopened for this long is a zombie. */
-export const ZOMBIE_DAYS = 90;
-
-const instrumentByMechanism: Record<Mechanism, Instrument> = {
-  upi_autopay: "UPI Autopay",
-  card_recurring: "Card",
-  play_store: "Store plan",
-  enach: "eNACH",
-  bbps: "Bill autopay",
-  neft_standing: "Standing transfer",
-  vas: "Operator pack",
-  emi_ach: "Loan",
-  none: "Card"
-};
+export const ZOMBIE_DAYS = RULES.zombieDays;
 
 function days(from: string, to: string) {
   return Math.round((Date.parse(to) - Date.parse(from)) / DAY);
@@ -40,31 +28,6 @@ function median(values: number[]) {
   const sorted = [...values].sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
-}
-
-function slug(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
-/**
- * An id has to identify one commitment, not one merchant. Grouping is per
- * pattern and per account, so the id carries both: the same brand reached
- * through a second account, or through a second descriptor such as
- * PAYPAL *SPOTIFY, is a different commitment and must not share an id.
- *
- * The descriptor is only added for a brand the dictionary reaches by more
- * than one pattern, so ordinary rows keep a readable id.
- */
-function commitmentId(brand: string, pattern: string, accountId: string, ambiguousBrands: Set<string>) {
-  const brandSlug = slug(brand);
-  const accountSlug = slug(accountId);
-  if (!ambiguousBrands.has(brand)) return [brandSlug, accountSlug].filter(Boolean).join("-");
-
-  const patternSlug = slug(pattern);
-  const descriptor = patternSlug.startsWith(brandSlug)
-    ? patternSlug.slice(brandSlug.length).replace(/^-/, "")
-    : patternSlug;
-  return [brandSlug, descriptor, accountSlug].filter(Boolean).join("-");
 }
 
 function addYears(date: string, count: number) {
@@ -99,11 +62,11 @@ function cadenceFromGaps(gaps: number[], fallback: string | undefined): { cadenc
   const centre = median(gaps);
   const spread = Math.sqrt(gaps.reduce((sum, gap) => sum + (gap - centre) ** 2, 0) / gaps.length);
   // Uneven dates are still a commitment. Society is the case this protects.
-  const irregular = gaps.length >= 2 && centre > 0 && spread / centre > 0.35;
+  const irregular = gaps.length >= 2 && centre > 0 && spread / centre > RULES.irregularSpread;
   if (irregular) return { cadence: "irregular", irregular: true };
-  if (centre <= 10) return { cadence: "weekly", irregular: false };
-  if (centre <= 45) return { cadence: "monthly", irregular: false };
-  if (centre <= 135) return { cadence: "quarterly", irregular: false };
+  if (centre <= RULES.weeklyMaxGap) return { cadence: "weekly", irregular: false };
+  if (centre <= RULES.monthlyMaxGap) return { cadence: "monthly", irregular: false };
+  if (centre <= RULES.quarterlyMaxGap) return { cadence: "quarterly", irregular: false };
   return { cadence: "annual", irregular: false };
 }
 
@@ -291,18 +254,26 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
         ? addYears(dates[dates.length - 1], 1)
         : cadence === "irregular"
           ? undefined
-          : addDays(dates[dates.length - 1], Math.round(median(gaps.length ? gaps : [30])));
+          : addDays(dates[dates.length - 1], Math.round(median(gaps.length ? gaps : [RULES.defaultGapDays])));
 
     const sources = new Set(notices.map((notice) => notice.channel));
-    const whyRecurring = buildWhyRecurring(rows.length, cadence, pattern, gaps, Boolean(mandate));
-    const issue = buildIssue(signals, { lastOpened, previous, latest, openedDaysAgo });
+    const whyRecurring = describeRecurring({
+      count: rows.length,
+      cadence,
+      pattern,
+      gapCentre: gaps.length ? Math.round(median(gaps)) : 0,
+      gapMin: gaps.length ? Math.min(...gaps) : undefined,
+      gapMax: gaps.length ? Math.max(...gaps) : undefined,
+      mandate: Boolean(mandate)
+    });
+    const issue = describeIssue(signals, { lastOpened, previous, latest, openedDaysAgo });
 
     commitments.push({
       id: commitmentId(
         entry?.brand ?? group.narration,
         entry?.pattern ?? group.narration,
         group.accountId,
-        ambiguousBrands
+        ambiguousBrands.has(entry?.brand ?? group.narration)
       ),
       rawNarration: group.narration,
       merchant: entry?.brand ?? group.narration,
@@ -354,51 +325,6 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
   }
 
   return commitments.sort((a, b) => b.annualCost - a.annualCost);
-}
-
-function buildWhyRecurring(count: number, cadence: Cadence, pattern: AmountPattern, gaps: number[], mandate: boolean) {
-  if (count < 2 && mandate) return "One debit so far, under a mandate that is still active. The mandate is what makes it recurring.";
-  const centre = gaps.length ? Math.round(median(gaps)) : 0;
-  const rhythm =
-    cadence === "irregular"
-      ? `${count} debits on uneven dates, ${Math.min(...gaps)} to ${Math.max(...gaps)} days apart`
-      : `${count} debits about ${centre} days apart`;
-  const money =
-    pattern === "fixed"
-      ? "the same amount every time"
-      : pattern === "step"
-        ? "one amount, then a second amount that stayed"
-        : "a different amount each time";
-  return `${rhythm}, ${money}. The interval holds, so the grouping keeps it.`;
-}
-
-function buildIssue(
-  signals: Signal[],
-  context: { lastOpened?: string; previous?: number; latest: number; openedDaysAgo?: number }
-) {
-  if (signals.includes("silent_hike")) {
-    return `₹${context.previous} became ₹${context.latest}. Debit messages exist. A price-change message does not.`;
-  }
-  if (signals.includes("trial_converted")) return "A trial-ending notice, then the paid price. The ₹1 hold is not the price.";
-  if (signals.includes("zombie")) {
-    return context.lastOpened
-      ? `Last opened ${context.lastOpened}, about ${Math.floor((context.openedDaysAgo ?? 0) / 30)} months ago. The charge did not stop.`
-      : "Never opened in the last twelve months. A pack she did not go looking for.";
-  }
-  return undefined;
-}
-
-function statusFor(signals: Signal[], kind: CommitmentKind) {
-  if (kind === "debt") return "Loan repayment";
-  if (signals.includes("zombie")) return "Stopped using it";
-  if (signals.includes("silent_hike")) return "Price changed without a notice";
-  if (signals.includes("trial_converted")) return "Trial became paid";
-  if (signals.includes("obligation")) return "Obligation";
-  if (signals.includes("variable_amount")) return "Variable bill";
-  if (signals.includes("irregular_interval")) return "Irregular dates";
-  if (signals.includes("new")) return "New autopay";
-  if (signals.includes("annual_next_date")) return "Annual payment";
-  return "In use";
 }
 
 export const spendGroupLabels: Record<SpendGroup, string> = {
