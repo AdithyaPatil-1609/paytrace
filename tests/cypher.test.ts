@@ -1,13 +1,15 @@
 /**
  * The live engine, locked the way tests/analysis.test.ts locks the offline one.
  *
- * Needs a seeded Neo4j (NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD; then
- * npm run seed). Without one, every test here is skipped, not passed. CI runs
+ * Needs a seeded Neo4j (NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD from the
+ * environment or .env.local; then npm run seed). Without one, every test here
+ * is skipped, not passed. CI runs
  * them against a Neo4j service container on every push.
  *
  * Nothing here writes to the stored graph: anything extra is written inside a
  * transaction that is rolled back.
  */
+import "../scripts/load-env-local";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { Driver, Session } from "neo4j-driver";

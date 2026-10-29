@@ -4,7 +4,7 @@ The judges' notes, and what answers each one:
 
 | Note | Where it is answered |
 | --- | --- |
-| Product screens come before the graph in the deck | The app now opens on **Screen 00 · Evidence graph** in live mode. Reorder the deck the same way (below). |
+| Product screens come before the graph in the deck | The app opens on **Screen 00 · Evidence graph** in live mode, and the rebuilt deck opens on the graph: slides 2–5 before any product screen (below). |
 | "Subscription finder" is a known category | Lead with the missing-edge finding, not with a list of subscriptions. Talking points below. |
 | CSV can render the same screens | Screen 00 has no CSV twin. It runs Cypher over relationships; offline it says there is no graph to read. |
 | Dual engine; Cypher tests not as locked | One rule book (`lib/rules.ts`) passed into Cypher as `$rules`. `npm run test:cypher`: 14 checks, including field-by-field parity with the offline engine. In live mode, Simulate runs in Cypher too. |
@@ -14,7 +14,7 @@ The judges' notes, and what answers each one:
 ## Record the video
 
 ```bash
-docker compose up -d        # or: brew install neo4j && neo4j start
+docker compose up -d        # without Docker: see "Run it live" in the README
 cp .env.example .env.local  # the local block is already filled in
 npm run seed
 npm run dev
@@ -51,14 +51,16 @@ Voice-over the PNGs in that order if you'd rather screen-record by hand. Keep th
 
 ## Deck order
 
-The PPT is not in this repository, so this is the order to move it to:
+The rebuilt deck (`Paytrace-deck.pptx`, submitted alongside this repository; 19 slides) follows this order. It replaces the earlier 16-slide PDF, which put the graph on slides 11–12, after the product screens:
 
-1. **The problem as a missing edge.** One slide: Spotify ₹119 → ₹139, twelve debit SMS, zero price-change messages.
-2. **The graph model.** Nodes (`Payment`, `Message`, `Mandate`, `Merchant`, `Pattern`, `Account`) and edges (`PAID_TO`, `ABOUT`, `AUTHORIZED_BY`, `FOR`, `MATCHES`). Screenshot of Screen 00.
-3. **Three Cypher findings.** Silent hike, trial → paid, paid after last open (₹24,341). Show one query.
-4. **The product** — Screens 01–04 — framed as "what the graph returns".
-5. **Engineering.** One rule book in both engines, the 14 Cypher tests plus 27 offline ones, CI on a Neo4j container, `docker compose up` to run it.
-6. **Why it isn't a subscription finder** (below).
+- **Slide 1 · Cover** — *The harm is a missing edge.*
+- **Slide 2 · The problem** — Spotify ₹119 → ₹139, twelve debit SMS, zero price-change messages, beside the Screen 00 neighbourhood.
+- **Slide 3 · The graph model** — eight labels with counts, nine relationship types.
+- **Slide 4 · Three Cypher findings** — silent hike, trial → paid, ₹24,341 paid after the last open, and the silent-hike query.
+- **Slide 5 · Not a subscription finder** — the comparison below.
+- **Slides 6–14 · The product** — the brief, detection rules, Priya's year, Screens 00–04, the Evidence path, Simulate in Neo4j, issues, cancel paths, the year.
+- **Slides 15–17 · Engineering** — one rule book with two runners, the 41 checks and CI on Neo4j, running it locally.
+- **Slides 18–19 · Next build, and the line** this prototype holds.
 
 ## Why it isn't a subscription finder
 
