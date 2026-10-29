@@ -33,7 +33,7 @@ export function EvidenceGraphScreen({
           <p>Run the live graph on this machine in about a minute — no Aura account needed:</p>
           <ol>
             <li>
-              <code>docker compose up -d</code> (or <code>brew install neo4j</code>)
+              <code>docker compose up -d</code> (without Docker, the README has the Homebrew steps)
             </li>
             <li>
               Copy <code>.env.example</code> to <code>.env.local</code> and keep the local block

@@ -11,35 +11,7 @@
  * Spotify and Netflix, so putting the copy on Merchant lets the later row
  * overwrite the earlier one.
  */
-import { readFileSync } from "node:fs";
-import path from "node:path";
-
-/**
- * Next.js loads .env.local for the app, but this script runs on plain node,
- * so it reads the file itself. No dependency, and no version requirement on
- * node's own --env-file flag.
- */
-function loadEnvLocal() {
-  try {
-    const text = readFileSync(path.join(process.cwd(), ".env.local"), "utf8");
-    for (const line of text.split("\n")) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const split = trimmed.indexOf("=");
-      if (split < 1) continue;
-      const key = trimmed.slice(0, split).trim();
-      let value = trimmed.slice(split + 1).trim();
-      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-        value = value.slice(1, -1);
-      }
-      if (!process.env[key]) process.env[key] = value;
-    }
-  } catch {
-    // No .env.local. hasNeo4jConfig() reports this with a usable message.
-  }
-}
-
-loadEnvLocal();
+import "./load-env-local";
 
 import {
   AS_OF,
