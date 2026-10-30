@@ -156,16 +156,33 @@ export function monthlyForecast(items: Commitment[], asOf: string): ForecastMont
 
     if (item.cadence === "irregular") {
       const spacing = Math.max(1, Math.round(12 / Math.max(item.debitCount, 1)));
-      for (let position = spacing - 1; position < 12; position += spacing) {
-        add(position, { label: item.merchant, amount: item.amount, kind: "irregular" });
-      }
+      const positions = Array.from({ length: Math.floor(12 / spacing) }, (_, index) => (index + 1) * spacing - 1);
+      // Dates are estimates; preserve the annual amount even when past bills varied.
+      positions.forEach((position, index) => {
+        const amount = Math.round(item.annualCost * (index + 1) / positions.length)
+          - Math.round(item.annualCost * index / positions.length);
+        add(position, { label: item.merchant, amount, kind: "irregular" });
+      });
       continue;
     }
 
     if (item.cadence === "quarterly") {
-      for (let position = 2; position < 12; position += 3) {
-        add(position, { label: item.merchant, amount: item.amount, kind: "annual" });
-      }
+      const anchor = new Date(item.lastCharge);
+      months.forEach((month, position) => {
+        const when = new Date(`${month.key}-01T00:00:00Z`);
+        const gap = (when.getUTCFullYear() - anchor.getUTCFullYear()) * 12 + when.getUTCMonth() - anchor.getUTCMonth();
+        if (gap > 0 && gap % 3 === 0) add(position, { label: item.merchant, amount: item.amount, kind: "annual" });
+      });
+      continue;
+    }
+
+    if (item.cadence === "weekly") {
+      // A monthly budget for weekly payments, with rounding that preserves the year.
+      months.forEach((month, position) => {
+        const amount = Math.round(item.annualCost * (position + 1) / 12) - Math.round(item.annualCost * position / 12);
+        add(position, { label: item.merchant, amount, kind: "base" });
+        month.estimated = true;
+      });
       continue;
     }
 

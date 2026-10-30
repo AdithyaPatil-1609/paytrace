@@ -7,6 +7,7 @@ import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
 import { monthlyCost } from "@/lib/commitment-ui";
 import { formatINR } from "@/lib/format";
 import type { Commitment } from "@/lib/types";
+import { useState } from "react";
 
 export function AllPaymentsScreen({
   items,
@@ -14,7 +15,6 @@ export function AllPaymentsScreen({
   baseline,
   simulated,
   simulating,
-  simulatedIn,
   onSimulate,
   onReset,
   onOpen,
@@ -32,94 +32,98 @@ export function AllPaymentsScreen({
   onOpen: (id: string) => void;
   asOf: string;
 }) {
+  const [search, setSearch] = useState("");
+  const visibleItems = items.filter((item) =>
+    `${item.merchant} ${item.rawNarration}`.toLowerCase().includes(search.trim().toLowerCase())
+  );
   return (
     <>
       <ScreenHeader
         number="1"
-        eyebrow="ALL OF THEM"
-        title="Every periodic payment, on one page"
-        copy="This is the whole book before any judgement. Each row shows the bank string and the plain name beside it. Electricity changes amount, and society has uneven dates. Both still belong here."
+        eyebrow="YOUR PAYMENTS"
+        title="All your regular payments"
+        copy="Find a service below. Tap it to see its charges, messages and payment details."
       />
       <section className="year-banner">
         <div>
-          <span>YEAR OF EVERYTHING</span>
+          <span>ESTIMATED SPENDING OVER TWELVE MONTHS</span>
           <strong>{formatINR(total)}</strong>
           {simulated && baseline !== total && (
             <p className="year-delta">
               <s>{formatINR(baseline)}</s> → <b>{formatINR(total)}</b> after one new autopay
             </p>
           )}
-          <small>{items.length} recurring commitments from statement lines and payment messages.</small>
+          <small>{items.length} regular payments found in the available records.</small>
         </div>
         <div className="year-note">
-          <b>{simulated ? "New autopay is included" : "A clear annual total"}</b>
+          <b>{simulated ? "Planned payment added" : "An estimate, not a bill"}</b>
           <p>
             {simulated
-              ? "Headspace was detected from one statement line and one live mandate. It is not an issue."
-              : "The current Spotify price is shown here. Price history belongs on the issues screen."}
+              ? "Headspace is included in this estimate. You can remove it at any time."
+              : "This is what regular payments could cost over the next twelve months. Bills can change."}
           </p>
         </div>
       </section>
 
-      <section className="data-panel">
+      <label className="payment-search">
+        Find a payment
+        <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Type a service name, like Netflix" />
+      </label>
+      <p className="chart-note" role="status">{visibleItems.length} {visibleItems.length === 1 ? "payment" : "payments"} shown</p>
+      <section className="data-panel simple-payment-list">
         <div className="table-caption">
-          <span>WHAT THE MESSAGE PRINTS</span>
-          <span>A PERSON READS</span>
-          <span>EACH MONTH</span>
-          <span>THIS YEAR</span>
-          <span>SOURCE</span>
+          <span>SERVICE</span>
+          <span>EACH PAYMENT</span>
+          <span>YEARLY ESTIMATE</span>
+          <span>MESSAGES</span>
         </div>
         <div className="payment-rows">
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <button
               className={["payment-row", item.signals.includes("new") ? "is-new" : ""].join(" ").trim()}
               data-row={item.id}
               key={item.id}
               onClick={() => onOpen(item.id)}
             >
-              <strong className="raw-narration">{item.rawNarration}</strong>
               <span className="pay-plain">
                 <strong>
                   {item.merchant}
                   {!item.inDictionary && <i className="unknown-tag">unknown</i>}
                 </strong>
-                <em>{item.plainDescription}</em>
+                <em>{item.product}</em>
               </span>
               <span className="pay-month">{monthlyCost(item)}</span>
-              <b>{formatINR(item.annualCost)}</b>
-              <small>{item.source}</small>
+              <b>{formatINR(item.annualCost)} / year</b>
+              <small>{item.source} messages</small>
             </button>
           ))}
+          {visibleItems.length === 0 && <p className="chart-note search-empty">No payments match “{search}”. Try another name or clear the search.</p>}
         </div>
       </section>
-      <p className="exclusion-note">
-        <strong>Not added to this list:</strong> one Swiggy order, a transfer to Rahul, salary credits, the
-        credit-card repayment, and YouTube&apos;s ₹1 authorisation. Each is a statement line with no second debit
-        and no mandate behind it, so the grouping drops it. Open any row above to see the rule that kept it.
-      </p>
+      <p className="chart-note">One-time purchases, transfers and income are not included. This list shows repeating payments.</p>
 
-      <h2 className="viz-heading">The next two months</h2>
-      <RenewalCalendar items={items} asOf={asOf} onOpen={onOpen} />
+      <details className="calendar-disclosure">
+        <summary>See upcoming payment dates</summary>
+        <RenewalCalendar items={items} asOf={asOf} onOpen={onOpen} />
+      </details>
 
       <section className="simulation-card">
         <div>
-          <p>SIMULATE NEW AUTOPAY</p>
-          <h2>{simulated ? "Headspace is now being tracked" : "See what a new autopay looks like"}</h2>
+          <p>PLAN A PAYMENT</p>
+          <h2>{simulated ? "Headspace is included in your plan" : "See the cost of a new payment"}</h2>
           <span>
             {simulated
-              ? simulatedIn === "neo4j"
-                ? "One Payment, one UPI Mandate, and two Messages were written to Neo4j inside a transaction. The analysis query found Headspace on its own, then the transaction rolled back — the stored graph is unchanged."
-                : "One statement line, one UPI mandate, and two SMS were added to the fixture. Detection found Headspace on its own. A second click will not duplicate it."
-              : "One click appends the rows a new mandate leaves behind: ₹299 on 22 Oct 2026, a UPI Autopay mandate, and the SMS. Detection then runs again."}
+              ? "A planned ₹299 monthly Headspace payment is included in your estimate. No charge has been set up."
+              : "Include a ₹299 monthly Headspace payment in your spending plan. This only changes the estimate."}
           </span>
         </div>
         {simulated ? (
           <button className="secondary-button" onClick={onReset}>
-            Reset simulation
+            Remove planned payment
           </button>
         ) : (
           <button className="primary-button" onClick={onSimulate} disabled={simulating}>
-            {simulating ? "Asking the graph…" : "Simulate new autopay"} <i>→</i>
+            {simulating ? "Updating estimate…" : "Add to spending plan"} <i>→</i>
           </button>
         )}
       </section>

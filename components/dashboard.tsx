@@ -6,7 +6,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { EvidenceStrip } from "@/components/chrome/evidence-strip";
+import { Button } from "@/components/ui/button";
 import { DetailPanel } from "@/components/detail/detail-panel";
 import {
   AllPaymentsScreen,
@@ -26,25 +26,25 @@ import type { Commitment, Dataset } from "@/lib/types";
 type DashboardProps = { dataset: Dataset; source: SourceInfo; commitments?: Commitment[]; graph?: GraphFacts };
 type Screen = "graph" | "annual" | "list" | "issues" | "paths";
 
-const graphScreen: { id: Screen; number: string; label: string } = { id: "graph", number: "00", label: "Evidence graph" };
+const graphScreen: { id: Screen; number: string; label: string } = { id: "graph", number: "00", label: "How it works" };
 
 const screens: { id: Screen; number: string; label: string }[] = [
+  { id: "annual", number: "04", label: "Spending" },
   { id: "list", number: "01", label: "All payments" },
-  { id: "issues", number: "02", label: "Issues" },
-  { id: "paths", number: "03", label: "Cancel paths" },
-  { id: "annual", number: "04", label: "Annual" }
+  { id: "issues", number: "02", label: "Save money" },
+  { id: "paths", number: "03", label: "Stop a payment" }
 ];
 
 export function Dashboard({ dataset, source, commitments, graph }: DashboardProps) {
   const live = Boolean(commitments && commitments.length > 0);
-  // Live mode opens on the graph; a reviewer on the CSV fixture lands on the product.
-  const [screen, setScreen] = useState<Screen>(source.kind === "neo4j" ? "graph" : "list");
+  const [screen, setScreen] = useState<Screen>("annual");
   const [simulated, setSimulated] = useState(false);
   // Live Simulate: the rows Cypher returned inside a rolled-back transaction.
   const [liveSimulation, setLiveSimulation] = useState<Commitment[] | null>(null);
   const [simulating, setSimulating] = useState(false);
   const [revoked, setRevoked] = useState<string[]>([]);
   const [kept, setKept] = useState<string[]>([]);
+  const [handled, setHandled] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
 
   // Live: Neo4j decides every row, Simulate included. The TypeScript engine
@@ -72,7 +72,6 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
   const keptLeak = keptLeakTotal(active, kept);
   const leakage = yearlyTotal(active.filter((item) => item.kind === "unused"));
   const hike = active.filter(isSilentPriceHike).reduce((sum, item) => sum + hikeAmount(item), 0);
-  const debt = yearlyTotal(active.filter((item) => item.bucket === "debt"));
   const openItem = active.find((item) => item.id === openId) ?? null;
 
   async function simulate() {
@@ -100,9 +99,11 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
     const baseIds = new Set(baseDetected.map((item) => item.id));
     setRevoked((current) => current.filter((id) => baseIds.has(id)));
     setKept((current) => current.filter((id) => baseIds.has(id)));
+    setHandled((current) => current.filter((id) => baseIds.has(id)));
   }
 
   function confirmRevoke(id: string) {
+    if (detected.find((item) => item.id === id)?.cancelMode !== "normal") return;
     setRevoked((current) => (current.includes(id) ? current : [...current, id]));
     setKept((current) => current.filter((entry) => entry !== id));
   }
@@ -122,65 +123,62 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
           <div className="wordmark">
             <span>p</span>paytrace
           </div>
-          <p>
-            PROTOTYPE <i>·</i> SYNTHETIC MESSAGES ONLY
-          </p>
-          <span className={source.kind === "neo4j" ? "source-badge live" : "source-badge"}>
-            <i />
-            {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV fixture"}
-          </span>
           <div className="bar-actions">
-            <button className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
+            <Button variant="outline" className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
               ↓ Export CSV
-            </button>
+            </Button>
             <div className="persona">
-              <b>PD</b>
-              <span>Priya Demo</span>
+              <b>P</b>
+              <span>Priya</span>
             </div>
           </div>
         </header>
-        <EvidenceStrip source={source} />
       </div>
 
       <div className="app-layout">
         <aside className="side-nav">
-          <p>THE GRAPH</p>
-          <button className={screen === graphScreen.id ? "active" : ""} onClick={() => setScreen(graphScreen.id)}>
-            <span>{graphScreen.number}</span>
-            {graphScreen.label}
-          </button>
-          <p className="side-gap">THE FOUR SCREENS</p>
+          <p>YOUR MONEY</p>
           {screens.map((item) => (
             <button
               key={item.id}
               className={screen === item.id ? "active" : ""}
               onClick={() => setScreen(item.id)}
+              aria-current={screen === item.id ? "page" : undefined}
             >
-              <span>{item.number}</span>
               {item.label}
             </button>
           ))}
+          <p className="side-gap">HELP</p>
+          <button className={screen === graphScreen.id ? "active" : ""} onClick={() => setScreen(graphScreen.id)} aria-current={screen === graphScreen.id ? "page" : undefined}>
+            {graphScreen.label}
+          </button>
           <div className="side-note">
-            <strong>Prototype only</strong>
-            <span>It shows a route to stop a payment. It never sends a revoke.</span>
+            <strong>You’re in control</strong>
+            <span>Complete payment changes with your service or bank.</span>
           </div>
         </aside>
 
         <section className="main-stage">
-          <nav className="mobile-nav">
-            {[graphScreen, ...screens].map((item) => (
+          <nav className="mobile-nav" aria-label="Main navigation">
+            {[...screens, graphScreen].map((item) => (
               <button
                 className={screen === item.id ? "active" : ""}
                 onClick={() => setScreen(item.id)}
                 key={item.id}
+                aria-current={screen === item.id ? "page" : undefined}
               >
-                {item.number}
+                {item.label}
               </button>
             ))}
           </nav>
 
           {screen === "graph" && (
-            <EvidenceGraphScreen graph={graph} source={source} onContinue={() => setScreen("list")} />
+            <EvidenceGraphScreen
+              graph={graph}
+              source={source}
+              onContinue={() => setScreen("list")}
+              onReview={() => setScreen("issues")}
+            />
           )}
           {screen === "list" && (
             <AllPaymentsScreen
@@ -214,9 +212,12 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
               allItems={detected}
               revoked={revoked}
               kept={kept}
+              handled={handled}
               onConfirm={confirmRevoke}
               onKeep={keepIt}
               onFlagAgain={flagAgain}
+              onHandle={(id) => setHandled((current) => current.includes(id) ? current : [...current, id])}
+              onRestore={(id) => setRevoked((current) => current.filter((entry) => entry !== id))}
             />
           )}
           {screen === "annual" && (
@@ -224,19 +225,17 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
               items={active}
               total={total}
               leakage={leakage}
-              debt={debt}
               stoppedValue={stoppedValue}
               asOf={dataset.asOf}
-              source={source}
-              detected={detected.length}
               onOpen={setOpenId}
+              onGoToSavings={() => setScreen("issues")}
             />
           )}
         </section>
       </div>
 
       {openItem && (
-        <DetailPanel item={openItem} asOf={dataset.asOf} source={source} onClose={() => setOpenId(null)} />
+        <DetailPanel item={openItem} asOf={dataset.asOf} onClose={() => setOpenId(null)} />
       )}
     </main>
   );

@@ -1,157 +1,74 @@
 "use client";
 
 import { useState } from "react";
-import { groupByCategory, monthlyForecast, unusedTotal, yearlyTotal } from "@/lib/analysis";
-import { spendGroupLabels } from "@/lib/engine";
+import { monthlyForecast } from "@/lib/analysis";
 import { formatINR } from "@/lib/format";
-import type { Commitment, SpendGroup } from "@/lib/types";
+import type { Commitment } from "@/lib/types";
 
-/** Donut geometry: one ring, drawn as stroked arcs on a single circle. */
-const RADIUS = 78;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-
-const sliceColor: Record<SpendGroup, string> = {
-  debt: "var(--ink-soft)",
-  subscriptions: "var(--marigold)",
-  utilities: "var(--plum)",
-  insurance: "var(--sage)"
-};
-
-export function AnnualDashboard({
-  items,
-  asOf,
-  onOpen
-}: {
+/** Visible amounts and native buttons make the chart usable without hover. */
+export function AnnualDashboard({ items, asOf, onOpen }: {
   items: Commitment[];
   asOf: string;
   onOpen: (id: string) => void;
 }) {
-  const [picked, setPicked] = useState<SpendGroup | null>(null);
-
-  const slices = groupByCategory(items);
+  const [openedMonth, setOpenedMonth] = useState<string | null>(null);
   const months = monthlyForecast(items, asOf);
-  const year = yearlyTotal(items);
-  const leak = unusedTotal(items);
-  const monthlyAverage = Math.round(year / 12);
-  const listed = picked ? items.filter((item) => item.spendGroup === picked) : [];
-
-  // Each arc starts where the ones before it finished.
-  const arcs = slices.map((slice, index) => ({
-    slice,
-    length: slice.share * CIRCUMFERENCE,
-    offset: slices.slice(0, index).reduce((sum, earlier) => sum + earlier.share * CIRCUMFERENCE, 0)
-  }));
-
-
-  const widest = Math.max(...months.map((month) => month.total), 1);
+  const forecasts = items.map((item) => ({ item, months: monthlyForecast([item], asOf) }));
+  const highest = Math.max(...months.map((month) => month.total), 1);
 
   return (
-    <section className="viz-block">
-      <div className="kpi-row">
-        <Kpi label="Committed this year" value={formatINR(year)} lead />
-        <Kpi label="Average month" value={formatINR(monthlyAverage)} />
-        <Kpi label="Going to things unused" value={formatINR(leak)} alarm />
-        <Kpi label="Active commitments" value={String(items.length)} />
-      </div>
-
-      <div className="viz-split">
-        <figure className="donut-figure">
-          <figcaption>Where the year goes</figcaption>
-          <div className="donut-wrap">
-            <svg viewBox="0 0 200 200" role="img" aria-label="Annual spending by category">
-              <circle cx="100" cy="100" r={RADIUS} className="donut-track" />
-              {arcs.map(({ slice, length, offset }) => {
-                const active = picked === slice.group;
-                return (
-                  <circle
-                    key={slice.group}
-                    cx="100"
-                    cy="100"
-                    r={RADIUS}
-                    className={active ? "donut-slice active" : "donut-slice"}
-                    stroke={sliceColor[slice.group]}
-                    strokeDasharray={`${length} ${CIRCUMFERENCE - length}`}
-                    strokeDashoffset={-offset}
-                    onClick={() => setPicked(active ? null : slice.group)}
-                  />
-                );
-              })}
-              <text x="100" y="96" className="donut-centre">
-                {formatINR(year)}
-              </text>
-              <text x="100" y="114" className="donut-sub">
-                per year
-              </text>
-            </svg>
-          </div>
-
-          <ul className="legend">
-            {slices.map((slice) => (
-              <li key={slice.group}>
-                <button
-                  className={picked === slice.group ? "active" : ""}
-                  onClick={() => setPicked(picked === slice.group ? null : slice.group)}
-                >
-                  <i style={{ background: sliceColor[slice.group] }} />
-                  <span>{spendGroupLabels[slice.group]}</span>
-                  <b>{formatINR(slice.total)}</b>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </figure>
-
-        <figure className="bars-figure">
-          <figcaption>What leaves each month</figcaption>
-          <div className="month-chart">
-            {months.map((month) => (
-              <div
-                className="month-col"
-                key={month.key}
-                tabIndex={0}
-                aria-label={`${month.label} ${month.key.slice(0, 4)}, ${formatINR(month.total)}`}
-              >
-                <div className="month-plot">
-                  <div className="month-col-bar" style={{ height: `${(month.total / widest) * 100}%` }}>
-                    <span className="month-tip">{formatINR(month.total)}</span>
-                  </div>
-                </div>
-                <span className="month-col-label">{month.label}</span>
-              </div>
-            ))}
-          </div>
-        </figure>
-      </div>
-
-      {picked && (
-        <div className="slice-drill">
-          <header>
-            <strong>{spendGroupLabels[picked]}</strong>
-            <button onClick={() => setPicked(null)}>Clear filter</button>
-          </header>
-          <div className="bucket-rows">
-            {listed.map((item) => (
+    <section className="simple-chart" aria-labelledby="monthly-spending-heading">
+      <header className="simple-chart-heading">
+        <p className="chart-eyebrow">SPENDING ESTIMATE</p>
+        <h2 id="monthly-spending-heading">Estimated payments by month</h2>
+        <p>Each bar shows the estimated total for that month. Tap a month to see the payments.</p>
+      </header>
+      <p className="chart-note">These are future estimates, not payments already made. Bills and payment dates can change.</p>
+      <ul className="spending-bars">
+        {months.map((month, index) => {
+          const label = new Date(`${month.key}-01T00:00:00Z`).toLocaleDateString("en-IN", {
+            month: "long", year: "numeric", timeZone: "UTC"
+          });
+          const expanded = openedMonth === month.key;
+          const rows = forecasts.filter((entry) => entry.months[index].total > 0);
+          const panelId = `spending-${month.key}`;
+          return (
+            <li key={month.key}>
               <button
-                className={item.signals.includes("new") ? "is-new" : ""}
-                key={item.id}
-                onClick={() => onOpen(item.id)}
+                className="spending-bar-button"
+                aria-label={`${label}, ${formatINR(month.total)} estimated. ${expanded ? "Hide" : "Show"} payments`}
+                aria-expanded={expanded}
+                aria-controls={expanded ? panelId : undefined}
+                onClick={() => setOpenedMonth(expanded ? null : month.key)}
               >
-                <span>{item.merchant}</span>
-                <b>{formatINR(item.annualCost)}</b>
+                <span className="spending-month">{label}</span>
+                <span className="simple-bar-track" aria-hidden="true">
+                  <span className="simple-bar-fill" style={{ width: `${month.total / highest * 100}%` }} />
+                </span>
+                <strong>{formatINR(month.total)} <span aria-hidden="true">{expanded ? "−" : "+"}</span></strong>
               </button>
-            ))}
-          </div>
-        </div>
-      )}
+              {expanded && (
+                <section className="month-payment-details" id={panelId} aria-label={`Estimated payments for ${label}`}>
+                  <h3>{label}: estimated payments</h3>
+                  <p>Tap a service to read its payment details.</p>
+                  <ul>
+                    {rows.map(({ item, months: itemMonths }) => (
+                      <li key={item.id}>
+                        <button onClick={() => onOpen(item.id)}>
+                          <span>{item.merchant}{item.cadence === "annual" && <small>Yearly payment</small>}</span>
+                          <strong>{formatINR(itemMonths[index].total)} <span aria-hidden="true">→</span></strong>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  {rows.length === 0 && <p>No payments are estimated for this month.</p>}
+                </section>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <p className="chart-note">Some services charge once a year. Payments with uneven dates are spread into estimated months. Weekly payments are shown as a monthly budget.</p>
     </section>
-  );
-}
-
-function Kpi({ label, value, lead = false, alarm = false }: { label: string; value: string; lead?: boolean; alarm?: boolean }) {
-  return (
-    <article className={`kpi${lead ? " lead" : ""}${alarm ? " alarm" : ""}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
   );
 }

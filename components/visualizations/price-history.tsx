@@ -22,7 +22,7 @@ export function PriceHistory({ items, onOpen }: { items: Commitment[]; onOpen: (
   if (!hike) {
     return (
       <section className="viz-block">
-        <p className="viz-empty">No price has stepped up in this fixture.</p>
+        <p className="viz-empty">No price increases were found in these records.</p>
       </section>
     );
   }

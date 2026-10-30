@@ -2,86 +2,63 @@
 
 import { useState } from "react";
 import { potentialSavings, yearlyTotal } from "@/lib/analysis";
-import { formatDate, formatINR } from "@/lib/format";
+import { formatINR } from "@/lib/format";
 import type { Commitment } from "@/lib/types";
 
-/**
- * Forgotten commitments, ranked by what they cost over a year, with a
- * what-if selector. Selecting a row changes nothing in the data: it is a
- * projection of what a confirmed stop would be worth.
- */
-export function UnusedSavings({
-  items,
-  onOpen,
-  onGoToCancel
-}: {
+export function UnusedSavings({ items, onOpen, onGoToCancel }: {
   items: Commitment[];
   onOpen: (id: string) => void;
   onGoToCancel: () => void;
 }) {
   const { eligible } = potentialSavings(items, []);
   const [selected, setSelected] = useState<string[]>(eligible.map((item) => item.id));
-  const { saved, revisedYear } = potentialSavings(items, selected);
+  const { selected: selectedItems, saved, revisedYear } = potentialSavings(items, selected);
   const year = yearlyTotal(items);
-  const widest = Math.max(...eligible.map((item) => item.annualCost), 1);
 
   function toggle(id: string) {
-    setSelected((current) => (current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id]));
+    setSelected((current) => current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id]);
   }
 
   if (eligible.length === 0) {
-    return (
-      <section className="viz-block">
-        <p className="viz-empty">Nothing is flagged unused right now.</p>
-      </section>
-    );
+    return <section className="simple-chart"><h2>No unused services to review</h2><p>We have not found any unused services you could stop in these records.</p></section>;
   }
 
   return (
-    <section className="viz-block">
-      <figure className="leak-figure">
-        <figcaption>Still charging, not being used</figcaption>
-        <div className="leak-rows">
-          {eligible.map((item) => {
-            const on = selected.includes(item.id);
-            return (
-              <div className={on ? "leak-row on" : "leak-row"} key={item.id}>
-                <label>
-                  <input type="checkbox" checked={on} onChange={() => toggle(item.id)} />
-                  <span>{item.merchant}</span>
-                </label>
-                <div className="leak-track">
-                  <i style={{ width: `${Math.max((item.annualCost / widest) * 100, 3)}%` }} />
-                </div>
-                <b>{formatINR(item.annualCost)}</b>
-                <button className="leak-evidence" onClick={() => onOpen(item.id)}>
-                  <em>{formatINR(item.spentToDate)} already gone</em>
-                  {item.lastOpened ? `since ${formatDate(item.startedOn)}, last opened ${formatDate(item.lastOpened)}` : `since ${formatDate(item.startedOn)}, never opened`}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </figure>
-
-      <div className="whatif">
-        <article className="whatif-main">
-          <span>If these stop</span>
-          <strong>{formatINR(saved)}</strong>
-          <small>
-            stays in the account over a year. Potential, not saved: it is real once the money actually stops and no
-            further debit posts.
-          </small>
-        </article>
-        <article className="whatif-side">
-          <span>Year after that</span>
-          <strong>{formatINR(revisedYear)}</strong>
-          <small>Down from {formatINR(year)}. Insurance and the loan are never offered here.</small>
-        </article>
-        <button className="primary-button" onClick={onGoToCancel}>
-          View cancellation steps
-        </button>
+    <section className="simple-chart savings-chart" aria-labelledby="savings-heading">
+      <header className="simple-chart-heading">
+        <p className="chart-eyebrow">POTENTIAL SAVINGS</p>
+        <h2 id="savings-heading">What if you stop unused services?</h2>
+        <p>Tick the services you would like to stop. This only changes the estimate.</p>
+      </header>
+      <div className="savings-result" role="status" aria-live="polite" aria-atomic="true">
+        <span>You could save</span>
+        <strong>{formatINR(saved)} <small>a year</small></strong>
+        <p>{selectedItems.length} {selectedItems.length === 1 ? "service selected" : "services selected"}. Nothing has been cancelled.</p>
       </div>
+      <div className="savings-comparison" aria-label="Yearly spending before and after stopping the selected services">
+        <div className="comparison-row">
+          <div><span>Keep all current payments</span><strong>{formatINR(year)} a year</strong></div>
+          <div className="simple-bar-track" aria-hidden="true"><span className="simple-bar-fill current" style={{ width: year > 0 ? "100%" : "0%" }} /></div>
+        </div>
+        <div className="comparison-row">
+          <div><span>Stop the selected services</span><strong>{formatINR(revisedYear)} a year</strong></div>
+          <div className="simple-bar-track" aria-hidden="true"><span className="simple-bar-fill after" style={{ width: `${year > 0 ? revisedYear / year * 100 : 0}%` }} /></div>
+        </div>
+      </div>
+      <fieldset className="savings-choices">
+        <legend>Choose services to compare</legend>
+        {eligible.map((item) => (
+          <div className="savings-choice" key={item.id}>
+            <label>
+              <input type="checkbox" checked={selected.includes(item.id)} onChange={() => toggle(item.id)} />
+              <span>{item.merchant}<small>{formatINR(item.annualCost)} a year</small></span>
+            </label>
+            <button className="plain-details-button" onClick={() => onOpen(item.id)} aria-label={`See details for ${item.merchant}`}>See details</button>
+          </div>
+        ))}
+      </fieldset>
+      <p className="chart-note">This is money you may avoid spending in the future, not money already saved. Savings start only when charges stop. Loans and insurance are not included.</p>
+      <button className="primary-button" disabled={selectedItems.length === 0} onClick={onGoToCancel}>See how to stop payments →</button>
     </section>
   );
 }

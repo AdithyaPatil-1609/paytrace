@@ -267,3 +267,24 @@ test("27. keeping a row settles it everywhere, without moving the year", () => {
   assert.equal(unusedTotal(commitments), 27936);
   assert.equal(keptLeakTotal(commitments, [gym.id]), 18000);
 });
+
+test("28. weekly payment budgets preserve all 52 charges in the spending chart", () => {
+  const weekly = { ...find("FitLine Gym"), cadence: "weekly" as const, amount: 1500, annualCost: 78000 };
+  const months = monthlyForecast([weekly], dataset.asOf);
+  assert.equal(months.reduce((sum, month) => sum + month.total, 0), 78000);
+  assert.ok(months.every((month) => month.estimated));
+});
+
+test("29. irregular spending estimates preserve the year's recorded total", () => {
+  const irregular = { ...find("Society"), debitCount: 5, amount: 300, annualCost: 1700 };
+  const months = monthlyForecast([irregular], dataset.asOf);
+  assert.equal(months.reduce((sum, month) => sum + month.total, 0), 1700);
+  assert.ok(months.filter((month) => month.total > 0).every((month) => month.estimated));
+});
+
+test("30. quarterly spending follows the last payment's quarter", () => {
+  const quarterly = { ...find("Spotify"), cadence: "quarterly" as const, lastCharge: "2026-09-11", annualCost: 556 };
+  const months = monthlyForecast([quarterly], dataset.asOf);
+  assert.deepEqual(months.filter((month) => month.total > 0).map((month) => month.key), ["2026-12", "2027-03", "2027-06", "2027-09"]);
+  assert.equal(months.reduce((sum, month) => sum + month.total, 0), 556);
+});
