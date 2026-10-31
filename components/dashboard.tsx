@@ -148,10 +148,6 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
               {item.label}
             </button>
           ))}
-          <p className="side-gap">HELP</p>
-          <button className={screen === graphScreen.id ? "active" : ""} onClick={() => setScreen(graphScreen.id)} aria-current={screen === graphScreen.id ? "page" : undefined}>
-            {graphScreen.label}
-          </button>
           <div className="side-note">
             <strong>You’re in control</strong>
             <span>Complete payment changes with your service or bank.</span>
