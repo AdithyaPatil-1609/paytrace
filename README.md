@@ -91,7 +91,7 @@ If Neo4j is missing, empty, or unreachable, the app serves the CSV so a reviewer
 ## The screens
 
 0. **Evidence graph** — the graph itself and three relationship findings (live only).
-1. **All payments** — every row with the raw bank string, the plain name, the month, the year, and the message source. Open any row for its **Evidence path**: `Payment -[:PAID_TO]-> Merchant`, Messages on `ABOUT`, the Mandate on `AUTHORIZED_BY`.
+1. **All payments** — every row with the raw bank string, the plain name, the month, the year, and the message source, then next month on a calendar (the month on the fridge door). Open any row for its **Evidence path**: `Payment -[:PAID_TO]-> Merchant`, Messages on `ABOUT`, the Mandate on `AUTHORIZED_BY`.
 2. **Issues** — silent hike, trial conversion, unused; Spotify price history from dated debits.
 3. **Cancel paths** — stop the service, stop the money, and what to do if they stay silent.
 4. **Annual** — year ahead, unused part, five-way split; the panel states the Cypher year when live.
@@ -104,7 +104,7 @@ If Neo4j is missing, empty, or unreachable, the app serves the CSV so a reviewer
 | `app/api/simulate/route.ts` | Live Simulate: Cypher in a rolled-back transaction |
 | `components/dashboard.tsx` | Shell only — top bar, side nav, which screen is open |
 | `components/screens/` | One file per screen: `evidence-graph.tsx` (00), then 01–04 |
-| `components/chrome/` | Shared chrome: evidence strip, screen header, Neo4j source panel |
+| `components/chrome/` | Shared chrome: evidence strip, screen header, Neo4j source panel, mobile menu, and the 3D graph backdrop |
 | `components/detail/` | Side drawer + Evidence path (live Neo4j only) |
 | `components/visualizations/` | Charts used inside the screens |
 | `db/neo4j/analyze.ts` | The Cypher that decides commitments |

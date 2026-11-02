@@ -2889,6 +2889,8 @@ button:focus-visible, summary:focus-visible { outline: 3px solid var(--marigold-
   .mobile-menu nav button:hover { background: var(--marigold-skin); color: var(--ink); }
   .bar-actions { gap: 0; }
   .export-csv { padding: 9px 8px; min-height: 44px; white-space: nowrap; }
+}
+
 /* --- screen 00 · evidence graph ------------------------------------- */
 
 .side-nav > p.side-gap {
@@ -3221,4 +3223,17 @@ button:focus-visible, summary:focus-visible { outline: 3px solid var(--marigold-
   .graph-findings {
     grid-template-columns: 1fr;
   }
+}
+
+/* --- background · the graph as texture ------------------------------- */
+
+/* Behind everything in the shell: the shell has no background of its own,
+   so z-index -1 paints the canvas over the paper and under the content. */
+.graph-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
