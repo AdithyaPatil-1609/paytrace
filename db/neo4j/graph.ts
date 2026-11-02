@@ -42,14 +42,19 @@ WITH m, collect(p.debit_inr) AS a, collect(p.date) AS d
 WITH m, a, d, [i IN range(1, size(a) - 1)
   WHERE all(x IN a[0..i] WHERE x = a[0]) AND all(x IN a[i..] WHERE x = a[i]) AND a[i] > a[0] | i] AS steps
 WHERE size(steps) > 0
-  AND NOT EXISTS { (:Message {event_type: 'price_change'})-[:ABOUT]->(m) }
+  AND NOT EXISTS { (notice:Message {event_type: 'price_change'})-[:ABOUT]->(m)
+    WHERE duration.inDays(notice.sent_on, d[steps[0]]).days >= 0
+      AND duration.inDays(notice.sent_on, d[steps[0]]).days <= 45
+      AND (notice.amount_inr IS NULL OR notice.amount_inr = a[steps[0]]) }
 RETURN m.brand AS brand, a[0] AS from, a[steps[0]] AS to, toString(d[steps[0]]) AS since,
        size(a) AS payments, COUNT { (:Message)-[:ABOUT]->(m) } AS messages
 ORDER BY brand`;
 
 /** A trial_ending Message, then the first real debit to the same Merchant. */
 export const TRIAL_QUERY = `MATCH (t:Message {event_type: 'trial_ending'})-[:ABOUT]->(m:Merchant)<-[:PAID_TO]-(p:Payment)
-WHERE p.date >= t.sent_on AND coalesce(p.txn_kind, '') <> 'authorisation'
+WHERE p.date >= t.sent_on AND duration.inDays(t.sent_on, p.date).days <= 45
+  AND p.debit_inr > 0 AND (t.amount_inr IS NULL OR t.amount_inr = p.debit_inr)
+  AND coalesce(p.txn_kind, '') <> 'authorisation'
 WITH t, m, p ORDER BY p.date
 WITH t, m, head(collect(p)) AS first
 OPTIONAL MATCH (h:Payment {txn_kind: 'authorisation'})-[:PAID_TO]->(m)

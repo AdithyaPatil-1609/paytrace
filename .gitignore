@@ -10,3 +10,5 @@ coverage/
 
 # demo recordings (npm run demo)
 work/demo/
+work/neo4j/
+work/browsers/

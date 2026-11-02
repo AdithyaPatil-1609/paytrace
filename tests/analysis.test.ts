@@ -116,14 +116,17 @@ test("13. a recent open is not a zombie", () => {
   assert.equal(find("Netflix").kind, "essential");
 });
 
-test("14. simulating a new autopay detects Headspace and moves the year to 2,02,726", () => {
+test("14. difficult simulation groups changing descriptors and rejects an older notice", () => {
   const simulated = detectCommitments(withSimulatedAutopay(dataset));
-  const headspace = simulated.find((item) => item.merchant === "Headspace Plus")!;
-  assert.equal(headspace.amount, 299);
-  assert.equal(headspace.annualCost, 3588);
-  assert.equal(headspace.kind, "essential");
-  assert.equal(headspace.issue, undefined);
-  assert.equal(yearlyTotal(simulated), 202726);
+  const scenario = simulated.find((item) => item.merchant === "Lumen Notes")!;
+  assert.equal(scenario.amount, 129);
+  assert.equal(scenario.previousAmount, 99);
+  assert.equal(scenario.annualCost, 1548);
+  assert.equal(scenario.debitCount, 4);
+  assert.equal(scenario.hasPriceChangeNotice, false);
+  assert.ok(scenario.signals.includes("silent_hike"));
+  assert.equal(scenario.notices.filter((notice) => notice.eventType === "price_change").length, 1);
+  assert.equal(yearlyTotal(simulated), 200686);
   // A second click must not add a second copy.
   assert.equal(detectCommitments(withSimulatedAutopay(withSimulatedAutopay(dataset))).length, simulated.length);
 });

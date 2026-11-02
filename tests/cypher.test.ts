@@ -18,7 +18,8 @@ import { analyzeCommitments } from "../db/neo4j/analyze";
 import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../db/neo4j/client";
 import { loadGraphFacts } from "../db/neo4j/graph";
 import { analyzeWithSimulatedAutopay } from "../db/neo4j/simulate";
-import { writePayments } from "../db/neo4j/write";
+import { writePayments, writePatterns, writeMessages } from "../db/neo4j/write";
+import { alternateDataset } from "../data/alternate";
 import { isSilentPriceHike, isTrialConverted, isZombie, unusedTotal, yearlyTotal } from "../lib/analysis";
 import { detectCommitments } from "../lib/engine";
 import { AS_OF, loadFixtures, loadParserFixtures } from "../lib/fixtures";
@@ -48,6 +49,23 @@ describe("Cypher engine on the live graph", { skip }, () => {
   after(async () => {
     await session?.close();
     await driver?.close();
+  });
+
+  test("C15. independent synthetic inputs and adversarial notices retain engine parity", async () => {
+    const sample = alternateDataset(dataset);
+    sample.statement.forEach((row, index) => { row.debit = [99, 109, 129, 129][index]; });
+    sample.notifications = [
+      { noticeId: "ALT-OLD", sentOn: "2025-01-01", channel: "email", sender: "demo", eventType: "price_change", brand: "CloudNote", amount: 129, text: "Old change" },
+      { noticeId: "ALT-TRIAL", sentOn: "2026-10-20", channel: "email", sender: "demo", eventType: "trial_ending", brand: "CloudNote", amount: 129, text: "Future trial" }
+    ];
+    const tx = session.beginTransaction();
+    try {
+      await writePatterns(tx, sample.dictionary);
+      await writePayments(tx, sample.statement);
+      await writeMessages(tx, sample.notifications);
+      const actual = (await analyzeCommitments(tx, AS_OF)).filter((item) => item.merchant === "CloudNote");
+      assert.deepEqual(actual, detectCommitments(sample));
+    } finally { await tx.rollback(); }
   });
 
   // One answer, two runners.
@@ -142,16 +160,19 @@ describe("Cypher engine on the live graph", { skip }, () => {
     }
   });
 
-  test("C12. Simulate runs in Cypher, finds Headspace, and leaves the stored graph unchanged", async () => {
+  test("C12. difficult scenario runs in Cypher and leaves the stored graph unchanged", async () => {
     const count = async () =>
       (await session.run("MATCH (n) RETURN count(n) AS n")).records[0].get("n").toNumber() as number;
     const before = await count();
     const simulated = await analyzeWithSimulatedAutopay();
-    const headspace = simulated.find((item) => item.merchant === "Headspace Plus")!;
-    assert.equal(headspace.amount, 299);
-    assert.equal(headspace.annualCost, 3588);
-    assert.equal(headspace.issue, undefined);
-    assert.equal(yearlyTotal(simulated), 202726);
+    const scenario = simulated.find((item) => item.merchant === "Lumen Notes")!;
+    assert.equal(scenario.amount, 129);
+    assert.equal(scenario.previousAmount, 99);
+    assert.equal(scenario.annualCost, 1548);
+    assert.equal(scenario.debitCount, 4);
+    assert.equal(scenario.hasPriceChangeNotice, false);
+    assert.ok(scenario.signals.includes("silent_hike"));
+    assert.equal(yearlyTotal(simulated), 200686);
     assert.deepEqual(byId(simulated), byId(detectCommitments(withSimulatedAutopay(dataset))));
     assert.equal(await count(), before);
   });

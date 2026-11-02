@@ -41,10 +41,11 @@ WITH patternKey, a, pat, m,
      [pay IN raw WHERE coalesce(pay.txn_kind, '') <> 'authorisation'] AS charges,
      [pay IN raw WHERE pay.txn_kind = 'authorisation'] AS holds
 WHERE size(charges) > 0
-OPTIONAL MATCH (md:Mandate)
-WHERE (m IS NOT NULL AND md.brand = m.brand) OR md.narration = charges[0].narration
+OPTIONAL MATCH (md:Mandate)-[:ON_ACCOUNT]->(a)
+WHERE toLower(md.status) = 'active' AND md.created_on <= date($asOf)
+  AND ((m IS NOT NULL AND md.brand = m.brand) OR md.narration = charges[0].narration)
 WITH patternKey, a, pat, m, charges, holds, head(collect(DISTINCT md)) AS md
-WHERE size(charges) >= 2 OR md IS NOT NULL
+WHERE (size(charges) >= 2 AND pat IS NOT NULL) OR md IS NOT NULL
 WITH patternKey, a, pat, m, charges, holds, md,
      [pay IN charges | pay.debit_inr] AS amounts,
      [i IN range(0, size(charges) - 2) |
@@ -81,6 +82,8 @@ CALL (gaps) {
 WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, uniqueAmounts, stepIndexes, amountMedian, gapMedian,
      CASE
        WHEN size(uniqueAmounts) <= 1 THEN 'fixed'
+       WHEN size(amounts) >= 3 AND amounts[size(amounts)-1] = amounts[size(amounts)-2]
+         AND all(i IN range(1, size(amounts)-1) WHERE amounts[i] >= amounts[i-1]) THEN 'step'
        WHEN size(stepIndexes) > 0 THEN 'step'
        ELSE 'variable'
      END AS amountPattern,
@@ -101,13 +104,19 @@ WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gap
        ELSE 'annual'
      END AS cadence
 OPTIONAL MATCH (msg:Message)
-WHERE (m IS NOT NULL AND msg.merchant_brand = m.brand)
-   OR any(pay IN (charges + holds) WHERE pay.txn_id = msg.related_txn_id)
+WHERE msg.sent_on <= date($asOf) AND ((m IS NOT NULL AND msg.merchant_brand = m.brand AND msg.related_txn_id IS NULL)
+   OR any(pay IN (charges + holds) WHERE pay.txn_id = msg.related_txn_id))
 WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gapMedian, amountPattern, cadence,
      [msg IN collect(DISTINCT msg) WHERE msg IS NOT NULL] AS notices
 WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gapMedian, amountPattern, cadence, notices,
-     any(msg IN notices WHERE msg.event_type = 'price_change') AS hasPrice,
-     any(msg IN notices WHERE msg.event_type = 'trial_ending') AS hasTrial,
+     any(msg IN notices WHERE msg.event_type = 'price_change' AND
+       duration.inDays(msg.sent_on, head([pay IN charges WHERE pay.debit_inr <> amounts[0]]).date).days >= 0 AND
+       duration.inDays(msg.sent_on, head([pay IN charges WHERE pay.debit_inr <> amounts[0]]).date).days <= $rules.noticeWindowDays AND
+       (msg.amount_inr IS NULL OR msg.amount_inr = amounts[size(amounts)-1])) AS hasPrice,
+     any(msg IN notices WHERE msg.event_type = 'trial_ending' AND
+       any(pay IN charges WHERE duration.inDays(msg.sent_on, pay.date).days >= 0 AND
+         duration.inDays(msg.sent_on, pay.date).days <= $rules.noticeWindowDays AND
+         (msg.amount_inr IS NULL OR msg.amount_inr = pay.debit_inr))) AS hasTrial,
      CASE WHEN m IS NULL OR m.last_opened IS NULL THEN null
           ELSE duration.inDays(m.last_opened, date($asOf)).days END AS openedDays,
      m IS NOT NULL AND m.opens_last_12_months IS NOT NULL AND m.last_opened IS NULL AND m.opens_last_12_months = 0 AS neverOpened,

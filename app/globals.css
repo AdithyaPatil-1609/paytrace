@@ -3171,3 +3171,14 @@ body { font-size: 16px; }
   background: var(--ink);
   color: var(--paper-lift) !important;
 }
+ .finding-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 18px; margin: 20px 0 32px; }
+ .finding-card { border: 1px solid #d8dee7; border-radius: 16px; background: #fff; padding: 24px; color: #1e293b; }
+ .finding-card h2 { font-size: 1.2rem; line-height: 1.45; margin: 12px 0; }
+ .finding-card p { line-height: 1.65; margin: 12px 0; }
+ .finding-label { font-size: .75rem; letter-spacing: .08em; font-weight: 700; color: #475569; }
+ .demo-label { font-size: .85rem; font-weight: 600; color: #475569; }
+ .technical-source { margin: 12px 0 24px; color: #475569; }
+ .technical-source summary { cursor: pointer; min-height: 44px; display: list-item; padding: 12px 0; }
+ .overview-metrics { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+ .finding-card button { min-height: 44px; }
+ .finding-card button:focus-visible, .technical-source summary:focus-visible { outline: 3px solid #2563eb; outline-offset: 4px; }

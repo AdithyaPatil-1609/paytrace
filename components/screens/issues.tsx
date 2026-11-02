@@ -8,6 +8,7 @@ import { UnusedSavings } from "@/components/visualizations/unused-savings";
 import { monthlyCost } from "@/lib/commitment-ui";
 import { formatINR } from "@/lib/format";
 import type { Commitment } from "@/lib/types";
+import { FindingCards } from "./overview";
 
 export function IssuesScreen({
   items,
@@ -37,6 +38,7 @@ export function IssuesScreen({
         title="Pay for what you use"
         copy="See what you could save by stopping unused services. Choosing a service here does not cancel it."
       />
+      <FindingCards items={items} onOpen={onOpen} />
       <UnusedSavings items={allItems} onOpen={onOpen} onGoToCancel={onGoToCancel} />
       <details className="review-disclosure">
         <summary>See payments that changed or need a review ({items.length})</summary>
@@ -51,7 +53,7 @@ export function IssuesScreen({
             }
             accent
           />
-          <Metric value={formatINR(hike)} label="Extra yearly cost from Spotify's price increase: ₹119 became ₹139 with no price-change message." accent />
+          <Metric value={formatINR(hike)} label="Estimated extra yearly cost from price increases with no matching notice in the supplied messages." accent />
         </section>
         <section className="issues-table">
           <div className="issue-caption">

@@ -12,6 +12,7 @@ import type { AmountPattern, Cadence, CommitmentKind, Instrument, Mechanism, Sig
 export const RULES = {
   /** A service unopened for longer than this is a zombie. */
   zombieDays: 90,
+  noticeWindowDays: 45,
   /** Gaps scattering by more than this share of their median make a row irregular. */
   irregularSpread: 0.35,
   /** Median-gap ceilings, in days, for each cadence. Above quarterly is annual. */

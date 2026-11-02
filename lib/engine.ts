@@ -73,6 +73,10 @@ function cadenceFromGaps(gaps: number[], fallback: string | undefined): { cadenc
 function amountShape(amounts: number[]): { pattern: AmountPattern; previous?: number } {
   const distinct = new Set(amounts);
   if (distinct.size === 1) return { pattern: "fixed" };
+  if (amounts.length >= 3 && amounts.at(-1) === amounts.at(-2) &&
+      amounts.every((amount, index) => index === 0 || amount >= amounts[index - 1])) {
+    return { pattern: "step", previous: amounts[0] };
+  }
 
   // A step is one price, then another price that stays. Anything else varies.
   for (let index = 1; index < amounts.length; index += 1) {
@@ -185,10 +189,11 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
     if (rows.length === 0) continue;
 
     const mandate = mandates.find(
-      (item) => item.narration === group.narration || (entry && item.brand === entry.brand)
+      (item) => item.accountId === group.accountId && item.status.toLowerCase() === "active" && item.createdOn <= asOf &&
+        (item.narration === group.narration || Boolean(entry && item.brand === entry.brand))
     );
     // One debit is a purchase. Two debits, or one debit under a live mandate, is a commitment.
-    if (rows.length < 2 && !mandate) continue;
+    if ((rows.length < 2 || !entry) && !mandate) continue;
 
     const dates = rows.map((row) => row.date);
     const amounts = rows.map((row) => row.debit ?? 0);
@@ -204,7 +209,7 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
         const byTxn = notice.relatedTxnId && rows.some((row) => row.txnId === notice.relatedTxnId);
         const byHold = notice.relatedTxnId && group.holds.some((row) => row.txnId === notice.relatedTxnId);
         const byBrand = entry ? notice.brand === entry.brand : false;
-        return Boolean(byTxn || byHold || byBrand);
+        return notice.sentOn <= asOf && Boolean(byTxn || byHold || (!notice.relatedTxnId && byBrand));
       })
       .map((notice) => ({
         noticeId: notice.noticeId,
@@ -222,8 +227,14 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
     const openedDaysAgo = lastOpened ? days(lastOpened, asOf) : undefined;
     const neverOpened = Boolean(usageRow) && !lastOpened && usageRow?.opensLast12Months === 0;
 
-    const hasPriceChangeNotice = notices.some((notice) => notice.eventType === "price_change");
-    const hasTrialNotice = notices.some((notice) => notice.eventType === "trial_ending");
+    const changeIndex = amounts.findIndex((amount) => amount !== amounts[0]);
+    const changeDate = dates[Math.max(0, changeIndex)];
+    const hasPriceChangeNotice = notices.some((notice) => notice.eventType === "price_change" &&
+      days(notice.sentOn, changeDate) >= 0 && days(notice.sentOn, changeDate) <= RULES.noticeWindowDays &&
+      (notice.amount === undefined || notice.amount === latest));
+    const hasTrialNotice = notices.some((notice) => notice.eventType === "trial_ending" &&
+      rows.some((row) => days(notice.sentOn, row.date) >= 0 && days(notice.sentOn, row.date) <= RULES.noticeWindowDays &&
+        (notice.amount === undefined || notice.amount === row.debit)));
     const mechanism: Mechanism = entry?.mechanism ?? mandate?.mechanism ?? "none";
 
     const signals: Signal[] = [];

@@ -1,5 +1,36 @@
 # Paytrace
 
+## Prototype validation update
+
+The simulation in **All payments** is now **Run difficult scenario**: four changing Lumen Notes descriptors, charges of ₹99, ₹99, ₹129, ₹129, and an older January notice for ₹99. Both engines group the charges and reject the old notice for the August increase. The result explains the matching window and amount mismatch; **Review Lumen Notes evidence** opens the records. **Reset demo scenario** removes the example. Live mode writes the synthetic records and dictionary pattern within a rolled-back transaction, so no reseed is required and the stored graph remains unchanged. An unavailable live simulation shows an error rather than silently substituting offline results.
+
+The first screen is now **Overview**, with a short introduction, synthetic-data label, payment counts, estimated spending and review cards. **How PayTrace works** retains the graph and queries. Expand **Analysis source and technical details** for the active runner. Payment details provide cancellation guidance and expandable evidence. Cancellation progress records the user's report, rather than claiming verified bank cancellation. This user-first entry supersedes the graph-first instructions below.
+
+The app opens on the evidence graph when Neo4j is available. The header labels the active analysis source. Use **Second synthetic dataset** to switch to Arun's independent CloudNote example, with changing descriptor references and a price increase; this example explicitly uses the offline engine and does not modify Neo4j.
+
+`npm test` runs 36 offline checks, including adversarial mandate, notice, descriptor and price cases and the simulation's notice-exclusion explanation. `npm run test:cypher` runs 15 live graph checks, including simulation rollback and parity on independent adversarial inputs. The demo recorder follows discovery, the difficult scenario and its evidence, issues, cancellation guidance and annual impact, checks progress after reload, and exercises the second dataset. Recordings are timestamped under `work/demo/`.
+
+Cancellation progress is saved in this browser, separately by dataset account. Instructions viewed, user-reported cancellation, and a later observed debit have different statuses. Reports use the dataset's as-of date. A later debit reopens the payment and restores it to the estimate. These reports do not verify cancellation with a bank and do not sync between devices.
+
+Matching requires active mandates on the same account. Price notices must precede the price change by at most 45 days and match the new amount when supplied; trial notices need a matching paid debit within 45 days. Sustained nondecreasing price steps are detected. Unknown repeated purchases without a mandate are excluded conservatively; add a dictionary entry to recognise a new service. This sacrifices recall to avoid inventing subscriptions.
+
+For local verification without changing existing Aura credentials:
+
+```bash
+export NEO4J_URI=bolt://localhost:7687
+export NEO4J_USERNAME=neo4j
+export NEO4J_PASSWORD=paytrace-local
+export NEO4J_DATABASE=neo4j
+npm run seed
+npm run test:cypher
+npm run build -- --webpack
+npm start -- --port 3100
+# In another terminal:
+BASE_URL=http://localhost:3100 npm run demo
+```
+
+Seeding replaces the prototype graph: use a dedicated local database. Existing Aura credentials are left unchanged. If this machine's downloaded local server is stopped, start it with `JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home work/neo4j/neo4j-community-5.26.0/bin/neo4j console`, or use Docker as described below. For browser installation in the project, run `PLAYWRIGHT_BROWSERS_PATH=work/browsers npx playwright install chromium`, then set the same variable when recording.
+
 Bank lines, SMS, email, and mandates are separate systems today. The harm — a silent price hike, a trial that became a plan, an autopay still charging after she stopped opening it — only appears when those records fail to join. Paytrace models them as **linked evidence** in Neo4j, and the finding is often an edge that is *missing*: Spotify's price steps from ₹119 to ₹139, twelve Messages are `ABOUT` Spotify, and none of them is a `price_change`.
 
 Priya Demo is invented. Arclight Bank is invented. The as-of date is 22 October 2026. The prototype shows a route to stop a payment. It never connects to a bank, and it never sends a revoke.

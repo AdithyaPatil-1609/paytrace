@@ -2,6 +2,7 @@ import { formatDate, formatINR } from "@/lib/format";
 import type { Cadence, Commitment } from "@/lib/types";
 import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { EvidencePath } from "./evidence-path";
 
 const frequency: Record<Cadence, string> = {
   weekly: "every week",
@@ -12,10 +13,11 @@ const frequency: Record<Cadence, string> = {
 };
 
 /** Show the essentials first; keep the original records available on request. */
-export function DetailPanel({ item, asOf, onClose }: {
+export function DetailPanel({ item, asOf, onClose, onCancel }: {
   item: Commitment;
   asOf: string;
   onClose: () => void;
+  onCancel?: () => void;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -103,6 +105,8 @@ export function DetailPanel({ item, asOf, onClose }: {
 
         {finding && <section className="payment-explanation attention"><h3>Worth a look</h3><p>{finding}</p></section>}
 
+        {onCancel && item.cancelMode !== "block" && <Button onClick={onCancel}>Review cancellation steps</Button>}
+        <details className="payment-disclosure"><summary>Explore technical evidence</summary><EvidencePath item={item} /></details>
         <details className="payment-disclosure">
           <summary>Past payments ({item.evidenceRows.length})</summary>
           <div className="payment-disclosure-body">

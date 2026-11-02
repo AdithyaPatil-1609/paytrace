@@ -68,7 +68,7 @@ export function PriceHistory({ items, onOpen }: { items: Commitment[]; onOpen: (
 
       <figure className="price-figure">
         <figcaption>
-          {hike.item.merchant} — every charge on the statement
+          {hike.item.merchant}: charges increased from {formatINR(hike.from)} to {formatINR(hike.to)}
           <em className={hike.noticed ? "badge noticed" : "badge silent"}>
             {hike.noticed ? "rise came with a notice" : "no notice found"}
           </em>
@@ -139,7 +139,7 @@ export function PriceHistory({ items, onOpen }: { items: Commitment[]; onOpen: (
           <span>
             {hike.noticed
               ? "A price-change message was found."
-              : "Price-change messages in the inbox. The debit messages arrived; the warning did not."}
+              : "No matching price-change notice was found in the supplied messages. Other messages may exist."}
           </span>
         </article>
       </div>

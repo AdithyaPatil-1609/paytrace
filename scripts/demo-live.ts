@@ -1,149 +1,92 @@
-/**
- * Records the live-mode walkthrough, and refuses to record the wrong one.
- *
- * Run with: npm run demo   (app already running on BASE_URL, default :3000)
- *
- * It checks, in order, the four things a judge needs to see in the video:
- * the Reading Neo4j badge, Screen 00 (the graph itself), an Evidence path
- * that names the missing price_change edge, and all four product screens —
- * with Simulate answered by Cypher on the way. Any one missing fails the run.
- *
- * Output: work/demo/paytrace-live.webm and one PNG per step.
- * Flags:  --headed to watch it, --allow-fixture to record the CSV path anyway.
- */
-import { mkdirSync, readdirSync, renameSync, rmSync } from "node:fs";
+import { mkdirSync, renameSync } from "node:fs";
 import path from "node:path";
-import { chromium, type Page } from "playwright";
-
-const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
-const OUT = path.join(process.cwd(), "work", "demo");
-const headed = process.argv.includes("--headed");
-const allowFixture = process.argv.includes("--allow-fixture");
-
-let step = 0;
-
-async function shot(page: Page, name: string) {
-  step += 1;
-  const file = path.join(OUT, `${String(step).padStart(2, "0")}-${name}.png`);
-  await page.screenshot({ path: file });
-  console.log(`  ✓ ${name}`);
-}
-
-async function expectText(page: Page, selector: string, text: string, what: string) {
-  const locator = page.locator(selector).filter({ hasText: text }).first();
-  try {
-    await locator.waitFor({ state: "visible", timeout: 8000 });
-  } catch {
-    throw new Error(`${what}: expected "${text}" in ${selector}, and it is not on screen.`);
-  }
-  return locator;
-}
-
-async function openScreen(page: Page, label: string) {
-  await page.locator(".side-nav button", { hasText: label }).click();
-  await page.evaluate(() => window.scrollTo({ top: 0 }));
-  await page.waitForTimeout(900);
-}
-
-async function glide(page: Page, distance: number) {
-  for (let moved = 0; moved < distance; moved += 120) {
-    await page.mouse.wheel(0, 120);
-    await page.waitForTimeout(140);
-  }
-}
+import assert from "node:assert/strict";
+import { chromium } from "playwright";
 
 async function main() {
-  rmSync(OUT, { recursive: true, force: true });
-  mkdirSync(OUT, { recursive: true });
-
-  const browser = await chromium.launch({ headless: !headed, slowMo: 60 });
-  const context = await browser.newContext({
-    viewport: { width: 1440, height: 900 },
-    recordVideo: { dir: OUT, size: { width: 1440, height: 900 } }
-  });
+  const out = path.join(process.cwd(), "work", "demo", String(Date.now()));
+  mkdirSync(out, { recursive: true });
+  const browser = await chromium.launch({ headless: !process.argv.includes("--headed") });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, recordVideo: { dir: out } });
   const page = await context.newPage();
-
+  const video = page.video();
+  const base = process.env.BASE_URL ?? "http://localhost:3000";
+  let step = 0;
+  async function shot(name: string) {
+    await page.screenshot({ path: path.join(out, `${++step}-${name}.png`), fullPage: true });
+    console.log(`Verified ${name}`);
+  }
+  async function screen(label: string) {
+    await page.locator(".side-nav button").filter({ hasText: label }).click();
+    await page.waitForTimeout(300);
+  }
   try {
-    console.log(`Recording ${BASE_URL}`);
-    await page.goto(BASE_URL, { waitUntil: "networkidle" });
-
-    // 1. The badge. The CSV clip is the one that scored lower.
-    const badge = (await page.locator(".source-badge").innerText()).trim();
-    if (!badge.includes("Reading Neo4j") && !allowFixture) {
-      const note = await page.locator(".evidence-strip").innerText().catch(() => "");
-      throw new Error(
-        `The app is on the CSV fixture ("${badge}"). ${note.trim()}\n` +
-          "Start Neo4j (docker compose up -d), run npm run seed, restart npm run dev, then record again."
-      );
-    }
-    await expectText(page, ".evidence-strip", "Cypher decided", "Neo4j strip");
-    await page.waitForTimeout(1200);
-    await shot(page, "badge-reading-neo4j");
-
-    // 2. Screen 00 — the graph before the product.
-    await expectText(page, ".screen-header h1", "The harm is a missing edge", "Screen 00");
-    await expectText(page, ".graph-focus", "price_change × 0", "Screen 00 missing edge");
-    await shot(page, "screen-00-graph");
-    await glide(page, 700);
-    await page.waitForTimeout(800);
-    await shot(page, "screen-00-findings");
-    await page.locator(".graph-finding details summary").first().click();
-    await page.waitForTimeout(1200);
-    await shot(page, "screen-00-cypher");
-
-    // 3. Screen 01 — then an Evidence path on the silent hike.
-    await page.locator(".graph-handoff button").click();
-    await page.evaluate(() => window.scrollTo({ top: 0 }));
-    await expectText(page, ".screen-header", "SCREEN 1", "Screen 01");
-    await page.waitForTimeout(900);
-    await shot(page, "screen-01-all-payments");
-    await page.locator(".payment-row", { hasText: "Spotify" }).first().click();
-    const pathBlock = await expectText(page, ".evidence-path", "Evidence path · Neo4j", "Evidence path");
-    await expectText(page, ".path-finding", "silent_hike", "Evidence path finding");
-    await pathBlock.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(1500);
-    await shot(page, "evidence-path-spotify");
+    await page.goto(base, { waitUntil: "networkidle" });
+    await page.getByRole("heading", { name: "Know what keeps charging you" }).waitFor();
+    await shot("user-overview");
+    await page.locator(".technical-source summary").click();
+    assert.match(await page.locator(".source-badge").innerText(), /Reading Neo4j/);
+    await screen("How PayTrace works");
+    await page.getByRole("heading", { name: "Your payments, explained" }).waitFor();
+    await shot("live-graph");
+    await screen("All payments");
+    await page.getByRole("button", { name: "Run difficult scenario" }).click();
+    await page.locator(".simulation-result").waitFor();
+    assert.match(await page.locator(".simulation-result").innerText(), /transaction rolled back/);
+    assert.match(await page.locator(".simulation-result").innerText(), /outside the 45-day matching window/);
+    await page.getByRole("button", { name: "Review Lumen Notes evidence" }).click();
+    await page.getByText("Explore technical evidence", { exact: true }).click();
+    await page.locator(".notice-exclusion").waitFor();
+    await shot("difficult-scenario-evidence");
     await page.locator(".detail-panel header button").click();
-
-    // Simulate, answered by Cypher in a rolled-back transaction.
-    const simulate = page.locator(".simulation-card .primary-button");
-    await simulate.scrollIntoViewIfNeeded();
-    await simulate.click();
-    await expectText(page, ".simulation-card", "rolled back", "Simulate in Neo4j");
-    await page.waitForTimeout(1200);
-    await shot(page, "simulate-in-neo4j");
-    await page.locator(".simulation-card .secondary-button").click();
-
-    // 4. Screens 02–04.
-    await openScreen(page, "Issues");
-    await expectText(page, ".screen-header", "SCREEN 2", "Screen 02");
-    await shot(page, "screen-02-issues");
-    await glide(page, 600);
-    await shot(page, "screen-02-price-history");
-
-    await openScreen(page, "Cancel paths");
-    await expectText(page, ".screen-header", "SCREEN 3", "Screen 03");
-    await shot(page, "screen-03-cancel-paths");
-
-    await openScreen(page, "Annual");
-    await expectText(page, ".screen-header", "SCREEN 4", "Screen 04");
-    await shot(page, "screen-04-annual");
-    const proof = page.locator(".source-panel.live");
-    await proof.scrollIntoViewIfNeeded();
-    await expectText(page, ".source-panel.live", "Decided in Neo4j", "Screen 04 Neo4j proof");
-    await page.waitForTimeout(1500);
-    await shot(page, "screen-04-decided-in-neo4j");
+    await page.getByRole("button", { name: "Reset demo scenario" }).click();
+    assert.equal(await page.locator(".payment-row").filter({ hasText: "Lumen Notes" }).count(), 0);
+    await page.locator(".payment-row").filter({ hasText: "Spotify" }).first().click();
+    await page.getByText("Explore technical evidence", { exact: true }).click();
+    await page.locator(".evidence-path").waitFor();
+    await shot("discovery-evidence");
+    await page.locator(".detail-panel header button").click();
+    await screen("Save money");
+    await shot("issues");
+    await screen("Stop a payment");
+    const gym = page.getByRole("article", { name: "FitLine Gym payment", exact: true });
+    await gym.getByRole("button", { name: "Show steps to stop", exact: true }).click();
+    await gym.getByText("Instructions viewed.", { exact: false }).waitFor();
+    await shot("cancellation-guidance");
+    await page.reload({ waitUntil: "networkidle" });
+    await screen("Stop a payment");
+    await gym.getByRole("button", { name: "Show steps to stop", exact: true }).click();
+    await gym.getByText("Instructions viewed.", { exact: false }).waitFor();
+    await gym.getByRole("button", { name: "I completed these steps", exact: true }).click();
+    await page.getByRole("button", { name: "Yes, I have stopped it", exact: true }).click();
+    await page.reload({ waitUntil: "networkidle" });
+    await page.getByText("User reports cancelled", { exact: false }).waitFor();
+    await shot("persisted-report");
+    await page.evaluate(() => {
+      const key = Object.keys(localStorage).find((entry) => entry.endsWith(":reports"));
+      if (!key) throw new Error("Cancellation report was not saved");
+      const reports = JSON.parse(localStorage.getItem(key)!);
+      for (const id of Object.keys(reports)) reports[id] = "2026-01-01";
+      localStorage.setItem(key, JSON.stringify(reports));
+    });
+    await page.reload({ waitUntil: "networkidle" });
+    await page.getByText("Future debit observed", { exact: false }).waitFor();
+    await shot("later-debit-detected");
+    await screen("Spending");
+    await page.locator(".money-summary").waitFor();
+    await shot("annual-impact");
+    await page.getByRole("link", { name: "Second synthetic dataset" }).click();
+    await screen("All payments");
+    await page.locator(".payment-row").filter({ hasText: "CloudNote" }).waitFor();
+    await page.locator(".technical-source summary").click();
+    assert.match(await page.locator(".source-badge").innerText(), /CSV fixture/);
+    await shot("second-dataset");
   } finally {
     await context.close();
     await browser.close();
   }
-
-  const video = readdirSync(OUT).find((file) => file.endsWith(".webm"));
-  if (video) renameSync(path.join(OUT, video), path.join(OUT, "paytrace-live.webm"));
-  console.log(`\nSaved ${step} screenshots and paytrace-live.webm to ${path.relative(process.cwd(), OUT)}/`);
+  if (video) renameSync(await video.path(), path.join(out, "paytrace-live.webm"));
+  console.log(`Saved recording and screenshots: ${out}`);
 }
 
-main().catch((error) => {
-  console.error(`\nDemo failed: ${error instanceof Error ? error.message : error}`);
-  process.exit(1);
-});
+main().catch((error) => { console.error(error); process.exitCode = 1; });

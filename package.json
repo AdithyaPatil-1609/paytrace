@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/analysis.test.ts",
+    "test": "node --import tsx --test tests/analysis.test.ts tests/adversarial.test.ts",
     "seed": "node --import tsx scripts/seed-neo4j.ts",
     "test:cypher": "node --import tsx --test tests/cypher.test.ts",
     "test:all": "node --import tsx --test tests/*.test.ts",
@@ -18,24 +18,25 @@
     "@radix-ui/react-accordion": "^1.3.1",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-slot": "^1.5.0",
+    "@tailwindcss/postcss": "^4.3.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.65.0",
     "neo4j-driver": "6.0.1",
     "next": "16.4.2",
+    "postcss": "^8.5.23",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.0",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "24.10.0",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.1",
     "eslint-config-next": "16.4.2",
     "playwright": "1.64.1",
-    "tailwindcss": "^4.3.3",
     "tsx": "4.20.6",
     "typescript": "6.0.3"
   }

@@ -6,6 +6,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DetailPanel } from "@/components/detail/detail-panel";
 import {
@@ -21,14 +22,18 @@ import type { GraphFacts } from "@/db/neo4j/graph";
 import { hikeAmount, isSilentPriceHike, issueItems, keptLeakTotal, yearlyTotal } from "@/lib/analysis";
 import { downloadCommitmentsCsv } from "@/lib/commitment-ui";
 import { detectCommitments } from "@/lib/engine";
+import { usePersistedState } from "@/lib/use-persisted-state";
+import { EvidenceStrip } from "@/components/chrome/evidence-strip";
+import { OverviewScreen } from "@/components/screens/overview";
 import type { Commitment, Dataset } from "@/lib/types";
 
 type DashboardProps = { dataset: Dataset; source: SourceInfo; commitments?: Commitment[]; graph?: GraphFacts };
-type Screen = "graph" | "annual" | "list" | "issues" | "paths";
+type Screen = "overview" | "graph" | "annual" | "list" | "issues" | "paths";
 
-const graphScreen: { id: Screen; number: string; label: string } = { id: "graph", number: "00", label: "How it works" };
+const graphScreen: { id: Screen; number: string; label: string } = { id: "graph", number: "00", label: "How PayTrace works" };
 
 const screens: { id: Screen; number: string; label: string }[] = [
+  { id: "overview", number: "05", label: "Overview" },
   { id: "annual", number: "04", label: "Spending" },
   { id: "list", number: "01", label: "All payments" },
   { id: "issues", number: "02", label: "Save money" },
@@ -37,14 +42,24 @@ const screens: { id: Screen; number: string; label: string }[] = [
 
 export function Dashboard({ dataset, source, commitments, graph }: DashboardProps) {
   const live = Boolean(commitments && commitments.length > 0);
-  const [screen, setScreen] = useState<Screen>("annual");
+  const [screen, setScreen] = useState<Screen>("overview");
   const [simulated, setSimulated] = useState(false);
   // Live Simulate: the rows Cypher returned inside a rolled-back transaction.
   const [liveSimulation, setLiveSimulation] = useState<Commitment[] | null>(null);
   const [simulating, setSimulating] = useState(false);
-  const [revoked, setRevoked] = useState<string[]>([]);
-  const [kept, setKept] = useState<string[]>([]);
-  const [handled, setHandled] = useState<string[]>([]);
+  const [simulationError, setSimulationError] = useState<string>();
+  const scope = `paytrace:v1:${dataset.statement[0]?.accountId ?? "empty"}`;
+  const [reports, setReports] = usePersistedState<Record<string, string>>(`${scope}:reports`, {});
+  const [kept, setKept] = usePersistedState<string[]>(`${scope}:kept`, []);
+  const [handled, setHandled] = usePersistedState<string[]>(`${scope}:viewed`, []);
+  const revoked = Object.keys(reports).filter((id) => !detectedAfterReport(id));
+  function detectedAfterReport(id: string) {
+    return Boolean((commitments ?? detectCommitments(dataset)).find((item) => item.id === id)?.evidenceRows.some((row) => row.date > reports[id]));
+  }
+  function setRevoked(update: (current: string[]) => string[]) {
+    const retained = new Set(update(Object.keys(reports)));
+    setReports(Object.fromEntries(Object.entries(reports).filter(([id]) => retained.has(id))));
+  }
   const [openId, setOpenId] = useState<string | null>(null);
 
   // Live: Neo4j decides every row, Simulate included. The TypeScript engine
@@ -75,16 +90,19 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
   const openItem = active.find((item) => item.id === openId) ?? null;
 
   async function simulate() {
+    setSimulationError(undefined);
     if (live) {
       setSimulating(true);
       try {
         const response = await fetch("/api/simulate", { method: "POST" });
+        if (!response.ok) throw new Error("The graph could not run this scenario.");
         if (response.ok) {
           const body = (await response.json()) as { commitments: Commitment[] };
           setLiveSimulation(body.commitments);
         }
       } catch {
-        // The fixture path below still answers; the card says which ran.
+        setSimulationError("Neo4j could not run the scenario. Check the connection and try again. No offline result has been substituted.");
+        return;
       } finally {
         setSimulating(false);
       }
@@ -93,6 +111,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
   }
 
   function resetSimulation() {
+    setSimulationError(undefined);
     setSimulated(false);
     setLiveSimulation(null);
     // Forget any decision taken on a row that only the simulation created.
@@ -104,7 +123,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
 
   function confirmRevoke(id: string) {
     if (detected.find((item) => item.id === id)?.cancelMode !== "normal") return;
-    setRevoked((current) => (current.includes(id) ? current : [...current, id]));
+    setReports((current) => ({ ...current, [id]: dataset.asOf }));
     setKept((current) => current.filter((entry) => entry !== id));
   }
 
@@ -124,6 +143,8 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
             <span>p</span>paytrace
           </div>
           <div className="bar-actions">
+            <Link href="/">Priya dataset</Link>
+            <Link href="/?dataset=alternate">Second synthetic dataset</Link>
             <Button variant="outline" className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
               ↓ Export CSV
             </Button>
@@ -159,6 +180,15 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
         </aside>
 
         <section className="main-stage">
+          <p className="demo-label">Demo · Synthetic payments · No bank connected</p>
+          <details className="technical-source"><summary>Analysis source and technical details</summary>
+          <p className="source-badge">{source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV fixture"}</p>
+          <EvidenceStrip source={source} />
+          {source.note && <p role="status">{source.note}</p>}
+          </details>
+          {Object.keys(reports).map((id) => <p role="status" key={id}>
+            {baseDetected.find((item) => item.id === id)?.merchant ?? id}: {detectedAfterReport(id) ? "Future debit observed after your cancellation report. Review with your bank." : "User reports cancelled; bank cancellation is unverified."}
+          </p>)}
           <nav className="mobile-nav" aria-label="Main navigation">
             {[...screens, graphScreen].map((item) => (
               <button
@@ -172,6 +202,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
             ))}
           </nav>
 
+          {screen === "overview" && <OverviewScreen items={active} issues={issues} total={total} asOf={dataset.asOf} onOpen={setOpenId} onPayments={() => setScreen("list")} onSpending={() => setScreen("annual")} />}
           {screen === "graph" && (
             <EvidenceGraphScreen
               graph={graph}
@@ -187,6 +218,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
               baseline={baseline}
               simulated={simulated}
               simulating={simulating}
+              simulationError={simulationError}
               simulatedIn={simulated ? (live && liveSimulation ? "neo4j" : "app") : undefined}
               onSimulate={simulate}
               onReset={resetSimulation}
@@ -235,7 +267,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
       </div>
 
       {openItem && (
-        <DetailPanel item={openItem} asOf={dataset.asOf} onClose={() => setOpenId(null)} />
+        <DetailPanel item={openItem} asOf={dataset.asOf} onClose={() => setOpenId(null)} onCancel={() => { setOpenId(null); setScreen("paths"); }} />
       )}
     </main>
   );

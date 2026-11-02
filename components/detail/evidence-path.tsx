@@ -1,5 +1,6 @@
 import { formatDate, formatINR } from "@/lib/format";
 import type { Commitment } from "@/lib/types";
+import { rejectedPriceNotices } from "@/lib/notice-evidence";
 
 export function EvidencePath({ item }: { item: Commitment }) {
   const latest = item.evidenceRows.at(-1);
@@ -36,9 +37,12 @@ export function EvidencePath({ item }: { item: Commitment }) {
       {silentHike && (
         <p className="path-finding">
           The price increased{item.previousAmount !== undefined ? ` from ${formatINR(item.previousAmount)} to ${formatINR(item.amount)}` : ""},
-          but no price-change notice was found.
+          but no matching price-change notice was found in the supplied messages.
         </p>
       )}
+      {rejectedPriceNotices(item).map(({ notice, changeDate, reasons }) => <p className="notice-exclusion" key={notice.noticeId}>
+        The notice dated {formatDate(notice.sentOn)} does not explain the increase on {formatDate(changeDate)}: {reasons.join("; ")}.
+      </p>)}
     </section>
   );
 }

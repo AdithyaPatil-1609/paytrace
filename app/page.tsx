@@ -7,6 +7,7 @@
 import { Dashboard } from "@/components/dashboard";
 import { hasNeo4jConfig, loadDatasetFromNeo4j, type LoadedDataset, type SourceInfo } from "@/db/neo4j/dataset";
 import { loadFixtures } from "@/lib/fixtures";
+import { alternateDataset } from "@/data/alternate";
 
 // Read per request, so a change in the graph or in data/raw shows on reload.
 export const dynamic = "force-dynamic";
@@ -59,7 +60,10 @@ async function load(): Promise<LoadedDataset> {
   };
 }
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ dataset?: string }> }) {
+  if ((await searchParams).dataset === "alternate") {
+    return <Dashboard key="alternate" dataset={alternateDataset(loadFixtures())} source={{ ...fixtureSource, note: "Second synthetic dataset, analysed by the offline engine." }} />;
+  }
   const { dataset, source, commitments, graph } = await load();
-  return <Dashboard dataset={dataset} source={source} commitments={commitments} graph={graph} />;
+  return <Dashboard key="priya" dataset={dataset} source={source} commitments={commitments} graph={graph} />;
 }

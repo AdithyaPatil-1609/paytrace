@@ -8,6 +8,8 @@ import { monthlyCost } from "@/lib/commitment-ui";
 import { formatINR } from "@/lib/format";
 import type { Commitment } from "@/lib/types";
 import { useState } from "react";
+import { simulatedStatements, simulatedNotices, simulationMerchant, simulatedPattern } from "@/data/simulation";
+import { rejectedPriceNotices } from "@/lib/notice-evidence";
 
 export function AllPaymentsScreen({
   items,
@@ -15,6 +17,8 @@ export function AllPaymentsScreen({
   baseline,
   simulated,
   simulating,
+  simulatedIn,
+  simulationError,
   onSimulate,
   onReset,
   onOpen,
@@ -27,12 +31,14 @@ export function AllPaymentsScreen({
   simulating: boolean;
   /** Who decided the simulated rows: Cypher in a rolled-back transaction, or the fixture engine. */
   simulatedIn?: "neo4j" | "app";
+  simulationError?: string;
   onSimulate: () => void;
   onReset: () => void;
   onOpen: (id: string) => void;
   asOf: string;
 }) {
   const [search, setSearch] = useState("");
+  const scenario = simulated ? items.find((item) => item.merchant === simulationMerchant) : undefined;
   const visibleItems = items.filter((item) =>
     `${item.merchant} ${item.rawNarration}`.toLowerCase().includes(search.trim().toLowerCase())
   );
@@ -50,16 +56,16 @@ export function AllPaymentsScreen({
           <strong>{formatINR(total)}</strong>
           {simulated && baseline !== total && (
             <p className="year-delta">
-              <s>{formatINR(baseline)}</s> → <b>{formatINR(total)}</b> after one new autopay
+              <s>{formatINR(baseline)}</s> → <b>{formatINR(total)}</b> including the synthetic scenario
             </p>
           )}
           <small>{items.length} regular payments found in the available records.</small>
         </div>
         <div className="year-note">
-          <b>{simulated ? "Planned payment added" : "An estimate, not a bill"}</b>
+          <b>{simulated ? "Demo scenario included" : "An estimate, not a bill"}</b>
           <p>
             {simulated
-              ? "Headspace is included in this estimate. You can remove it at any time."
+              ? "Lumen Notes is included in this estimate. Reset the demo to remove the scenario."
               : "This is what regular payments could cost over the next twelve months. Bills can change."}
           </p>
         </div>
@@ -109,21 +115,36 @@ export function AllPaymentsScreen({
 
       <section className="simulation-card">
         <div>
-          <p>PLAN A PAYMENT</p>
-          <h2>{simulated ? "Headspace is included in your plan" : "See the cost of a new payment"}</h2>
+          <p>SYNTHETIC DEMO · A HARDER CASE</p>
+          <h2>{simulated ? "What did PayTrace find?" : "Can an old notice hide a new price increase?"}</h2>
           <span>
             {simulated
-              ? "A planned ₹299 monthly Headspace payment is included in your estimate. No charge has been set up."
-              : "Include a ₹299 monthly Headspace payment in your spending plan. This only changes the estimate."}
+              ? "Results below are calculated from the synthetic records. No payment has been created."
+              : "Four differently described charges belong to Lumen Notes. The price rises from ₹99 to ₹129, but the only price notice concerns an older ₹99 price."}
           </span>
+          <details><summary>See the synthetic inputs</summary>
+            <ul>{simulatedStatements.map((row) => <li key={row.txnId}>{row.date} · {row.narration} · {formatINR(row.debit ?? 0)}</li>)}</ul>
+            <p>Shared merchant pattern: {simulatedPattern.pattern}. The dictionary links these descriptions to one service; the account stays the same.</p>
+            <p>Older notice · {simulatedNotices[0].sentOn}: {simulatedNotices[0].text}</p>
+          </details>
+          {simulationError && <p role="alert">{simulationError}</p>}
+          {scenario && <div className="simulation-result" role="status">
+            <p><strong>{scenario.merchant}: {scenario.debitCount} charges grouped into one recurring payment.</strong></p>
+            <p>Price: {formatINR(scenario.previousAmount ?? 0)} → {formatINR(scenario.amount)} per month. Estimated yearly cost: {formatINR(scenario.annualCost)}.</p>
+            {scenario.previousAmount !== undefined && <p>Increase: {formatINR(scenario.amount - scenario.previousAmount)} per month, or {formatINR((scenario.amount - scenario.previousAmount) * 12)} more per year if this monthly price continues.</p>}
+            <p>{scenario.signals.includes("silent_hike") ? "Price increase flagged: no matching notice was found in the supplied messages." : "No unannounced price increase was detected."}</p>
+            {rejectedPriceNotices(scenario).map(({ notice, reasons }) => <p key={notice.noticeId}>Notice from {notice.sentOn} excluded: {reasons.join("; ")}.</p>)}
+            <p>{simulatedIn === "neo4j" ? "Calculated in Neo4j; the transaction rolled back and the stored graph is unchanged." : "Calculated by the offline engine; no graph was changed."}</p>
+            <button className="primary-button" onClick={() => onOpen(scenario.id)}>Review Lumen Notes evidence →</button>
+          </div>}
         </div>
         {simulated ? (
           <button className="secondary-button" onClick={onReset}>
-            Remove planned payment
+            Reset demo scenario
           </button>
         ) : (
           <button className="primary-button" onClick={onSimulate} disabled={simulating}>
-            {simulating ? "Updating estimate…" : "Add to spending plan"} <i>→</i>
+            {simulating ? "Checking the evidence…" : "Run difficult scenario"} <i>→</i>
           </button>
         )}
       </section>

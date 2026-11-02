@@ -72,11 +72,13 @@ export function CancelPathsScreen({ items, allItems, revoked, kept, handled, onC
                     : <p className="stop-payment-note">{isKept ? "You chose to keep paying. Your yearly estimate stays the same." : `Stopping future charges could reduce your yearly spending by ${formatINR(item.annualCost)}.`}</p>}
                 <Accordion type="single" collapsible>
                   <AccordionItem value="steps">
-                    <AccordionTrigger>{isLoan ? "What to do about this loan" : "Show steps to stop"}</AccordionTrigger>
+                    <AccordionTrigger onClick={() => onHandle(item.id)}>{isLoan ? "What to do about this loan" : "Show steps to stop"}</AccordionTrigger>
                     <AccordionContent>
+                      {handled.includes(item.id) && <p role="status">Instructions viewed. Cancellation has not been confirmed.</p>}
                       <ol className="simple-stop-steps">
                         <li><strong>{isLoan ? "Contact your lender" : "Contact the service"}</strong><p>{isLoan ? "Ask your lender about repayment options and what is needed to close the loan." : item.stopService.replace(/This prototype[^.]*\./gi, "").trim()}</p></li>
                         <li><strong>{isLoan ? "Keep repayments in place" : "Check automatic payments"}</strong><p>{isLoan ? "Keep making payments until your lender confirms the loan is settled." : plainAutomaticPaymentStep(item.stopMoney)}</p></li>
+                        <li><strong>If you do not receive confirmation</strong><p>{item.ifSilent}</p></li>
                       </ol>
                       <Accordion type="single" collapsible>
                         <AccordionItem value="help"><AccordionTrigger>More help and bank details</AccordionTrigger><AccordionContent>
@@ -94,10 +96,10 @@ export function CancelPathsScreen({ items, allItems, revoked, kept, handled, onC
                         <div className="stop-record-action">
                           <p>Already completed the steps with the service and your bank?</p>
                           <AlertDialog>
-                            <AlertDialogTrigger asChild><Button>I&apos;ve stopped this payment</Button></AlertDialogTrigger>
+                            <AlertDialogTrigger asChild><Button>I completed these steps</Button></AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Mark {item.merchant} as stopped?</AlertDialogTitle>
+                                <AlertDialogTitle>Record your cancellation report for {item.merchant}?</AlertDialogTitle>
                                 <AlertDialogDescription>Only do this after you have stopped the payment with the service or your bank. This updates your spending estimate by {formatINR(item.annualCost)} a year. It does not cancel anything for you.</AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter><AlertDialogCancel>Go back</AlertDialogCancel><AlertDialogAction onClick={() => onConfirm(item.id)}>Yes, I have stopped it</AlertDialogAction></AlertDialogFooter>

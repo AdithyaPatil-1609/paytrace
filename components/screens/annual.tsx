@@ -37,7 +37,8 @@ export function AnnualScreen({ items, total, leakage, stoppedValue, asOf, onOpen
       )}
       <AnnualDashboard items={items} asOf={asOf} onOpen={onOpen} />
       <details className="calendar-disclosure">
-        <summary>See payment dates on a calendar</summary>
+        <summary>What might charge next? View the payment calendar</summary>
+        <p className="chart-note">Dates reflect the available payment history. Estimates are not bank confirmations; amounts and timing may change.</p>
         <PaymentCalendar items={items} asOf={asOf} onOpen={onOpen} />
       </details>
     </>
