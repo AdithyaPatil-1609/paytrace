@@ -1,10 +1,12 @@
 /**
- * App shell only: top bar, side nav, which of the four screens is open.
+ * App shell only: top bar, side nav, which screen is open — Screen 00 (the
+ * evidence graph) first, then the four product screens.
  * Screen UIs live in components/screens/. Detail drawer in components/detail/.
  */
 "use client";
 
 import { useMemo, useState } from "react";
+import { GraphBackdrop } from "@/components/chrome/graph-backdrop";
 import { MobileNavigation } from "@/components/chrome/mobile-navigation";
 import { EvidenceStrip } from "@/components/chrome/evidence-strip";
 import { DetailPanel } from "@/components/detail/detail-panel";
@@ -12,17 +14,21 @@ import {
   AllPaymentsScreen,
   AnnualScreen,
   CancelPathsScreen,
+  EvidenceGraphScreen,
   IssuesScreen
 } from "@/components/screens";
 import { withSimulatedAutopay } from "@/data/simulation";
 import type { SourceInfo } from "@/db/neo4j/dataset";
+import type { GraphFacts } from "@/db/neo4j/graph";
 import { hikeAmount, isSilentPriceHike, issueItems, keptLeakTotal, yearlyTotal } from "@/lib/analysis";
 import { downloadCommitmentsCsv } from "@/lib/commitment-ui";
 import { detectCommitments } from "@/lib/engine";
 import type { Commitment, Dataset } from "@/lib/types";
 
-type DashboardProps = { dataset: Dataset; source: SourceInfo; commitments?: Commitment[] };
-type Screen = "annual" | "list" | "issues" | "paths";
+type DashboardProps = { dataset: Dataset; source: SourceInfo; commitments?: Commitment[]; graph?: GraphFacts };
+type Screen = "graph" | "annual" | "list" | "issues" | "paths";
+
+const graphScreen: { id: Screen; number: string; label: string } = { id: "graph", number: "00", label: "Evidence graph" };
 
 const screens: { id: Screen; number: string; label: string }[] = [
   { id: "list", number: "01", label: "All payments" },
@@ -31,25 +37,31 @@ const screens: { id: Screen; number: string; label: string }[] = [
   { id: "annual", number: "04", label: "Annual" }
 ];
 
-export function Dashboard({ dataset, source, commitments }: DashboardProps) {
-  const [screen, setScreen] = useState<Screen>("list");
+export function Dashboard({ dataset, source, commitments, graph }: DashboardProps) {
+  const live = Boolean(commitments && commitments.length > 0);
+  // Live mode opens on the graph; a reviewer on the CSV fixture lands on the product.
+  const [screen, setScreen] = useState<Screen>(source.kind === "neo4j" ? "graph" : "list");
   const [simulated, setSimulated] = useState(false);
+  // Live Simulate: the rows Cypher returned inside a rolled-back transaction.
+  const [liveSimulation, setLiveSimulation] = useState<Commitment[] | null>(null);
+  const [simulating, setSimulating] = useState(false);
   const [revoked, setRevoked] = useState<string[]>([]);
   const [kept, setKept] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  // Neo4j already decided the rows. Simulate is a new debit the graph has
-  // not seen, so that path detects again from the rows.
+  // Live: Neo4j decides every row, Simulate included. The TypeScript engine
+  // only runs on the offline fixture, or if the graph cannot simulate.
   const detected = useMemo(() => {
-    if (commitments && commitments.length > 0 && !simulated) return commitments;
+    if (live && !simulated) return commitments!;
+    if (live && liveSimulation) return liveSimulation;
     return detectCommitments(simulated ? withSimulatedAutopay(dataset) : dataset);
-  }, [dataset, simulated, commitments]);
+  }, [dataset, simulated, commitments, live, liveSimulation]);
 
   // The rows before Simulate: their total drives the before-and-after
   // reading, and their ids tell Reset what the simulation added.
   const baseDetected = useMemo(
-    () => (commitments && commitments.length > 0 ? commitments : detectCommitments(dataset)),
-    [dataset, commitments]
+    () => (live ? commitments! : detectCommitments(dataset)),
+    [dataset, commitments, live]
   );
   const baseline = yearlyTotal(baseDetected);
   const active = detected.filter((item) => !revoked.includes(item.id));
@@ -65,8 +77,27 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
   const debt = yearlyTotal(active.filter((item) => item.bucket === "debt"));
   const openItem = active.find((item) => item.id === openId) ?? null;
 
+  async function simulate() {
+    if (live) {
+      setSimulating(true);
+      try {
+        const response = await fetch("/api/simulate", { method: "POST" });
+        if (response.ok) {
+          const body = (await response.json()) as { commitments: Commitment[] };
+          setLiveSimulation(body.commitments);
+        }
+      } catch {
+        // The fixture path below still answers; the card says which ran.
+      } finally {
+        setSimulating(false);
+      }
+    }
+    setSimulated(true);
+  }
+
   function resetSimulation() {
     setSimulated(false);
+    setLiveSimulation(null);
     // Forget any decision taken on a row that only the simulation created.
     const baseIds = new Set(baseDetected.map((item) => item.id));
     setRevoked((current) => current.filter((id) => baseIds.has(id)));
@@ -88,9 +119,10 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
 
   return (
     <main className="paytrace-shell">
+      <GraphBackdrop />
       <div className="product-chrome">
         <header className="product-bar">
-          <MobileNavigation screens={screens} current={screen} onSelect={setScreen} />
+          <MobileNavigation screens={[graphScreen, ...screens]} current={screen} onSelect={setScreen} />
           <div className="wordmark">
             <span>p</span>paytrace
           </div>
@@ -116,7 +148,12 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
 
       <div className="app-layout">
         <aside className="side-nav">
-          <p>THE FOUR SCREENS</p>
+          <p>THE GRAPH</p>
+          <button className={screen === graphScreen.id ? "active" : ""} onClick={() => setScreen(graphScreen.id)}>
+            <span>{graphScreen.number}</span>
+            {graphScreen.label}
+          </button>
+          <p className="side-gap">THE FOUR SCREENS</p>
           {screens.map((item) => (
             <button
               key={item.id}
@@ -134,13 +171,18 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
         </aside>
 
         <section className="main-stage">
+          {screen === "graph" && (
+            <EvidenceGraphScreen graph={graph} source={source} onContinue={() => setScreen("list")} />
+          )}
           {screen === "list" && (
             <AllPaymentsScreen
               items={active}
               total={total}
               baseline={baseline}
               simulated={simulated}
-              onSimulate={() => setSimulated(true)}
+              simulating={simulating}
+              simulatedIn={simulated ? (live && liveSimulation ? "neo4j" : "app") : undefined}
+              onSimulate={simulate}
               onReset={resetSimulation}
               onOpen={setOpenId}
               asOf={dataset.asOf}
