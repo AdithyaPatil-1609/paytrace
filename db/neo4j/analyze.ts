@@ -33,7 +33,8 @@ const instrumentByMechanism: Record<Mechanism, Instrument> = {
  * / signal rules as lib/engine.ts. The mapper only turns the query's columns
  * into the commitment shape the screens already render.
  */
-const ANALYSIS = `
+/** Live-mode contract. Tests lock the clauses; Aura runs the query. */
+export const ANALYSIS = `
 MATCH (p:Payment)-[:ON_ACCOUNT]->(a:Account)
 WHERE p.debit_inr IS NOT NULL AND p.debit_inr > 0
 OPTIONAL MATCH (pat:Pattern)
@@ -366,90 +367,96 @@ function mechanismOf(value: string): Mechanism {
   return known.includes(value as Mechanism) ? (value as Mechanism) : "none";
 }
 
+/** Neo4j Record and the test double both expose get(). */
+export type AnalysisRecord = { get: (key: string) => unknown };
+
+/** Maps one ANALYSIS row into the commitment the screens render. */
+export function commitmentFromAnalysisRecord(record: AnalysisRecord): Commitment {
+  const merchant = text(record.get("merchant"));
+  const signals = asStrings(record.get("signals"));
+  const kind = text(record.get("kind")) as CommitmentKind;
+  const cadence = text(record.get("cadence")) as Cadence;
+  const amountPattern = text(record.get("amountPattern")) as AmountPattern;
+  const mechanism = mechanismOf(text(record.get("mechanism")));
+  const account = text(record.get("accountId"));
+  const previous = num(record.get("previousAmount"));
+  const openedDays = num(record.get("openedDays"));
+  const lastOpened = record.get("lastOpened") ? text(record.get("lastOpened")) : undefined;
+  const debitCount = num(record.get("debitCount")) ?? 0;
+  const evidence = rowsOf(record.get("evidence"), account);
+  const issueText = issueFor(signals, {
+    lastOpened,
+    previous,
+    latest: evidence.at(-1)?.amount ?? num(record.get("amount")) ?? 0,
+    openedDays
+  });
+  const why = whyRecurring(
+    debitCount,
+    cadence,
+    amountPattern,
+    num(record.get("gapCentre")) ?? 0,
+    num(record.get("gapMin")),
+    num(record.get("gapMax")),
+    asBool(record.get("hasMandate"))
+  );
+  const cancelMode = (text(record.get("cancelMode")) || "normal") as CancelMode;
+  const notices = noticesOf(record.get("noticeRows"));
+
+  return {
+    id: slug(merchant),
+    rawNarration: text(record.get("rawNarration")),
+    merchant,
+    product: text(record.get("product")),
+    category: text(record.get("category")),
+    instrument: instrumentByMechanism[mechanism],
+    mechanism,
+    cadence,
+    amountPattern,
+    amount: amountPattern === "variable" ? Math.round(num(record.get("amount")) ?? 0) : (num(record.get("amount")) ?? 0),
+    previousAmount: previous,
+    annualCost: num(record.get("annualCost")) ?? 0,
+    debitCount,
+    firstCharge: text(record.get("firstCharge")),
+    startedOn: text(record.get("startedOn")),
+    spentToDate: num(record.get("spentToDate")) ?? 0,
+    lastCharge: text(record.get("lastCharge")),
+    nextCharge: record.get("nextCharge") ? text(record.get("nextCharge")) : undefined,
+    lastOpened,
+    lastOpenedMonthsAgo: openedDays === undefined ? undefined : Math.floor(openedDays / 30),
+    opensLast12Months: num(record.get("opensLast12Months")),
+    kind,
+    bucket: text(record.get("bucket")) as Bucket,
+    signals,
+    whyRecurring: why,
+    evidence: issueText ?? why,
+    evidenceRows: evidence,
+    notices,
+    hasPriceChangeNotice: asBool(record.get("hasPriceChangeNotice")),
+    holds: rowsOf(record.get("holdRows"), account),
+    status: statusFor(signals, kind),
+    canCancel: cancelMode !== "block",
+    cancelMode,
+    cancellationPath: record.get("inDictionary")
+      ? `${text(record.get("stopService"))} ${text(record.get("stopMoney"))}`
+      : undefined,
+    source: notices.some((notice) => notice.channel === "email") ? "SMS and email" : "SMS",
+    plainDescription: text(record.get("plainDescription")),
+    issue: issueText,
+    stopService: text(record.get("stopService")),
+    stopMoney: text(record.get("stopMoney")),
+    ifSilent: text(record.get("ifSilent")),
+    trap: text(record.get("trap")) || undefined,
+    mandateRef: text(record.get("mandateRef")) || undefined,
+    mandateStatus: text(record.get("mandateStatus")) || undefined,
+    spendGroup: text(record.get("spendGroup")) as SpendGroup,
+    dateConfidence: text(record.get("dateConfidence")) as DateConfidence,
+    priceSeries: evidence.map((row) => ({ date: row.date, amount: row.amount })),
+    inDictionary: asBool(record.get("inDictionary"))
+  };
+}
+
 /** Runs the analysis query. Throws if the graph cannot answer it. */
 export async function analyzeCommitments(session: Session, asOf: string): Promise<Commitment[]> {
   const result = await session.run(ANALYSIS, { asOf });
-  return result.records.map((record) => {
-    const merchant = text(record.get("merchant"));
-    const signals = asStrings(record.get("signals"));
-    const kind = text(record.get("kind")) as CommitmentKind;
-    const cadence = text(record.get("cadence")) as Cadence;
-    const amountPattern = text(record.get("amountPattern")) as AmountPattern;
-    const mechanism = mechanismOf(text(record.get("mechanism")));
-    const account = text(record.get("accountId"));
-    const previous = num(record.get("previousAmount"));
-    const openedDays = num(record.get("openedDays"));
-    const lastOpened = record.get("lastOpened") ? text(record.get("lastOpened")) : undefined;
-    const debitCount = num(record.get("debitCount")) ?? 0;
-    const evidence = rowsOf(record.get("evidence"), account);
-    const issueText = issueFor(signals, {
-      lastOpened,
-      previous,
-      latest: evidence.at(-1)?.amount ?? num(record.get("amount")) ?? 0,
-      openedDays
-    });
-    const why = whyRecurring(
-      debitCount,
-      cadence,
-      amountPattern,
-      num(record.get("gapCentre")) ?? 0,
-      num(record.get("gapMin")),
-      num(record.get("gapMax")),
-      asBool(record.get("hasMandate"))
-    );
-    const cancelMode = (text(record.get("cancelMode")) || "normal") as CancelMode;
-    const notices = noticesOf(record.get("noticeRows"));
-
-    return {
-      id: slug(merchant),
-      rawNarration: text(record.get("rawNarration")),
-      merchant,
-      product: text(record.get("product")),
-      category: text(record.get("category")),
-      instrument: instrumentByMechanism[mechanism],
-      mechanism,
-      cadence,
-      amountPattern,
-      amount: amountPattern === "variable" ? Math.round(num(record.get("amount")) ?? 0) : (num(record.get("amount")) ?? 0),
-      previousAmount: previous,
-      annualCost: num(record.get("annualCost")) ?? 0,
-      debitCount,
-      firstCharge: text(record.get("firstCharge")),
-      startedOn: text(record.get("startedOn")),
-      spentToDate: num(record.get("spentToDate")) ?? 0,
-      lastCharge: text(record.get("lastCharge")),
-      nextCharge: record.get("nextCharge") ? text(record.get("nextCharge")) : undefined,
-      lastOpened,
-      lastOpenedMonthsAgo: openedDays === undefined ? undefined : Math.floor(openedDays / 30),
-      opensLast12Months: num(record.get("opensLast12Months")),
-      kind,
-      bucket: text(record.get("bucket")) as Bucket,
-      signals,
-      whyRecurring: why,
-      evidence: issueText ?? why,
-      evidenceRows: evidence,
-      notices,
-      hasPriceChangeNotice: asBool(record.get("hasPriceChangeNotice")),
-      holds: rowsOf(record.get("holdRows"), account),
-      status: statusFor(signals, kind),
-      canCancel: cancelMode !== "block",
-      cancelMode,
-      cancellationPath: record.get("inDictionary")
-        ? `${text(record.get("stopService"))} ${text(record.get("stopMoney"))}`
-        : undefined,
-      source: notices.some((notice) => notice.channel === "email") ? "SMS and email" : "SMS",
-      plainDescription: text(record.get("plainDescription")),
-      issue: issueText,
-      stopService: text(record.get("stopService")),
-      stopMoney: text(record.get("stopMoney")),
-      ifSilent: text(record.get("ifSilent")),
-      trap: text(record.get("trap")) || undefined,
-      mandateRef: text(record.get("mandateRef")) || undefined,
-      mandateStatus: text(record.get("mandateStatus")) || undefined,
-      spendGroup: text(record.get("spendGroup")) as SpendGroup,
-      dateConfidence: text(record.get("dateConfidence")) as DateConfidence,
-      priceSeries: evidence.map((row) => ({ date: row.date, amount: row.amount })),
-      inDictionary: asBool(record.get("inDictionary"))
-    };
-  });
+  return result.records.map(commitmentFromAnalysisRecord);
 }
