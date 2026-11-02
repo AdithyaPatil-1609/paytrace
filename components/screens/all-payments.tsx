@@ -89,11 +89,11 @@ export function AllPaymentsScreen({
       </section>
       <p className="exclusion-note">
         <strong>Not added to this list:</strong> one Swiggy order, a transfer to Rahul, salary credits, the
-        credit-card repayment, and YouTube&apos;s ₹1 authorisation. Each is a statement line with no second debit
-        and no mandate behind it, so the grouping drops it. Open any row above to see the rule that kept it.
+        credit-card repayment, and YouTube&apos;s ₹1 authorisation. One-off debits have no second debit or active mandate; credits, card repayments, and
+        authorisation holds are excluded separately. Open any row above to see the rule that kept it.
       </p>
 
-      <h2 className="viz-heading">The next two months</h2>
+      <h2 className="viz-heading">Next month’s payments</h2>
       <RenewalCalendar items={items} asOf={asOf} onOpen={onOpen} />
 
       <section className="simulation-card">
@@ -102,7 +102,7 @@ export function AllPaymentsScreen({
           <h2>{simulated ? "Headspace is now being tracked" : "See what a new autopay looks like"}</h2>
           <span>
             {simulated
-              ? "One statement line, one UPI mandate, and two SMS were added to the fixture. Detection found Headspace on its own. A second click will not duplicate it."
+              ? "One statement line, one UPI mandate, and two SMS were added to the payment records. Detection found Headspace on its own. A second click will not duplicate it."
               : "One click appends the rows a new mandate leaves behind: ₹299 on 22 Oct 2026, a UPI Autopay mandate, and the SMS. Detection then runs again."}
           </span>
         </div>

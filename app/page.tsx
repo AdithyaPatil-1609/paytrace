@@ -36,7 +36,7 @@ async function load(): Promise<{ dataset: Dataset; source: SourceInfo; commitmen
       return {
         dataset: loaded,
         source: fixtureFallback(
-          "Offline fixture — Neo4j answered but the graph has no payments. Run npm run seed for live mode."
+          "Showing saved CSV statements. No payments are available from the connected graph."
         )
       };
     } catch (error) {
@@ -44,8 +44,8 @@ async function load(): Promise<{ dataset: Dataset; source: SourceInfo; commitmen
       console.warn("Neo4j unreachable, falling back to the fixture:", message);
       const loaded = loadFixtures();
       const note = /unauthorized|authentication/i.test(message)
-        ? "Offline fixture — Aura rejected the login. Fix NEO4J_PASSWORD in .env.local, then seed."
-        : "Offline fixture — Neo4j is configured but unreachable. Resume Aura, then npm run seed.";
+        ? "Showing saved CSV statements. The graph connection could not be authenticated."
+        : "Showing saved CSV statements. The graph connection is currently unavailable.";
       return { dataset: loaded, source: fixtureFallback(note) };
     }
   }
@@ -55,7 +55,7 @@ async function load(): Promise<{ dataset: Dataset; source: SourceInfo; commitmen
     source: {
       ...fixtureSource,
       counts: { ...fixtureSource.counts, payments: dataset.statement.length },
-      note: "Offline fixture — Neo4j is not configured. Add Aura credentials and seed for live mode."
+      note: "Payments and insights from saved CSV statements."
     }
   };
 }

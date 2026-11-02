@@ -421,5 +421,5 @@ export const bucketCopy: Record<Bucket, string> = {
   review: "A trial that became a paid plan. Worth a decision.",
   used: "Services she still opens.",
   bills: "A bill or a premium. The autopay can stop; the amount due does not.",
-  debt: "A loan repayment. This prototype has no cancel button for it."
+  debt: "A loan repayment. Manage repayment changes with the lender."
 };

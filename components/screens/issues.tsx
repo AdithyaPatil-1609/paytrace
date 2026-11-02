@@ -29,6 +29,8 @@ export function IssuesScreen({
   onOpen: (id: string) => void;
   onGoToCancel: () => void;
 }) {
+  const silentHikes = allItems.filter(item => item.signals.includes("silent_hike") && !item.hasPriceChangeNotice && item.previousAmount !== undefined);
+  const monthlyIncrease = silentHikes.reduce((sum, item) => sum + item.amount - (item.previousAmount ?? item.amount), 0);
   return (
     <>
       <ScreenHeader
@@ -48,7 +50,7 @@ export function IssuesScreen({
           }
           accent
         />
-        <Metric value={formatINR(hike)} label="Spotify's silent hike. ₹119 became ₹139, with no price message." accent />
+        <Metric value={`${formatINR(monthlyIncrease)} / month`} label={`${silentHikes.map(item => `${item.merchant}: ${formatINR(item.previousAmount ?? 0)} → ${formatINR(item.amount)}`).join("; ") || "No silent price increases"}. ${formatINR(hike)} extra paid across the recorded higher charges. No price-change notice found.`} accent />
       </section>
       <section className="issues-table">
         <div className="issue-caption">

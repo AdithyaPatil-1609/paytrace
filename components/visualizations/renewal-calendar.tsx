@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { upcomingRenewals } from "@/lib/analysis";
+import { nextMonthSchedule } from "@/lib/calendar";
 import { formatINR } from "@/lib/format";
 import type { Commitment } from "@/lib/types";
 
@@ -20,34 +20,6 @@ const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
 ];
-
-function daysInMonth(year: number, month: number) {
-  return new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-}
-
-/** The two months after the as-of date. October shows November, then December. */
-function ahead(asOf: string) {
-  const start = new Date(Date.parse(asOf));
-  return [1, 2].map((step) => {
-    const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + step, 1));
-    return { year: cursor.getUTCFullYear(), month: cursor.getUTCMonth() };
-  });
-}
-
-function dayInMonth(item: Commitment, year: number, month: number) {
-  if (item.cadence === "irregular" || item.dateConfidence === "unknown") return undefined;
-  if (item.cadence === "annual") {
-    if (!item.nextCharge) return undefined;
-    const when = new Date(Date.parse(item.nextCharge));
-    return when.getUTCFullYear() === year && when.getUTCMonth() === month ? when.getUTCDate() : undefined;
-  }
-  const anchor = new Date(Date.parse(item.lastCharge));
-  if (item.cadence === "quarterly") {
-    const gap = (year - anchor.getUTCFullYear()) * 12 + (month - anchor.getUTCMonth());
-    if (gap <= 0 || gap % 3 !== 0) return undefined;
-  }
-  return Math.min(anchor.getUTCDate(), daysInMonth(year, month));
-}
 
 function matches(item: Commitment, filter: Filter) {
   if (filter === "all") return true;
@@ -72,16 +44,9 @@ export function RenewalCalendar({
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const visible = items.filter((item) => matches(item, filter));
-  const months = ahead(asOf).map((slot) => ({
-    ...slot,
-    rows: visible
-      .flatMap((item) => {
-        const day = dayInMonth(item, slot.year, slot.month);
-        return day === undefined ? [] : [{ item, day }];
-      })
-      .sort((a, b) => a.day - b.day)
-  }));
-  const undatedRows = upcomingRenewals(visible).filter((row) => !row.date);
+  const schedule = nextMonthSchedule(visible, asOf);
+  const months = [schedule];
+  const undatedRows = schedule.undated.map(item => ({ item }));
 
   return (
     <section className="viz-block">
@@ -90,6 +55,7 @@ export function RenewalCalendar({
           <button
             key={entry.id}
             className={filter === entry.id ? "active" : ""}
+            aria-pressed={filter === entry.id}
             onClick={() => setFilter(entry.id)}
           >
             {entry.label}
@@ -103,14 +69,14 @@ export function RenewalCalendar({
             {MONTH_NAMES[slot.month]} {slot.year}
           </h3>
           {slot.rows.map(({ item, day }) => (
-            <button className="renewal-row" key={`${item.id}-${slot.month}`} onClick={() => onOpen(item.id)}>
+            <button className="renewal-row" key={`${item.id}-${slot.month}-${day}`} onClick={() => onOpen(item.id)}>
               <div className="renewal-date">
                 <span>{MONTHS[slot.month]}</span>
                 <strong>{String(day).padStart(2, "0")}</strong>
               </div>
               <div className="renewal-body">
                 <strong>{item.merchant}</strong>
-                <span>{item.cadence === "annual" ? "Once a year" : "Same day every month"}</span>
+                <span>{item.cadence === "annual" ? "Once a year" : item.cadence === "weekly" ? "Weekly payment" : item.cadence === "quarterly" ? "Quarterly payment" : "Monthly payment"}</span>
                 <em className={item.dateConfidence === "confirmed" ? "stamp confirmed" : "stamp estimated"}>
                   {item.dateConfidence === "confirmed" ? "date from the schedule" : "estimated, amount varies"}
                 </em>

@@ -58,7 +58,7 @@ export function AnnualScreen({
         <article className="annual-figure muted">
           <span>HOME-LOAN EMI</span>
           <strong>{formatINR(debt)}</strong>
-          <small>This prototype has no cancel button for it.</small>
+          <small>Loan repayments must be managed with the lender.</small>
         </article>
       </section>
 

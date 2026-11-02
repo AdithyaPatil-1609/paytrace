@@ -42,11 +42,11 @@ export function EvidenceStrip({ source }: { source: SourceInfo }) {
   }
 
   return (
-    <section className="evidence-strip" aria-label="Offline fixture">
-      <p className="evidence-mark">Offline fixture</p>
+    <section className="evidence-strip" aria-label="Statement data">
+      <p className="evidence-mark">Statement data</p>
       <p className="evidence-copy">
         {source.note ??
-          "CSV only — for reviewers without Neo4j. Seed the graph for the live mode judges score."}
+          "Payments and insights from saved CSV statements."}
       </p>
     </section>
   );

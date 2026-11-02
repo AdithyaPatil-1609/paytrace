@@ -60,20 +60,20 @@ export function CancelPathsScreen({
                 </small>
                 {item.mandateRef && <small>Mandate: {item.mandateRef}</small>}
               </div>
-              <div className="path-copy">
+              <details className="cancel-guide"><summary>View cancellation steps for {item.merchant}</summary><div className="path-copy">
                 <div>
-                  <b>STOP THE SERVICE</b>
-                  <p>{item.stopService}</p>
+                  <b>1. STOP THE SERVICE</b>
+                  <StepList text={item.stopService} />
                   {item.mechanism === "vas" && (
                     <code className="stop-line">Sample: send STOP CT to 155223</code>
                   )}
                 </div>
                 <div>
-                  <b>STOP THE MONEY</b>
-                  <p>{item.stopMoney}</p>
+                  <b>2. STOP THE MONEY</b>
+                  <StepList text={item.stopMoney} />
                 </div>
                 <div className="silent-line">
-                  <b>IF THEY STAY SILENT</b>
+                  <b>3. CHECK & FOLLOW UP</b>
                   <p>{item.ifSilent}</p>
                 </div>
                 {item.trap && (
@@ -88,7 +88,7 @@ export function CancelPathsScreen({
                     <button onClick={() => onFlagAgain(item.id)}>Flag it again</button>
                   </p>
                 )}
-              </div>
+              </div></details>
               <div className="path-action">
                 {item.cancelMode === "block" ? (
                   <span className="no-action">No revoke control</span>
@@ -116,4 +116,9 @@ export function CancelPathsScreen({
       </section>
     </>
   );
+}
+
+function StepList({ text }: { text: string }) {
+  const steps = text.split(/\.\s+(?=[A-Z])|\s*[→]\s*/).filter(Boolean);
+  return <ol className="cancel-steps">{steps.map((step, index) => <li key={index}>{step}</li>)}</ol>;
 }

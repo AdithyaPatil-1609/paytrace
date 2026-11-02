@@ -47,7 +47,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 15px;
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -103,13 +103,13 @@ button {
   border-radius: 8px 8px 8px 2px;
   background: var(--marigold);
   color: var(--paper-lift);
-  font: 700 15px/1 var(--sans);
+  font: 700 16px/1 var(--sans);
 }
 
 .product-bar > p {
   margin: 0;
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.22em;
 }
 
@@ -130,7 +130,7 @@ button {
   padding: 8px 13px;
   background: var(--paper-lift);
   color: var(--ink);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: border-color 0.14s, color 0.14s;
@@ -146,7 +146,7 @@ button {
   align-items: center;
   gap: 9px;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .persona b {
@@ -157,7 +157,7 @@ button {
   border-radius: 50%;
   background: var(--ink);
   color: var(--paper);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 /* --- frame --------------------------------------------------- */
@@ -180,7 +180,7 @@ button {
 .side-nav > p {
   margin: 0 0 16px 12px;
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.2em;
 }
 
@@ -196,14 +196,14 @@ button {
   background: transparent;
   color: var(--ink-soft);
   text-align: left;
-  font-size: 13px;
+  font-size: 15px;
   cursor: pointer;
   transition: color 0.14s, border-color 0.14s;
 }
 
 .side-nav > button span {
   color: var(--ink-faint);
-  font: 500 10px var(--mono);
+  font: 500 13px var(--mono);
 }
 
 .side-nav > button:hover {
@@ -225,7 +225,7 @@ button {
   padding: 16px 12px;
   border-top: 1px solid var(--rule-firm);
   color: var(--ink-faint);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -245,10 +245,6 @@ button {
   margin: 0 auto;
 }
 
-.mobile-nav {
-  display: none;
-}
-
 /* --- screen heading ------------------------------------------ */
 
 .screen-header {
@@ -258,7 +254,7 @@ button {
 .screen-header > p {
   margin: 0 0 14px;
   color: var(--marigold-deep);
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.2em;
 }
 
@@ -277,7 +273,7 @@ button {
   max-width: 64ch;
   margin-top: 18px;
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.65;
 }
 
@@ -309,7 +305,7 @@ button {
 
 .annual-figure span {
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.18em;
 }
 
@@ -326,7 +322,7 @@ button {
   display: block;
   max-width: 34ch;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -369,7 +365,7 @@ button {
 .kpi span {
   display: block;
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.16em;
 }
 
@@ -418,7 +414,7 @@ figcaption {
   gap: 10px;
   margin-bottom: 16px;
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -461,7 +457,7 @@ figcaption {
 
 .donut-sub {
   fill: var(--ink-faint);
-  font: 400 9px var(--sans);
+  font: 400 13px var(--sans);
   letter-spacing: 0.14em;
   text-anchor: middle;
 }
@@ -485,7 +481,7 @@ figcaption {
   padding: 7px 8px;
   background: transparent;
   text-align: left;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--ink-soft);
   cursor: pointer;
 }
@@ -553,7 +549,7 @@ figcaption {
   border-radius: 3px;
   background: var(--paper-lift);
   color: var(--ink);
-  font-size: 11px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   opacity: 0;
@@ -568,7 +564,7 @@ figcaption {
 .month-col-label {
   margin-top: 8px;
   color: var(--ink-faint);
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.04em;
 }
 
@@ -576,7 +572,7 @@ figcaption {
   margin: 16px 0 0;
   max-width: 66ch;
   color: var(--ink-faint);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -586,7 +582,7 @@ figcaption {
   border: 1px dashed var(--rule-firm);
   border-radius: var(--r-lg);
   color: var(--ink-faint);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .viz-link {
@@ -596,7 +592,7 @@ figcaption {
   padding: 9px 13px;
   background: transparent;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -629,7 +625,7 @@ figcaption {
   border: 0;
   background: none;
   color: var(--marigold-deep);
-  font-size: 11px;
+  font-size: 13px;
   text-decoration: underline;
   cursor: pointer;
 }
@@ -648,7 +644,7 @@ figcaption {
   padding: 6px 13px;
   background: transparent;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -670,7 +666,7 @@ figcaption {
 .badge {
   padding: 4px 9px;
   border-radius: 20px;
-  font: 700 9px var(--sans);
+  font: 700 13px var(--sans);
   font-style: normal;
   letter-spacing: 0.08em;
 }
@@ -692,7 +688,7 @@ figcaption {
 
 .axis-label {
   fill: var(--ink-faint);
-  font: 400 10px var(--mono);
+  font: 400 13px var(--mono);
 }
 
 .change-line {
@@ -703,7 +699,7 @@ figcaption {
 
 .change-label {
   fill: var(--ember);
-  font: 700 9px var(--sans);
+  font: 700 13px var(--sans);
   letter-spacing: 0.06em;
 }
 
@@ -727,7 +723,7 @@ figcaption {
 
 .delta-label {
   fill: var(--ember);
-  font: 700 13px var(--sans);
+  font: 700 15px var(--sans);
 }
 
 .hike-facts {
@@ -765,7 +761,7 @@ figcaption {
   display: block;
   margin-top: 7px;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -796,7 +792,7 @@ figcaption {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -821,7 +817,7 @@ figcaption {
 
 .leak-row b {
   color: var(--ink);
-  font-size: 13px;
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
@@ -830,7 +826,7 @@ figcaption {
   border: 0;
   background: none;
   color: var(--ink-faint);
-  font-size: 10px;
+  font-size: 13px;
   text-align: right;
   text-decoration: underline;
   text-decoration-style: dotted;
@@ -857,7 +853,7 @@ figcaption {
 .whatif span {
   display: block;
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
@@ -883,7 +879,7 @@ figcaption {
   display: block;
   max-width: 38ch;
   color: var(--ink-faint);
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -902,7 +898,7 @@ figcaption {
   padding: 6px 13px;
   background: transparent;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -946,7 +942,7 @@ figcaption {
 .renewal-empty {
   margin: 0;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .renewal-date {
@@ -959,7 +955,7 @@ figcaption {
 }
 
 .renewal-date span {
-  font: 700 9px var(--sans);
+  font: 700 13px var(--sans);
   letter-spacing: 0.14em;
 }
 
@@ -979,13 +975,13 @@ figcaption {
   display: block;
   margin: 3px 0 7px;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .stamp {
   padding: 3px 8px;
   border-radius: 20px;
-  font: 700 8px var(--sans);
+  font: 700 13px var(--sans);
   font-style: normal;
   letter-spacing: 0.08em;
 }
@@ -1017,14 +1013,14 @@ figcaption {
   display: block;
   margin-bottom: 6px;
   color: var(--ink);
-  font: 600 15px var(--serif);
+  font: 600 16px var(--serif);
 }
 
 .undated p {
   margin: 0 0 12px;
   max-width: 68ch;
   color: var(--ink-faint);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -1037,7 +1033,7 @@ figcaption {
   border-radius: 0 var(--r-sm) var(--r-sm) 0;
   background: rgba(79, 122, 98, 0.1);
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.55;
 }
 
@@ -1086,7 +1082,7 @@ figcaption {
   display: block;
   margin-top: 4px;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .bucket-card header b {
@@ -1135,7 +1131,7 @@ figcaption {
   padding: 7px 13px;
   background: var(--paper-lift);
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
   transition: border-color 0.12s, color 0.12s;
 }
@@ -1153,7 +1149,7 @@ figcaption {
 .bucket-empty {
   margin: 0;
   color: var(--ink-faint);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 /* --- year banner ----------------------------------------------- */
@@ -1176,7 +1172,7 @@ figcaption {
 
 .year-banner span {
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.18em;
 }
 
@@ -1190,7 +1186,7 @@ figcaption {
 
 .year-banner small {
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .year-delta {
@@ -1199,7 +1195,7 @@ figcaption {
   gap: 9px;
   margin: 2px 0 6px;
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .year-delta s {
@@ -1223,13 +1219,13 @@ figcaption {
 
 .year-note b {
   color: var(--ink);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .year-note p {
   margin: 5px 0 0;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -1257,7 +1253,7 @@ figcaption {
   border-bottom: 1px solid var(--rule-firm);
   background: var(--paper-sink);
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.14em;
 }
 
@@ -1283,7 +1279,7 @@ figcaption {
 
 .payment-row .raw-narration {
   color: var(--ink);
-  font: 500 11px var(--mono);
+  font: 500 13px var(--mono);
   overflow-wrap: anywhere;
 }
 
@@ -1297,13 +1293,13 @@ figcaption {
 
 .payment-row .pay-plain strong {
   color: var(--ink);
-  font: 600 15px/1.2 var(--serif);
+  font: 600 16px/1.2 var(--serif);
   letter-spacing: -0.02em;
 }
 
 .payment-row .pay-plain em {
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   font-style: normal;
   line-height: 1.35;
 }
@@ -1311,7 +1307,7 @@ figcaption {
 .payment-row span,
 .payment-row b,
 .payment-row small {
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .payment-row span,
@@ -1348,7 +1344,7 @@ figcaption {
   border-radius: 20px;
   background: var(--marigold);
   color: var(--paper-lift);
-  font: 700 8px var(--sans);
+  font: 700 13px var(--sans);
   letter-spacing: 0.08em;
   vertical-align: middle;
 }
@@ -1358,7 +1354,7 @@ figcaption {
   margin: 14px 2px 0;
   max-width: 76ch;
   color: var(--ink-faint);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.6;
 }
 
@@ -1383,7 +1379,7 @@ figcaption {
 .simulation-card p {
   margin: 0;
   color: var(--marigold-deep);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.18em;
 }
 
@@ -1398,7 +1394,7 @@ figcaption {
   display: block;
   max-width: 68ch;
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -1407,7 +1403,7 @@ figcaption {
   flex: 0 0 auto;
   border-radius: var(--r-sm);
   padding: 12px 18px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.1s;
@@ -1440,7 +1436,7 @@ figcaption {
   border-radius: 4px;
   background: var(--paper-sink);
   color: var(--ink-faint);
-  font: 500 8px var(--mono);
+  font: 500 13px var(--mono);
   font-style: normal;
 }
 
@@ -1484,7 +1480,7 @@ figcaption {
   margin-top: 9px;
   max-width: 34ch;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -1500,7 +1496,7 @@ figcaption {
   padding: 11px 15px;
   background: var(--paper-sink);
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.12em;
 }
 
@@ -1524,7 +1520,7 @@ figcaption {
 .issue-row span,
 .issue-row b,
 .issue-row small {
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .issue-row strong {
@@ -1599,20 +1595,20 @@ figcaption {
 .path-name span {
   margin-top: 5px;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
 
 .path-name small {
   margin-top: 9px;
   color: var(--ink-faint);
-  font: 8px var(--mono);
+  font: 13px var(--mono);
   overflow-wrap: anywhere;
 }
 
 .path-mode {
   color: var(--marigold-deep) !important;
-  font: 700 8px var(--sans) !important;
+  font: 700 13px var(--sans) !important;
   letter-spacing: 0.1em;
 }
 
@@ -1629,7 +1625,7 @@ figcaption {
 
 .path-copy b {
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.1em;
 }
@@ -1637,7 +1633,7 @@ figcaption {
 .path-copy p {
   margin: 0;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -1658,7 +1654,7 @@ figcaption {
   border-radius: 5px;
   background: var(--ink);
   color: var(--paper);
-  font: 9px var(--mono);
+  font: 13px var(--mono);
 }
 
 .trap {
@@ -1672,7 +1668,7 @@ figcaption {
   border-left: 2px solid var(--marigold);
   background: var(--marigold-skin);
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -1696,7 +1692,7 @@ figcaption {
   padding: 11px;
   background: var(--ink);
   color: var(--paper);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   text-align: center;
   cursor: pointer;
@@ -1718,7 +1714,7 @@ figcaption {
 
 .path-action small {
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1.45;
   text-align: center;
 }
@@ -1726,7 +1722,7 @@ figcaption {
 .no-action,
 .stopped-label {
   text-align: center;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
@@ -1781,7 +1777,7 @@ figcaption {
 
 .detail-panel header code {
   color: var(--ink-faint);
-  font: 10px var(--mono);
+  font: 13px var(--mono);
   overflow-wrap: anywhere;
 }
 
@@ -1796,7 +1792,7 @@ figcaption {
   margin: 0;
   max-width: 54ch;
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.55;
 }
 
@@ -1828,7 +1824,7 @@ figcaption {
 .detail-fact span {
   display: block;
   color: var(--ink-faint);
-  font-size: 8px;
+  font-size: 13px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -1837,7 +1833,7 @@ figcaption {
   display: block;
   margin-top: 5px;
   color: var(--ink);
-  font-size: 12px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1849,7 +1845,7 @@ figcaption {
 .detail-block h3 {
   margin: 0 0 8px;
   color: var(--marigold-deep);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1859,7 +1855,7 @@ figcaption {
   margin: 0;
   max-width: 62ch;
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.65;
 }
 
@@ -1878,7 +1874,7 @@ figcaption {
 .detail-mandate {
   margin-top: 8px !important;
   color: var(--ink-faint) !important;
-  font: 9px var(--mono) !important;
+  font: 13px var(--mono) !important;
 }
 
 .detail-note {
@@ -1907,20 +1903,20 @@ figcaption {
 .notice-list li span {
   display: block;
   color: var(--marigold-deep);
-  font: 8px var(--mono);
+  font: 13px var(--mono);
   letter-spacing: 0.06em;
 }
 
 .notice-list li p {
   margin: 5px 0 0;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
 .notice-list li.empty {
   color: var(--ink-faint);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .evidence-table {
@@ -1941,18 +1937,18 @@ figcaption {
 
 .evidence-table span {
   color: var(--ink-faint);
-  font: 9px var(--mono);
+  font: 13px var(--mono);
 }
 
 .evidence-table code {
   color: var(--ink-soft);
-  font: 9px var(--mono);
+  font: 13px var(--mono);
   overflow-wrap: anywhere;
 }
 
 .evidence-table b {
   color: var(--ink);
-  font-size: 10px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
@@ -1996,7 +1992,7 @@ figcaption {
 
 .path-hops code {
   color: #2f5744;
-  font: 500 10px var(--mono);
+  font: 500 13px var(--mono);
 }
 
 .path-rel {
@@ -2006,7 +2002,7 @@ figcaption {
 .path-hops strong {
   display: block;
   color: var(--ink);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -2014,7 +2010,7 @@ figcaption {
   display: block;
   margin-top: 2px;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
@@ -2026,12 +2022,12 @@ figcaption {
   background: var(--ember-skin);
   border: 1px solid rgba(180, 64, 42, 0.25);
   color: var(--ink) !important;
-  font-size: 11px !important;
+  font-size: 13px !important;
   line-height: 1.55 !important;
 }
 
 .path-finding code {
-  font: 500 10px var(--mono);
+  font: 500 13px var(--mono);
 }
 
 /* --- responsive ----------------------------------------------------- */
@@ -2063,22 +2059,12 @@ figcaption {
   .app-layout { display: block; }
   .side-nav { display: none; }
   .main-stage { padding: 26px 16px 48px; }
-  .mobile-nav { display: flex; gap: 6px; margin-bottom: 24px; }
-  .mobile-nav button {
-    flex: 1;
-    border: 1px solid var(--rule-firm);
-    border-radius: var(--r-sm);
-    padding: 9px;
-    background: transparent;
-    color: var(--ink-soft);
-    font: 500 11px var(--mono);
-  }
-  .mobile-nav button.active { background: var(--ink); color: var(--paper); }
+
   .screen-header h1 { font-size: 38px; }
   .kpi-row { grid-template-columns: 1fr; }
   .month-chart { gap: 3px; margin-top: 28px; }
   .month-plot { height: 110px; }
-  .month-col-label { font-size: 8px; }
+  .month-col-label { font-size: 13px; }
   .year-banner, .simulation-card, .whatif { display: block; }
   .year-note { max-width: none; margin-top: 16px; }
   .simulation-card button, .whatif .primary-button { width: 100%; margin-top: 16px; }
@@ -2144,7 +2130,7 @@ figcaption {
   display: block;
   margin-top: 4px;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2160,7 +2146,7 @@ figcaption {
   padding: 7px 12px;
   background: transparent;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -2187,7 +2173,7 @@ figcaption {
 
 .fridge-weekdays span {
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   text-align: center;
@@ -2211,7 +2197,7 @@ figcaption {
 
 .fridge-day > b {
   color: var(--ink-faint);
-  font: 500 11px var(--mono);
+  font: 500 13px var(--mono);
 }
 
 .fridge-day.has-notes {
@@ -2247,7 +2233,7 @@ figcaption {
 
 .note span {
   color: var(--ink);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.2;
   overflow-wrap: anywhere;
@@ -2255,7 +2241,7 @@ figcaption {
 
 .note i {
   color: var(--ink-soft);
-  font: 9px var(--mono);
+  font: 13px var(--mono);
   font-style: normal;
   font-variant-numeric: tabular-nums;
 }
@@ -2280,13 +2266,13 @@ figcaption {
   margin: 16px 0 0;
   max-width: 76ch;
   color: var(--ink-faint);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
 @media (max-width: 900px) {
   .fridge-day { min-height: 76px; }
-  .note span { font-size: 8px; }
+  .note span { font-size: 13px; }
 }
 
 @media (max-width: 660px) {
@@ -2393,7 +2379,7 @@ figcaption {
   border-left: 3px solid var(--sage);
   background: rgba(79, 122, 98, 0.12);
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -2404,7 +2390,7 @@ figcaption {
   margin-left: 4px;
   background: none;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 13px;
   text-decoration: underline;
   cursor: pointer;
 }
@@ -2469,13 +2455,13 @@ figcaption {
   margin: 0 0 16px;
   max-width: 60ch;
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
 .strip-lead strong {
   color: var(--ink);
-  font-size: 15px;
+  font-size: 16px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2499,14 +2485,14 @@ figcaption {
 
 .month-name {
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
 }
 
 .month-name i {
   margin-left: 4px;
   color: var(--ink-faint);
-  font: 9px var(--mono);
+  font: 13px var(--mono);
   font-style: normal;
 }
 
@@ -2543,21 +2529,21 @@ figcaption {
 
 .month-amount {
   color: var(--ink);
-  font-size: 12px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
 .month-note {
   color: var(--plum);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
 }
 
 .month-note em {
   margin-left: 6px;
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   font-style: normal;
 }
 
@@ -2566,7 +2552,7 @@ figcaption {
 .path-spent {
   margin-top: 7px !important;
   color: var(--ink-soft) !important;
-  font: 500 9px var(--sans) !important;
+  font: 500 13px var(--sans) !important;
   letter-spacing: 0;
 }
 
@@ -2583,7 +2569,7 @@ figcaption {
 
 .leak-evidence em {
   color: var(--ember-deep);
-  font-size: 12px;
+  font-size: 14px;
   font-style: normal;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -2614,7 +2600,7 @@ figcaption {
 .evidence-mark {
   margin: 0;
   color: var(--marigold-deep);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -2623,13 +2609,13 @@ figcaption {
 .evidence-copy {
   margin: 0;
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.4;
 }
 
 .evidence-copy code {
   color: var(--ink);
-  font: 500 11px var(--mono);
+  font: 500 13px var(--mono);
 }
 
 .evidence-counts {
@@ -2648,7 +2634,7 @@ figcaption {
 .evidence-counts dt {
   margin: 0;
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2657,7 +2643,7 @@ figcaption {
 .evidence-counts dd {
   margin: 0;
   color: var(--ink);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -2670,7 +2656,7 @@ figcaption {
   border: 1px solid var(--rule-firm);
   border-radius: 20px;
   color: var(--ink-faint);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
@@ -2723,14 +2709,14 @@ figcaption {
 
 .source-panel header span {
   color: var(--ink-faint);
-  font: 10px var(--mono);
+  font: 13px var(--mono);
 }
 
 .source-panel p {
   margin: 0;
   max-width: 76ch;
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -2742,7 +2728,7 @@ figcaption {
   padding: 1px 5px;
   border-radius: 3px;
   background: var(--paper-sink);
-  font: 10px var(--mono);
+  font: 13px var(--mono);
 }
 
 .source-counts {
@@ -2772,7 +2758,7 @@ figcaption {
   display: block;
   margin-top: 3px;
   color: var(--ink-faint);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -2781,4 +2767,126 @@ figcaption {
   .evidence-strip { padding: 10px 16px; }
   .evidence-counts { margin-left: 0; }
   .source-badge { display: none; }
+}
+
+/* Responsive payment review and progressive disclosure. */
+button, summary { touch-action: manipulation; }
+button:focus-visible, summary:focus-visible { outline: 3px solid var(--marigold-deep); outline-offset: 3px; }
+.main-stage, .app-layout > *, .path-card > *, .payment-row > *, .issue-row > * { min-width: 0; }
+.payment-row, .issue-row, .path-card, .detail-panel { overflow-wrap: anywhere; }
+.exclusion-note { padding: 20px 24px; border: 1px solid var(--marigold-deep); border-left: 5px solid var(--marigold-deep); border-radius: var(--r-md); background: var(--marigold-skin); color: var(--ink); font-size: 15px; line-height: 1.8; }
+.exclusion-note > strong { display: block; margin-bottom: 5px; font-size: 16px; }
+.detail-accordion { margin-top: 14px; border: 1px solid var(--rule-firm); border-radius: var(--r-md); background: var(--paper-lift); padding: 0 16px; }
+.detail-accordion > summary, .cancel-guide > summary { padding: 16px 0; cursor: pointer; font-weight: 650; font-size: 15px; color: var(--ink); }
+.detail-accordion[open] { padding-bottom: 16px; }
+.detail-accordion > p { font-size: 15px; line-height: 1.65; }
+.detail-accordion .detail-facts { margin-top: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.detail-accordion.flagged { border-color: var(--ember-edge); background: var(--ember-skin); }
+.detail-panel { overscroll-behavior: contain; height: 100dvh; }
+.detail-panel header button { width: 44px; height: 44px; }
+.cancel-guide { align-self: start; padding: 0 20px; }
+.cancel-guide .path-copy { padding: 0 0 18px; }
+.cancel-guide .path-copy > div { display: block; margin-bottom: 18px; }
+.cancel-steps { margin: 9px 0 0; padding-left: 20px; color: var(--ink-soft); font-size: 14px; line-height: 1.8; }
+.cancel-steps li + li { margin-top: 8px; }
+.path-card.issue .cancel-steps { color: #3f211a; }
+
+.calendar-controls { flex-wrap: wrap; }
+.calendar-controls button { min-height: 44px; }
+@media (min-width: 661px) and (max-width: 1100px) {
+  .table-caption, .issue-caption { display: none; }
+  .payment-row { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.5fr) auto; }
+  .payment-row > b { grid-column: 3; }
+  .payment-row > small { grid-column: 2; }
+  .issue-row { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; }
+  .issue-row > small { grid-column: 2; }
+  .issue-metrics { grid-template-columns: 1fr; }
+  .path-card { grid-template-columns: minmax(0, 1fr); }
+  .path-action { grid-column: 1; }
+}
+@media (max-width: 660px) {
+  .product-bar { flex-wrap: wrap; gap: 12px; padding: 12px 16px; }
+  .bar-actions { margin-left: auto; gap: 8px; }
+  .persona { display: none; }
+
+  .screen-header h1 { font-size: clamp(30px, 8vw, 38px); }
+  .year-banner strong, .annual-figure strong, .issue-metric > strong { font-size: clamp(30px, 8vw, 44px); }
+  .cancel-guide { padding: 0 14px; }
+
+  .fridge-head { display: block; }
+  .fridge-head .calendar-controls { margin-top: 14px; }
+  .path-hops li { grid-template-columns: 1fr; }
+  .exclusion-note { padding: 16px; }
+}
+@media (max-width: 660px) {
+  .product-chrome { position: relative; }
+}
+
+/* Chart labels are static text; category buttons remain interactive. */
+.donut-wrap { user-select: none; -webkit-user-select: none; caret-color: transparent; cursor: default; }
+.donut-wrap text { pointer-events: none; cursor: default; }
+.payment-row { padding-top: 16px; padding-bottom: 16px; }
+.payment-row .pay-plain em, .issue-row p, .cancel-steps, .detail-panel p { line-height: 1.7; }
+.legend button { min-height: 44px; gap: 10px; }
+.renewal-body, .renewal-row > *, .fridge-grid > * { min-width: 0; }
+.renewal-body { overflow-wrap: anywhere; }
+.fridge-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.fridge-day .note { min-width: 0; }
+.fridge-day .note span, .fridge-day .note i { font-size: 12px; }
+@media (max-width: 660px) {
+  .fridge-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .legend button { grid-template-columns: 10px minmax(0, 1fr) auto; }
+}
+
+/* Statement evidence stays aligned on one line at every screen width. */
+.evidence-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.evidence-table > div {
+  grid-template-columns: 112px minmax(max-content, 1fr) max-content;
+  gap: 16px;
+  width: 100%;
+  min-width: max-content;
+}
+.evidence-table span,
+.evidence-table code,
+.evidence-table b {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+.evidence-table b {
+  grid-column: 3;
+  text-align: right;
+}
+
+/* Phone navigation is a compact disclosure menu with full-size touch targets. */
+.mobile-menu { display: none; }
+@media (max-width: 660px) {
+  .product-bar { position: relative; flex-wrap: nowrap; gap: 8px; }
+  .wordmark { font-size: 22px; }
+  .mobile-menu { display: block; flex: 0 0 auto; }
+  .mobile-menu > summary {
+    display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; padding: 0;
+    border: 1px solid var(--rule-firm); border-radius: var(--r-sm);
+    background: var(--paper-lift); color: var(--ink); list-style: none; cursor: pointer;
+  }
+  .mobile-menu > summary::-webkit-details-marker { display: none; }
+  .mobile-menu[open] > summary { background: var(--ink); color: var(--paper); }
+  .mobile-menu nav {
+    position: absolute; top: calc(100% - 2px); left: 16px; right: 16px; z-index: 35;
+    display: grid; gap: 4px; padding: 8px;
+    border: 1px solid var(--rule-firm); border-radius: var(--r-md);
+    background: var(--paper-lift); box-shadow: var(--lift-shadow);
+  }
+  .mobile-menu nav button {
+    min-height: 48px; padding: 12px 16px; border: 0; border-radius: var(--r-sm);
+    background: transparent; color: var(--ink); text-align: left; font-size: 15px; cursor: pointer;
+  }
+  .mobile-menu nav button[aria-current="page"] { background: var(--ink); color: var(--paper); }
+  .mobile-menu nav button:hover { background: var(--marigold-skin); color: var(--ink); }
+  .bar-actions { gap: 0; }
+  .export-csv { padding: 9px 8px; min-height: 44px; white-space: nowrap; }
 }

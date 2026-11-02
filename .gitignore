@@ -7,3 +7,7 @@ coverage/
 # local env — never commit real credentials
 .env
 .env*.local
+
+# Generated TypeScript cache and local review exports
+*.tsbuildinfo
+work/

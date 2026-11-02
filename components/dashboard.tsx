@@ -5,6 +5,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { MobileNavigation } from "@/components/chrome/mobile-navigation";
 import { EvidenceStrip } from "@/components/chrome/evidence-strip";
 import { DetailPanel } from "@/components/detail/detail-panel";
 import {
@@ -89,15 +90,16 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
     <main className="paytrace-shell">
       <div className="product-chrome">
         <header className="product-bar">
+          <MobileNavigation screens={screens} current={screen} onSelect={setScreen} />
           <div className="wordmark">
             <span>p</span>paytrace
           </div>
           <p>
-            PROTOTYPE <i>·</i> SYNTHETIC MESSAGES ONLY
+            PAYMENTS <i>·</i> INSIGHTS <i>·</i> CONTROL
           </p>
           <span className={source.kind === "neo4j" ? "source-badge live" : "source-badge"}>
             <i />
-            {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV fixture"}
+            {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV statements"}
           </span>
           <div className="bar-actions">
             <button className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
@@ -105,7 +107,7 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
             </button>
             <div className="persona">
               <b>PD</b>
-              <span>Priya Demo</span>
+              <span>Priya</span>
             </div>
           </div>
         </header>
@@ -126,24 +128,12 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
             </button>
           ))}
           <div className="side-note">
-            <strong>Prototype only</strong>
-            <span>It shows a route to stop a payment. It never sends a revoke.</span>
+            <strong>Cancellation guidance</strong>
+            <span>Follow the steps in your payment app or with your provider. Mark the payment handled here once complete.</span>
           </div>
         </aside>
 
         <section className="main-stage">
-          <nav className="mobile-nav">
-            {screens.map((item) => (
-              <button
-                className={screen === item.id ? "active" : ""}
-                onClick={() => setScreen(item.id)}
-                key={item.id}
-              >
-                {item.number}
-              </button>
-            ))}
-          </nav>
-
           {screen === "list" && (
             <AllPaymentsScreen
               items={active}
@@ -196,7 +186,7 @@ export function Dashboard({ dataset, source, commitments }: DashboardProps) {
       </div>
 
       {openItem && (
-        <DetailPanel item={openItem} asOf={dataset.asOf} source={source} onClose={() => setOpenId(null)} />
+        <DetailPanel key={openItem.id} item={openItem} asOf={dataset.asOf} source={source} onClose={() => setOpenId(null)} />
       )}
     </main>
   );
