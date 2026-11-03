@@ -6,6 +6,8 @@ import { ScreenHeader } from "@/components/chrome/screen-header";
 import { modeLabel, monthlyCost } from "@/lib/commitment-ui";
 import { formatDate, formatINR } from "@/lib/format";
 import type { Commitment } from "@/lib/types";
+import { useState } from "react";
+import { CancellationGuide } from "@/components/detail/cancellation-guide";
 
 export function CancelPathsScreen({
   items,
@@ -14,7 +16,8 @@ export function CancelPathsScreen({
   kept,
   onConfirm,
   onKeep,
-  onFlagAgain
+  onFlagAgain,
+  initialOpenId
 }: {
   items: Commitment[];
   allItems: Commitment[];
@@ -23,7 +26,13 @@ export function CancelPathsScreen({
   onConfirm: (id: string) => void;
   onKeep: (id: string) => void;
   onFlagAgain: (id: string) => void;
+  initialOpenId?: string | null;
 }) {
+  const [openGuide, setOpenGuide] = useState<string | null>(initialOpenId ?? null);
+  function closeGuide(id: string) {
+    setOpenGuide(null);
+    document.getElementById(`cancel-trigger-${id}`)?.focus();
+  }
   const stoppedRows = allItems.filter((item) => revoked.includes(item.id));
   const saved = stoppedRows.reduce((sum, item) => sum + item.annualCost, 0);
 
@@ -37,7 +46,7 @@ export function CancelPathsScreen({
       />
       {saved > 0 && (
         <p className="revoke-banner">
-          Confirmed stops have taken <strong>{formatINR(saved)}</strong> out of the year:{" "}
+          Payments you reported as stopped have taken <strong>{formatINR(saved)}</strong> out of the estimate:{" "}
           {stoppedRows.map((item) => item.merchant).join(", ")}.
         </p>
       )}
@@ -60,27 +69,8 @@ export function CancelPathsScreen({
                 </small>
                 {item.mandateRef && <small>Mandate: {item.mandateRef}</small>}
               </div>
-              <details className="cancel-guide"><summary>View cancellation steps for {item.merchant}</summary><div className="path-copy">
-                <div>
-                  <b>1. STOP THE SERVICE</b>
-                  <StepList text={item.stopService} />
-                  {item.mechanism === "vas" && (
-                    <code className="stop-line">Sample: send STOP CT to 155223</code>
-                  )}
-                </div>
-                <div>
-                  <b>2. STOP THE MONEY</b>
-                  <StepList text={item.stopMoney} />
-                </div>
-                <div className="silent-line">
-                  <b>3. CHECK & FOLLOW UP</b>
-                  <p>{item.ifSilent}</p>
-                </div>
-                {item.trap && (
-                  <p className="trap">
-                    <strong>Watch for:</strong> {item.trap}
-                  </p>
-                )}
+              <div className="path-copy path-guide-intro">
+                <p>{item.cancelMode === "block" ? "This is a loan obligation. Contact the lender about repayment or closure; do not stop its mandate from this app." : "Follow the service and payment-provider steps, keep confirmation, and check what to do if charges continue."}</p>
                 {isKept && (
                   <p className="kept-note">
                     Kept. The warning is settled and the mandate stays <strong>Active</strong>, so the year is
@@ -88,7 +78,7 @@ export function CancelPathsScreen({
                     <button onClick={() => onFlagAgain(item.id)}>Flag it again</button>
                   </p>
                 )}
-              </div></details>
+              </div>
               <div className="path-action">
                 {item.cancelMode === "block" ? (
                   <span className="no-action">No revoke control</span>
@@ -99,26 +89,22 @@ export function CancelPathsScreen({
                         Keep it
                       </button>
                     )}
-                    <button className="danger-button" onClick={() => onConfirm(item.id)}>
-                      {item.cancelMode === "normal" ? "Cancel the autopay" : "Mark it handled"} <i>→</i>
+                    <button className="danger-button" id={`cancel-trigger-${item.id}`} aria-expanded={openGuide === item.id} aria-controls={openGuide === item.id ? `cancel-guide-${item.id}` : undefined} onClick={() => openGuide === item.id ? closeGuide(item.id) : setOpenGuide(item.id)}>
+                      Steps to cancel <i>→</i>
                     </button>
                     <small>
                       {item.cancelMode === "normal"
-                        ? `Cancelling drops the year by ${formatINR(item.annualCost)}.`
+                        ? "View guidance. No payment is cancelled by opening it."
                         : "This does not change the year. The amount due remains."}
                     </small>
                   </>
                 )}
               </div>
+              {openGuide === item.id && item.cancelMode !== "block" && <CancellationGuide item={item} onClose={() => closeGuide(item.id)} onComplete={() => { onConfirm(item.id); setOpenGuide(null); }} />}
             </article>
           );
         })}
       </section>
     </>
   );
-}
-
-function StepList({ text }: { text: string }) {
-  const steps = text.split(/\.\s+(?=[A-Z])|\s*[→]\s*/).filter(Boolean);
-  return <ol className="cancel-steps">{steps.map((step, index) => <li key={index}>{step}</li>)}</ol>;
 }

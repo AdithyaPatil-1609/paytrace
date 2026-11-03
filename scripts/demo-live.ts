@@ -81,9 +81,11 @@ async function main() {
     await shot(page, "badge-reading-neo4j");
 
     // 2. Screen 00 — the graph before the product.
-    await expectText(page, ".screen-header h1", "The harm is a missing edge", "Screen 00");
-    await expectText(page, ".graph-focus", "price_change × 0", "Screen 00 missing edge");
+    await expectText(page, ".screen-header h1", "Why each payment is here", "Screen 00");
+    await page.locator(".evidence-picker-list button").filter({ hasText: "Spotify" }).first().click();
+    await expectText(page, ".payment-diagram-panel", "Records from Neo4j analysis", "Payment evidence");
     await shot(page, "screen-00-graph");
+    await page.locator(".evidence-live-details > summary").click();
     await glide(page, 700);
     await page.waitForTimeout(800);
     await shot(page, "screen-00-findings");

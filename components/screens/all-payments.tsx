@@ -3,7 +3,6 @@
  * The full book of recurring commitments before any judgement.
  */
 import { ScreenHeader } from "@/components/chrome/screen-header";
-import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
 import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
 import { monthlyCost } from "@/lib/commitment-ui";
 import { formatINR } from "@/lib/format";
@@ -98,9 +97,6 @@ export function AllPaymentsScreen({
         credit-card repayment, and YouTube&apos;s ₹1 authorisation. One-off debits have no second debit or active mandate; credits, card repayments, and
         authorisation holds are excluded separately. Open any row above to see the rule that kept it.
       </p>
-
-      <h2 className="viz-heading">The month on the fridge door</h2>
-      <PaymentCalendar items={items} asOf={asOf} onOpen={onOpen} />
 
       <h2 className="viz-heading">Next month’s payments</h2>
       <RenewalCalendar items={items} asOf={asOf} onOpen={onOpen} />
