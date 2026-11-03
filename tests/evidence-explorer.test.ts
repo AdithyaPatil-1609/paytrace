@@ -32,3 +32,23 @@ test("empty evidence data produces an explicit empty state", () => {
   const markup = renderToStaticMarkup(createElement(PaymentEvidenceExplorer, { items: [], dictionary: [], live: false, onOpen: () => {} }));
   assert.match(markup, /No recurring payments are available/);
 });
+
+test("graph markup stays identical across small server/browser trigonometry differences", () => {
+  const render = () => renderToStaticMarkup(createElement(PaymentEvidenceExplorer, { items: [homeLoan], dictionary: dataset.dictionary, live: true, onOpen: () => {} }));
+  const server = render();
+  const originalSin = Math.sin;
+  const originalCos = Math.cos;
+  let browser: string;
+  try {
+    Math.sin = (angle) => originalSin(angle) + 1e-14;
+    Math.cos = (angle) => originalCos(angle) - 1e-14;
+    browser = render();
+  } finally {
+    Math.sin = originalSin;
+    Math.cos = originalCos;
+  }
+  assert.equal(browser, server);
+  for (const match of server.matchAll(/\b(?:x|y|cx|cy|x1|x2|y1|y2)="(-?\d+(?:\.\d+)?)"/g)) {
+    assert.ok((match[1].split(".")[1]?.length ?? 0) <= 3, `Unstable coordinate: ${match[1]}`);
+  }
+});

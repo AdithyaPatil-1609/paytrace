@@ -3,12 +3,14 @@ export function ScreenHeader({
   number,
   eyebrow,
   title,
-  copy
+  copy,
+  help
 }: {
   number: string;
   eyebrow: string;
   title: string;
   copy: string;
+  help?: string;
 }) {
   return (
     <header className="screen-header">
@@ -17,6 +19,7 @@ export function ScreenHeader({
       </p>
       <h1>{title}</h1>
       <div>{copy}</div>
+      {help && <details className="screen-reading-help"><summary>How to read this</summary><p>{help}</p></details>}
     </header>
   );
 }

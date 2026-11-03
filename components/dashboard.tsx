@@ -1,6 +1,6 @@
 /**
- * App shell only: top bar, side nav, which screen is open — Screen 00 (the
- * evidence graph) first, then the four product screens.
+ * App shell only: top bar, side nav, which screen is open — payments first,
+ * then issues, cancellation, annual spending and the supporting evidence graph.
  * Screen UIs live in components/screens/. Detail drawer in components/detail/.
  */
 "use client";
@@ -27,19 +27,17 @@ import type { Commitment, Dataset } from "@/lib/types";
 type DashboardProps = { dataset: Dataset; source: SourceInfo; commitments?: Commitment[]; graph?: GraphFacts };
 type Screen = "graph" | "annual" | "list" | "issues" | "paths";
 
-const graphScreen: { id: Screen; number: string; label: string } = { id: "graph", number: "00", label: "Evidence graph" };
-
 const screens: { id: Screen; number: string; label: string }[] = [
   { id: "list", number: "01", label: "All payments" },
   { id: "issues", number: "02", label: "Issues" },
   { id: "paths", number: "03", label: "Cancel paths" },
-  { id: "annual", number: "04", label: "Annual" }
+  { id: "annual", number: "04", label: "Annual" },
+  { id: "graph", number: "05", label: "Evidence graph" }
 ];
 
 export function Dashboard({ dataset, source, commitments, graph }: DashboardProps) {
   const live = Boolean(commitments && commitments.length > 0);
-  // Live mode opens on the graph; a reviewer on the CSV fixture lands on the product.
-  const [screen, setScreen] = useState<Screen>(source.kind === "neo4j" ? "graph" : "list");
+  const [screen, setScreen] = useState<Screen>("list");
   const [simulated, setSimulated] = useState(false);
   // Live Simulate: the rows Cypher returned inside a rolled-back transaction.
   const [liveSimulation, setLiveSimulation] = useState<Commitment[] | null>(null);
@@ -47,6 +45,8 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
   const [revoked, setRevoked] = useState<string[]>([]);
   const [kept, setKept] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [challengeOpen, setChallengeOpen] = useState(false);
+  function openPayment(id: string) { setChallengeOpen(false); setOpenId(id); }
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   // Live: Neo4j decides every row, Simulate included. The TypeScript engine
@@ -75,6 +75,8 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
   const openItem = active.find((item) => item.id === openId) ?? null;
 
   async function simulate() {
+    if (simulating || simulated) return;
+    setScreen("list");
     if (live) {
       setSimulating(true);
       try {
@@ -84,7 +86,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
           setLiveSimulation(body.commitments);
         }
       } catch {
-        // The fixture path below still answers; the card says which ran.
+        // The fixture path below still answers; the status says which ran.
       } finally {
         setSimulating(false);
       }
@@ -118,7 +120,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
     <main className="paytrace-shell">
       <div className="product-chrome">
         <header className="product-bar">
-          <MobileNavigation screens={[graphScreen, ...screens]} current={screen} onSelect={setScreen} />
+          <MobileNavigation screens={screens} current={screen} onSelect={setScreen} />
           <div className="wordmark">
             <span>p</span>paytrace
           </div>
@@ -130,6 +132,15 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
             {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV statements"}
           </span>
           <div className="bar-actions">
+            <button
+              className="simulate-button"
+              onClick={simulated ? resetSimulation : simulate}
+              disabled={simulating}
+              aria-busy={simulating}
+              title={simulated ? "Remove the simulated autopay" : "Add a synthetic autopay and rerun detection"}
+            >
+              {simulating ? "Simulating…" : simulated ? "Reset simulation" : "Simulate a new Autopay"}
+            </button>
             <button className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
               ↓ Export CSV
             </button>
@@ -140,16 +151,14 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
           </div>
         </header>
         <EvidenceStrip source={source} />
+        {simulated && <p className="simulation-status" role="status">
+          Synthetic demo: Headspace autopay added · {live && liveSimulation ? "Neo4j simulation; stored records unchanged." : "Offline simulation using a temporary copy of the records."}
+        </p>}
       </div>
 
       <div className="app-layout">
         <aside className="side-nav">
-          <p>THE GRAPH</p>
-          <button className={screen === graphScreen.id ? "active" : ""} onClick={() => setScreen(graphScreen.id)}>
-            <span>{graphScreen.number}</span>
-            {graphScreen.label}
-          </button>
-          <p className="side-gap">THE FOUR SCREENS</p>
+          <p>YOUR PAYMENTS</p>
           {screens.map((item) => (
             <button
               key={item.id}
@@ -168,7 +177,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
 
         <section className="main-stage">
           {screen === "graph" && (
-            <EvidenceGraphScreen graph={graph} source={source} items={active} dictionary={dataset.dictionary} recordsLive={live && (!simulated || Boolean(liveSimulation))} onOpen={setOpenId} onContinue={() => setScreen("list")} />
+            <EvidenceGraphScreen graph={graph} source={source} items={active} dictionary={dataset.dictionary} recordsLive={live && (!simulated || Boolean(liveSimulation))} onOpen={openPayment} onContinue={() => setScreen("list")} />
           )}
           {screen === "list" && (
             <AllPaymentsScreen
@@ -176,11 +185,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
               total={total}
               baseline={baseline}
               simulated={simulated}
-              simulating={simulating}
-              simulatedIn={simulated ? (live && liveSimulation ? "neo4j" : "app") : undefined}
-              onSimulate={simulate}
-              onReset={resetSimulation}
-              onOpen={setOpenId}
+              onOpen={openPayment}
               asOf={dataset.asOf}
             />
           )}
@@ -188,7 +193,8 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
             <IssuesScreen
               allItems={active}
               kept={kept}
-              onOpen={setOpenId}
+              onOpen={openPayment}
+              onChallenge={(id) => { setChallengeOpen(true); setOpenId(id); }}
               onGoToCancel={(id) => { setCancelTarget(id); setScreen("paths"); }}
             />
           )}
@@ -212,16 +218,14 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
               debt={debt}
               stoppedValue={stoppedValue}
               asOf={dataset.asOf}
-              source={source}
-              detected={detected.length}
-              onOpen={setOpenId}
+              onOpen={openPayment}
             />
           )}
         </section>
       </div>
 
       {openItem && (
-        <DetailPanel key={openItem.id} item={openItem} asOf={dataset.asOf} source={source} onClose={() => setOpenId(null)} />
+        <DetailPanel key={openItem.id} item={openItem} asOf={dataset.asOf} source={source} dataset={simulated ? withSimulatedAutopay(dataset) : dataset} challengeLive={live && !simulated} challengeInitiallyOpen={challengeOpen} onClose={() => setOpenId(null)} />
       )}
     </main>
   );

@@ -7,16 +7,24 @@ import type { SourceInfo } from "@/db/neo4j/dataset";
 import { monthlyCost } from "@/lib/commitment-ui";
 import { formatDate, formatINR } from "@/lib/format";
 import type { Commitment } from "@/lib/types";
+import type { Dataset } from "@/lib/types";
+import { FindingChallenge } from "./finding-challenge";
 
 export function DetailPanel({
   item,
   asOf,
   source,
+  dataset,
+  challengeLive,
+  challengeInitiallyOpen = false,
   onClose
 }: {
   item: Commitment;
   asOf: string;
   source: SourceInfo;
+  dataset: Dataset;
+  challengeLive: boolean;
+  challengeInitiallyOpen?: boolean;
   onClose: () => void;
 }) {
   const panel = useRef<HTMLElement>(null);
@@ -28,7 +36,7 @@ export function DetailPanel({
     function keys(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
       if (event.key === "Tab") {
-        const controls = Array.from(panel.current?.querySelectorAll<HTMLElement>("button, summary, [href]") ?? []).filter(el => el.getClientRects().length);
+        const controls = Array.from(panel.current?.querySelectorAll<HTMLElement>("button:not(:disabled), summary, [href], input, select, textarea") ?? []).filter(el => el.getClientRects().length);
         const first = controls[0], last = controls.at(-1);
         if (event.shiftKey && (document.activeElement === first || document.activeElement === panel.current)) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && (document.activeElement === last || document.activeElement === panel.current)) { event.preventDefault(); first?.focus(); }
@@ -52,6 +60,7 @@ export function DetailPanel({
           </button>
         </header>
 
+        <FindingChallenge item={item} dataset={dataset} live={challengeLive} initiallyOpen={challengeInitiallyOpen} />
         {source.kind === "neo4j" && <details className="detail-accordion"><summary>Linked evidence</summary><EvidencePath item={item} /></details>}
 
         <details className="detail-accordion" open><summary>Payment overview</summary><section className="detail-facts">

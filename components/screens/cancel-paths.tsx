@@ -7,7 +7,7 @@ import { modeLabel, monthlyCost } from "@/lib/commitment-ui";
 import { formatDate, formatINR } from "@/lib/format";
 import type { Commitment } from "@/lib/types";
 import { useState } from "react";
-import { CancellationGuide } from "@/components/detail/cancellation-guide";
+import { CancellationDrawer } from "@/components/detail/cancellation-drawer";
 
 export function CancelPathsScreen({
   items,
@@ -29,10 +29,10 @@ export function CancelPathsScreen({
   initialOpenId?: string | null;
 }) {
   const [openGuide, setOpenGuide] = useState<string | null>(initialOpenId ?? null);
-  function closeGuide(id: string) {
+  function closeGuide() {
     setOpenGuide(null);
-    document.getElementById(`cancel-trigger-${id}`)?.focus();
   }
+  const selectedGuide = items.find((item) => item.id === openGuide && item.cancelMode !== "block");
   const stoppedRows = allItems.filter((item) => revoked.includes(item.id));
   const saved = stoppedRows.reduce((sum, item) => sum + item.annualCost, 0);
 
@@ -42,7 +42,8 @@ export function CancelPathsScreen({
         number="3"
         eyebrow="HOW TO STOP EACH ONE"
         title="A cancel path for every autopay"
-        copy="A normal path has two tracks: stop the service, then stop the money. Every path also says what to do when the merchant never replies, because the revoke does not need their answer. The loan has no revoke control."
+        copy="Follow the steps for your service and payment provider, then keep the confirmation."
+        help="Cancelling a service and stopping its payment permission can be separate steps. Each guide includes follow-up instructions if charges continue. Bills, insurance and loans can remain due even when automatic payments stop; the loan has no revoke control. PayTrace only records your report."
       />
       {saved > 0 && (
         <p className="revoke-banner">
@@ -89,7 +90,7 @@ export function CancelPathsScreen({
                         Keep it
                       </button>
                     )}
-                    <button className="danger-button" id={`cancel-trigger-${item.id}`} aria-expanded={openGuide === item.id} aria-controls={openGuide === item.id ? `cancel-guide-${item.id}` : undefined} onClick={() => openGuide === item.id ? closeGuide(item.id) : setOpenGuide(item.id)}>
+                    <button className="danger-button" id={`cancel-trigger-${item.id}`} aria-haspopup="dialog" aria-expanded={openGuide === item.id} aria-controls={openGuide === item.id ? `cancel-guide-${item.id}` : undefined} onClick={() => setOpenGuide(item.id)}>
                       Steps to cancel <i>→</i>
                     </button>
                     <small>
@@ -100,11 +101,11 @@ export function CancelPathsScreen({
                   </>
                 )}
               </div>
-              {openGuide === item.id && item.cancelMode !== "block" && <CancellationGuide item={item} onClose={() => closeGuide(item.id)} onComplete={() => { onConfirm(item.id); setOpenGuide(null); }} />}
             </article>
           );
         })}
       </section>
+      {selectedGuide && <CancellationDrawer key={selectedGuide.id} item={selectedGuide} onClose={closeGuide} onComplete={() => { onConfirm(selectedGuide.id); setOpenGuide(null); }} />}
     </>
   );
 }

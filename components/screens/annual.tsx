@@ -1,12 +1,10 @@
 /**
  * Screen 04 — Annual
- * The next twelve months: totals, Neo4j proof, charts, five-way split.
+ * The next twelve months: totals, charts, five-way split.
  */
 import { ScreenHeader } from "@/components/chrome/screen-header";
-import { SourcePanel } from "@/components/chrome/source-panel";
 import { AnnualDashboard } from "@/components/visualizations/annual-dashboard";
 import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
-import type { SourceInfo } from "@/db/neo4j/dataset";
 import { splitByBucket } from "@/lib/analysis";
 import { bucketCopy, bucketLabels } from "@/lib/engine";
 import { formatINR } from "@/lib/format";
@@ -19,8 +17,6 @@ export function AnnualScreen({
   debt,
   stoppedValue,
   asOf,
-  source,
-  detected,
   onOpen
 }: {
   items: Commitment[];
@@ -29,8 +25,6 @@ export function AnnualScreen({
   debt: number;
   stoppedValue: number;
   asOf: string;
-  source: SourceInfo;
-  detected: number;
   onOpen: (id: string) => void;
 }) {
   const split = splitByBucket(items);
@@ -42,7 +36,8 @@ export function AnnualScreen({
         number="4"
         eyebrow="THE YEAR"
         title="The next twelve months, on one screen"
-        copy="Every commitment projected forward and split five ways. The unused part is the money that should move. The loan sits apart from both: it is a debt, not a subscription."
+        copy="See what your recurring payments could cost over the next twelve months."
+        help="The estimate groups recurring payments by their status. Review unused services before treating their cost as potential savings. Bills and loan repayments remain obligations; estimated spending is not a confirmed future bill."
       />
       <section className="annual-headline">
         <article className="annual-figure">
@@ -67,8 +62,6 @@ export function AnnualScreen({
           A revoke confirmed on screen 3 has taken <strong>{formatINR(stoppedValue)}</strong> out of the year.
         </p>
       )}
-
-      <SourcePanel source={source} detected={detected} />
 
       <AnnualDashboard items={items} asOf={asOf} onOpen={onOpen} />
 

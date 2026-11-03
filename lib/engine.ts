@@ -204,7 +204,7 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
         const byTxn = notice.relatedTxnId && rows.some((row) => row.txnId === notice.relatedTxnId);
         const byHold = notice.relatedTxnId && group.holds.some((row) => row.txnId === notice.relatedTxnId);
         const byBrand = entry ? notice.brand === entry.brand : false;
-        return Boolean(byTxn || byHold || byBrand);
+        return notice.sentOn <= asOf && Boolean(byTxn || byHold || (!notice.relatedTxnId && byBrand));
       })
       .map((notice) => ({
         noticeId: notice.noticeId,
@@ -222,7 +222,10 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
     const openedDaysAgo = lastOpened ? days(lastOpened, asOf) : undefined;
     const neverOpened = Boolean(usageRow) && !lastOpened && usageRow?.opensLast12Months === 0;
 
-    const hasPriceChangeNotice = notices.some((notice) => notice.eventType === "price_change");
+    const changeDate = dates[Math.max(0, amounts.findIndex((amount) => amount !== amounts[0]))];
+    const hasPriceChangeNotice = notices.some((notice) => notice.eventType === "price_change" &&
+      days(notice.sentOn, changeDate) >= 0 && days(notice.sentOn, changeDate) <= RULES.noticeWindowDays &&
+      (notice.amount === undefined || notice.amount === latest));
     const hasTrialNotice = notices.some((notice) => notice.eventType === "trial_ending");
     const mechanism: Mechanism = entry?.mechanism ?? mandate?.mechanism ?? "none";
 

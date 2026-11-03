@@ -1,4 +1,4 @@
-/** Screen 00 (the graph) and the four product screens — one file each, wired by components/dashboard.tsx */
+/** The four product screens and supporting evidence graph — wired by components/dashboard.tsx. */
 export { EvidenceGraphScreen } from "@/components/screens/evidence-graph";
 export { AllPaymentsScreen } from "@/components/screens/all-payments";
 export { IssuesScreen } from "@/components/screens/issues";
