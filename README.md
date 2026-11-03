@@ -23,7 +23,7 @@ Live mode opens on **Screen 00 · Evidence graph**, before any product screen. I
   - a `trial_ending` Message chained to the first paid debit, with the ₹1 hold kept out of the price;
   - a live `Mandate` `FOR` a merchant unopened for 90+ days, and the **₹24,341** `PAID_TO` those merchants since their last open.
 
-Screen 00 has no CSV version. Offline, it says there is no graph to read and how to start one.
+Screen 00 now opens with a payment picker and a static evidence diagram for every detected recurring payment. Select a debit, message, mandate or merchant-pattern node to read its record. The drawing samples up to seven debits and five messages to avoid overlap; all source records remain available below it. In offline mode this is explicitly labelled a CSV evidence diagram, not a live Neo4j query. Connected mode retains the database census, Cypher queries and relationship findings under **Explore live Neo4j queries and findings**.
 
 ### Why it isn't a subscription finder
 
@@ -90,7 +90,7 @@ If Neo4j is missing, empty, or unreachable, the app serves the CSV so a reviewer
 
 ## The screens
 
-0. **Evidence graph** — the graph itself and three relationship findings (live only).
+0. **Evidence graph** — pick a payment to explore its source records. Live Neo4j queries and three relationship findings remain available in a separate expandable section.
 1. **All payments** — every row with the raw bank string, the plain name, the month, the year, and the message source, then next month on a calendar (the month on the fridge door). Open any row for its **Evidence path**: `Payment -[:PAID_TO]-> Merchant`, Messages on `ABOUT`, the Mandate on `AUTHORIZED_BY`.
 2. **Issues** — silent hike, trial conversion, unused; Spotify price history from dated debits.
 3. **Cancel paths** — stop the service, stop the money, and what to do if they stay silent.

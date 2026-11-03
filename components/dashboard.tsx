@@ -6,7 +6,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { GraphBackdrop } from "@/components/chrome/graph-backdrop";
 import { MobileNavigation } from "@/components/chrome/mobile-navigation";
 import { EvidenceStrip } from "@/components/chrome/evidence-strip";
 import { DetailPanel } from "@/components/detail/detail-panel";
@@ -20,7 +19,7 @@ import {
 import { withSimulatedAutopay } from "@/data/simulation";
 import type { SourceInfo } from "@/db/neo4j/dataset";
 import type { GraphFacts } from "@/db/neo4j/graph";
-import { hikeAmount, isSilentPriceHike, issueItems, keptLeakTotal, yearlyTotal } from "@/lib/analysis";
+import { yearlyTotal } from "@/lib/analysis";
 import { downloadCommitmentsCsv } from "@/lib/commitment-ui";
 import { detectCommitments } from "@/lib/engine";
 import type { Commitment, Dataset } from "@/lib/types";
@@ -48,6 +47,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
   const [revoked, setRevoked] = useState<string[]>([]);
   const [kept, setKept] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   // Live: Neo4j decides every row, Simulate included. The TypeScript engine
   // only runs on the offline fixture, or if the graph cannot simulate.
@@ -70,10 +70,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
   const stoppedValue = fullYear - total;
   // Keeping a row settles the warning across every screen, not just the one
   // the decision was made on.
-  const issues = issueItems(active, kept);
-  const keptLeak = keptLeakTotal(active, kept);
   const leakage = yearlyTotal(active.filter((item) => item.kind === "unused"));
-  const hike = active.filter(isSilentPriceHike).reduce((sum, item) => sum + hikeAmount(item), 0);
   const debt = yearlyTotal(active.filter((item) => item.bucket === "debt"));
   const openItem = active.find((item) => item.id === openId) ?? null;
 
@@ -119,7 +116,6 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
 
   return (
     <main className="paytrace-shell">
-      <GraphBackdrop />
       <div className="product-chrome">
         <header className="product-bar">
           <MobileNavigation screens={[graphScreen, ...screens]} current={screen} onSelect={setScreen} />
@@ -172,7 +168,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
 
         <section className="main-stage">
           {screen === "graph" && (
-            <EvidenceGraphScreen graph={graph} source={source} onContinue={() => setScreen("list")} />
+            <EvidenceGraphScreen graph={graph} source={source} items={active} dictionary={dataset.dictionary} recordsLive={live && (!simulated || Boolean(liveSimulation))} onOpen={setOpenId} onContinue={() => setScreen("list")} />
           )}
           {screen === "list" && (
             <AllPaymentsScreen
@@ -190,18 +186,15 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
           )}
           {screen === "issues" && (
             <IssuesScreen
-              items={issues}
               allItems={active}
-              total={total}
-              leakage={leakage}
-              keptLeak={keptLeak}
-              hike={hike}
+              kept={kept}
               onOpen={setOpenId}
-              onGoToCancel={() => setScreen("paths")}
+              onGoToCancel={(id) => { setCancelTarget(id); setScreen("paths"); }}
             />
           )}
           {screen === "paths" && (
             <CancelPathsScreen
+              initialOpenId={cancelTarget}
               items={active}
               allItems={detected}
               revoked={revoked}
