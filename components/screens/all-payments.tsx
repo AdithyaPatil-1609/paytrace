@@ -13,10 +13,6 @@ export function AllPaymentsScreen({
   total,
   baseline,
   simulated,
-  simulating,
-  simulatedIn,
-  onSimulate,
-  onReset,
   onOpen,
   asOf
 }: {
@@ -24,11 +20,6 @@ export function AllPaymentsScreen({
   total: number;
   baseline: number;
   simulated: boolean;
-  simulating: boolean;
-  /** Who decided the simulated rows: Cypher in a rolled-back transaction, or the fixture engine. */
-  simulatedIn?: "neo4j" | "app";
-  onSimulate: () => void;
-  onReset: () => void;
   onOpen: (id: string) => void;
   asOf: string;
 }) {
@@ -38,7 +29,8 @@ export function AllPaymentsScreen({
         number="1"
         eyebrow="ALL OF THEM"
         title="Every periodic payment, on one page"
-        copy="This is the whole book before any judgement. Each row shows the bank string and the plain name beside it. Electricity changes amount, and society has uneven dates. Both still belong here."
+        copy="See every recurring payment, its original bank description and its yearly estimate."
+        help="Variable bills and payments with uneven dates still belong here. Open a payment to inspect the statement records and messages that explain why it was included. The next-month section shows the dates supported by these records."
       />
       <section className="year-banner">
         <div>
@@ -101,28 +93,6 @@ export function AllPaymentsScreen({
       <h2 className="viz-heading">Next month’s payments</h2>
       <RenewalCalendar items={items} asOf={asOf} onOpen={onOpen} />
 
-      <section className="simulation-card">
-        <div>
-          <p>SIMULATE NEW AUTOPAY</p>
-          <h2>{simulated ? "Headspace is now being tracked" : "See what a new autopay looks like"}</h2>
-          <span>
-            {simulated
-              ? simulatedIn === "neo4j"
-                ? "One Payment, one UPI Mandate, and two Messages were written to Neo4j inside a transaction. The analysis query found Headspace on its own, then the transaction rolled back — the stored graph is unchanged."
-                : "One statement line, one UPI mandate, and two SMS were added to the payment records. Detection found Headspace on its own. A second click will not duplicate it."
-              : "One click appends the rows a new mandate leaves behind: ₹299 on 22 Oct 2026, a UPI Autopay mandate, and the SMS. Detection then runs again."}
-          </span>
-        </div>
-        {simulated ? (
-          <button className="secondary-button" onClick={onReset}>
-            Reset simulation
-          </button>
-        ) : (
-          <button className="primary-button" onClick={onSimulate} disabled={simulating}>
-            {simulating ? "Asking the graph…" : "Simulate new autopay"} <i>→</i>
-          </button>
-        )}
-      </section>
     </>
   );
 }

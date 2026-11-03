@@ -42,7 +42,10 @@ WITH m, collect(p.debit_inr) AS a, collect(p.date) AS d
 WITH m, a, d, [i IN range(1, size(a) - 1)
   WHERE all(x IN a[0..i] WHERE x = a[0]) AND all(x IN a[i..] WHERE x = a[i]) AND a[i] > a[0] | i] AS steps
 WHERE size(steps) > 0
-  AND NOT EXISTS { (:Message {event_type: 'price_change'})-[:ABOUT]->(m) }
+  AND NOT EXISTS { (notice:Message {event_type: 'price_change'})-[:ABOUT]->(m)
+    WHERE duration.inDays(notice.sent_on, d[steps[0]]).days >= 0
+      AND duration.inDays(notice.sent_on, d[steps[0]]).days <= $noticeWindowDays
+      AND (notice.amount_inr IS NULL OR notice.amount_inr = a[steps[0]]) }
 RETURN m.brand AS brand, a[0] AS from, a[steps[0]] AS to, toString(d[steps[0]]) AS since,
        size(a) AS payments, COUNT { (:Message)-[:ABOUT]->(m) } AS messages
 ORDER BY brand`;
@@ -86,7 +89,7 @@ export async function loadGraphFacts(runner: CypherRunner, asOf: string): Promis
   const relationships = await runner.run(
     "MATCH ()-[r]->() RETURN type(r) AS type, count(*) AS count ORDER BY count DESC, type"
   );
-  const hikes = await runner.run(SILENT_HIKE_QUERY);
+  const hikes = await runner.run(SILENT_HIKE_QUERY, { noticeWindowDays: RULES.noticeWindowDays });
   const trials = await runner.run(TRIAL_QUERY);
   const unopened = await runner.run(UNOPENED_QUERY, { asOf, zombieDays: RULES.zombieDays });
 

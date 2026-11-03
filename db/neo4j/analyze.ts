@@ -102,12 +102,15 @@ WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gap
        ELSE 'annual'
      END AS cadence
 OPTIONAL MATCH (msg:Message)
-WHERE (m IS NOT NULL AND msg.merchant_brand = m.brand)
-   OR any(pay IN (charges + holds) WHERE pay.txn_id = msg.related_txn_id)
+WHERE msg.sent_on <= date($asOf) AND ((m IS NOT NULL AND msg.merchant_brand = m.brand AND msg.related_txn_id IS NULL)
+   OR any(pay IN (charges + holds) WHERE pay.txn_id = msg.related_txn_id))
 WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gapMedian, amountPattern, cadence,
      [msg IN collect(DISTINCT msg) WHERE msg IS NOT NULL] AS notices
 WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gapMedian, amountPattern, cadence, notices,
-     any(msg IN notices WHERE msg.event_type = 'price_change') AS hasPrice,
+     any(msg IN notices WHERE msg.event_type = 'price_change'
+       AND duration.inDays(msg.sent_on, coalesce(head([pay IN charges WHERE pay.debit_inr <> amounts[0]]).date, charges[0].date)).days >= 0
+       AND duration.inDays(msg.sent_on, coalesce(head([pay IN charges WHERE pay.debit_inr <> amounts[0]]).date, charges[0].date)).days <= $rules.noticeWindowDays
+       AND (msg.amount_inr IS NULL OR msg.amount_inr = amounts[size(amounts)-1])) AS hasPrice,
      any(msg IN notices WHERE msg.event_type = 'trial_ending') AS hasTrial,
      CASE WHEN m IS NULL OR m.last_opened IS NULL THEN null
           ELSE duration.inDays(m.last_opened, date($asOf)).days END AS openedDays,

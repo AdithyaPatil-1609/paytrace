@@ -12,7 +12,7 @@ export function EvidenceGraphScreen({ graph, source, items, dictionary, recordsL
   onOpen: (id: string) => void; onContinue: () => void;
 }) {
   return <>
-    <ScreenHeader number="0" eyebrow="THE EVIDENCE GRAPH" title="Why each payment is here, drawn as a graph" copy="Every payment in this book is a claim, and every claim needs proof. Pick a payment on the left: see the debits grouped into it, the messages beside it, its payment permission and the merchant pattern it matched." />
+    <ScreenHeader number="5" eyebrow="THE EVIDENCE GRAPH" title="Why each payment is here, drawn as a graph" copy="Pick a payment to see the charges, messages and permission behind it." help="The centre is a detected recurring payment. Around it are the debits grouped into it, related messages, any available payment permission and its matching merchant pattern. Select a record to inspect it; use the zoom controls for a closer look." />
     <PaymentEvidenceExplorer items={items} dictionary={dictionary} live={recordsLive ?? source.kind === "neo4j"} onOpen={onOpen} />
     {source.kind === "neo4j" && graph ? <details className="evidence-live-details"><summary>Explore live Neo4j queries and findings</summary>
       <section className="graph-census" aria-label="What the live graph holds"><div><span>{graph.labels.reduce((sum, row) => sum + row.count, 0)} nodes · {graph.relationships.reduce((sum, row) => sum + row.count, 0)} relationships · <code>{source.host}</code></span><ul>{graph.labels.map((row) => <li key={row.label}><code>:{row.label}</code> <b>{row.count}</b></li>)}</ul></div><div><ul>{graph.relationships.map((row) => <li key={row.type} className="rel"><code>[:{row.type}]</code> <b>{row.count}</b></li>)}</ul></div></section>

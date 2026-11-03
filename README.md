@@ -1,5 +1,13 @@
 # Paytrace
 
+## Challenge this finding
+
+Open a payment's details and expand **Challenge this finding**. Add a matching price notice, add an unrelated old notice, confirm hypothetical recent usage, or vary the bank references. Unknown merchants also allow a hypothetical name correction. Each test starts from the original evidence and displays the detector's before/after results without changing payment decisions or annual totals elsewhere in the app.
+
+Price notices must arrive no more than 45 days before the first changed charge and match the new amount when supplied. Notices tied to a transaction do not attach to unrelated accounts by brand alone. These are prototype matching rules, not a guarantee about every notification channel.
+
+Offline challenges evaluate a temporary copy of the synthetic records. Connected challenges use `/api/challenge`, write temporary evidence inside a Neo4j transaction, run the Cypher detector, and roll back. Connection failures show an error instead of substituting an offline result. The live challenge suite checks engine parity and complete graph rollback for notice, usage and descriptor tests. Merchant corrections are synthetic labels, not verified identification or validated cancellation instructions.
+
 Bank lines, SMS, email, and mandates are separate systems today. The harm — a silent price hike, a trial that became a plan, an autopay still charging after she stopped opening it — only appears when those records fail to join. Paytrace models them as **linked evidence** in Neo4j, and the finding is often an edge that is *missing*: Spotify's price steps from ₹119 to ₹139, twelve Messages are `ABOUT` Spotify, and none of them is a `price_change`.
 
 Priya Demo is invented. Arclight Bank is invented. The as-of date is 22 October 2026. The prototype shows a route to stop a payment. It never connects to a bank, and it never sends a revoke.

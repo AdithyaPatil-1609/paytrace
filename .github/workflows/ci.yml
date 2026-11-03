@@ -50,7 +50,7 @@ jobs:
       # A skipped suite reports "pass 0", so require passes, not just no failures.
       - name: Cypher tests
         run: |
-          node --import tsx --test --test-reporter=spec --test-reporter-destination=stdout \
-            --test-reporter=tap --test-reporter-destination=cypher.tap tests/cypher/cypher.test.ts
+          node --import tsx --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout \
+            --test-reporter=tap --test-reporter-destination=cypher.tap tests/cypher/*.test.ts
           grep -Eq "^# pass [1-9]" cypher.tap
           grep -q "^# fail 0" cypher.tap

@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "seed": "node --import tsx scripts/seed-neo4j.ts",
-    "test:cypher": "node --import tsx --test tests/cypher/*.test.ts",
+    "test:cypher": "node --import tsx --test --test-concurrency=1 tests/cypher/*.test.ts",
     "test:all": "node --import tsx --test tests/*.test.ts tests/cypher/*.test.ts",
     "demo": "node --import tsx scripts/demo-live.ts"
   },
