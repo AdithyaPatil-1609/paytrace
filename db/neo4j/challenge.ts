@@ -2,7 +2,7 @@ import { analyzeCommitments } from "./analyze";
 import { getNeo4jDriver, neo4jDatabase } from "./client";
 import { loadDatasetFromNeo4j } from "./dataset";
 import { linkEvidence, writeMessages, writePatterns, writePayments, writeUsage } from "./write";
-import { ChallengeInputError, challengeMatches, prepareChallenge, type ChallengeRequest, type ChallengeResult } from "@/lib/challenge";
+import { ChallengeInputError, challengeMatches, prepareChallenge, type ChallengeRequest, type ChallengeResult } from "@/lib/scenarios/challenge";
 
 export async function challengeInNeo4j(request: ChallengeRequest): Promise<ChallengeResult> {
   const loaded = await loadDatasetFromNeo4j();

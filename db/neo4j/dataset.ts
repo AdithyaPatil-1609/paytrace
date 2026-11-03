@@ -1,7 +1,7 @@
 import { analyzeCommitments } from "@/db/neo4j/analyze";
 import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "@/db/neo4j/client";
 import { loadGraphFacts, type GraphFacts } from "@/db/neo4j/graph";
-import { AS_OF } from "@/lib/fixtures";
+import { AS_OF } from "@/data/fixtures";
 import type {
   CancelMode,
   Commitment,
@@ -12,7 +12,7 @@ import type {
   NotificationRow,
   StatementRow,
   UsageRow
-} from "@/lib/types";
+} from "@/lib/payments/types";
 
 /** Where the rows on screen came from, so the UI can say so. */
 export type SourceInfo = {
@@ -59,7 +59,7 @@ function text(value: unknown): string {
 /**
  * Reads the evidence graph back into the Dataset shape, then asks Cypher
  * for the commitments the screens render, and for the relationship findings
- * Screen 00 shows. The CSV fallback detects in lib/engine; tests/cypher/cypher.test.ts
+ * the evidence graph page shows. The CSV fallback uses lib/payments/engine.ts; tests/cypher/cypher.test.ts
  * holds the two engines to the same answer.
  */
 export async function loadDatasetFromNeo4j(): Promise<LoadedDataset> {
@@ -201,7 +201,7 @@ export async function loadDatasetFromNeo4j(): Promise<LoadedDataset> {
       graph = await loadGraphFacts(session, AS_OF);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.warn("Neo4j graph findings failed. Screen 00 will say so:", message);
+      console.warn("Neo4j evidence graph findings failed:", message);
     }
 
     return {

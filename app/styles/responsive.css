@@ -1,0 +1,199 @@
+/* --- responsive ----------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .viz-split {
+    grid-template-columns: 1fr;
+  }
+  .kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .hike-facts {
+    grid-template-columns: 1fr;
+  }
+  .whatif {
+    grid-template-columns: 1fr 1fr;
+  }
+  .whatif .primary-button {
+    grid-column: 1 / -1;
+  }
+  .leak-row {
+    grid-template-columns: 150px 1fr 80px;
+  }
+  .leak-evidence {
+    grid-column: 2 / -1;
+    text-align: left;
+  }
+}
+
+@media (max-width: 1000px) {
+  .app-layout {
+    grid-template-columns: 176px minmax(0, 1fr);
+  }
+  .main-stage {
+    padding: 36px 28px 70px;
+  }
+  .annual-headline {
+    grid-template-columns: 1fr;
+  }
+  .detail-facts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .path-card {
+    grid-template-columns: 148px 1fr;
+  }
+  .path-action {
+    grid-column: 2;
+    border-left: 0;
+    border-top: 1px solid var(--rule-firm);
+  }
+  .path-copy > div {
+    grid-template-columns: 108px 1fr;
+  }
+}
+
+@media (max-width: 660px) {
+  body::before {
+    background-image: none;
+  }
+  .product-bar {
+    min-height: 58px;
+    padding: 0 16px;
+  }
+  .product-bar > p,
+  .persona span {
+    display: none;
+  }
+  .app-layout {
+    display: block;
+  }
+  .side-nav {
+    display: none;
+  }
+  .main-stage {
+    padding: 26px 16px 48px;
+  }
+
+  .screen-header h1 {
+    font-size: 38px;
+  }
+  .kpi-row {
+    grid-template-columns: 1fr;
+  }
+  .month-chart {
+    gap: 3px;
+    margin-top: 28px;
+  }
+  .month-plot {
+    height: 110px;
+  }
+  .month-col-label {
+    font-size: 13px;
+  }
+  .year-banner,
+  .simulation-card,
+  .whatif {
+    display: block;
+  }
+  .year-note {
+    max-width: none;
+    margin-top: 16px;
+  }
+  .simulation-card button,
+  .whatif .primary-button {
+    width: 100%;
+    margin-top: 16px;
+  }
+  .whatif-side {
+    margin-top: 16px;
+  }
+  .table-caption,
+  .issue-caption {
+    display: none;
+  }
+  .payment-row {
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+    padding: 13px 14px;
+  }
+  .payment-row .raw-narration,
+  .payment-row .pay-plain {
+    grid-column: 1 / -1;
+  }
+  .payment-row .pay-month {
+    text-align: left;
+  }
+  .payment-row small {
+    grid-column: 2;
+    text-align: right;
+  }
+  .issue-metrics {
+    grid-template-columns: 1fr;
+  }
+  .issue-row {
+    grid-template-columns: 1fr auto;
+    gap: 7px 10px;
+    padding: 13px;
+  }
+  .issue-row p {
+    grid-column: 1 / -1;
+  }
+  .issue-row small {
+    grid-column: 2;
+    text-align: right;
+  }
+  .leak-row {
+    grid-template-columns: 1fr auto;
+    gap: 7px 10px;
+  }
+  .leak-track {
+    grid-column: 1 / -1;
+    height: 10px;
+  }
+  .path-card {
+    grid-template-columns: 1fr;
+  }
+  .path-name {
+    border-right: 0;
+    border-bottom: 1px solid var(--rule-firm);
+  }
+  .path-copy > div {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .path-action {
+    grid-column: 1;
+  }
+  .bucket-card header {
+    display: block;
+  }
+  .bucket-card header b {
+    display: block;
+    margin-top: 9px;
+  }
+  .renewal-row {
+    grid-template-columns: 54px 1fr;
+    gap: 12px;
+  }
+  .renewal-row > b {
+    grid-column: 2;
+  }
+  .detail-panel {
+    padding: 22px 17px 54px;
+  }
+  .evidence-table > div {
+    grid-template-columns: 76px 1fr;
+  }
+  .evidence-table b {
+    grid-column: 2;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

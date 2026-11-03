@@ -1,4 +1,4 @@
-import type { Dataset, MandateRow, NotificationRow, StatementRow } from "@/lib/types";
+import type { Dataset, MandateRow, NotificationRow, StatementRow } from "@/lib/payments/types";
 
 /**
  * Simulate new autopay. The button does not append a finished commitment: it

@@ -3,9 +3,9 @@
  * Stop the service, stop the money, and what to do if they stay silent.
  */
 import { ScreenHeader } from "@/components/chrome/screen-header";
-import { modeLabel, monthlyCost } from "@/lib/commitment-ui";
-import { formatDate, formatINR } from "@/lib/format";
-import type { Commitment } from "@/lib/types";
+import { modeLabel, monthlyCost } from "@/lib/presentation/commitment-ui";
+import { formatDate, formatINR } from "@/lib/presentation/format";
+import type { Commitment } from "@/lib/payments/types";
 import { useState } from "react";
 import { CancellationDrawer } from "@/components/detail/cancellation-drawer";
 
@@ -47,8 +47,8 @@ export function CancelPathsScreen({
       />
       {saved > 0 && (
         <p className="revoke-banner">
-          Payments you reported as stopped have taken <strong>{formatINR(saved)}</strong> out of the estimate:{" "}
-          {stoppedRows.map((item) => item.merchant).join(", ")}.
+          Payments you reported as stopped have taken <strong>{formatINR(saved)}</strong> out of the
+          estimate: {stoppedRows.map((item) => item.merchant).join(", ")}.
         </p>
       )}
       <section className="path-list">
@@ -71,11 +71,15 @@ export function CancelPathsScreen({
                 {item.mandateRef && <small>Mandate: {item.mandateRef}</small>}
               </div>
               <div className="path-copy path-guide-intro">
-                <p>{item.cancelMode === "block" ? "This is a loan obligation. Contact the lender about repayment or closure; do not stop its mandate from this app." : "Follow the service and payment-provider steps, keep confirmation, and check what to do if charges continue."}</p>
+                <p>
+                  {item.cancelMode === "block"
+                    ? "This is a loan obligation. Contact the lender about repayment or closure; do not stop its mandate from this app."
+                    : "Follow the service and payment-provider steps, keep confirmation, and check what to do if charges continue."}
+                </p>
                 {isKept && (
                   <p className="kept-note">
-                    Kept. The warning is settled and the mandate stays <strong>Active</strong>, so the year is
-                    unchanged.{" "}
+                    Kept. The warning is settled and the mandate stays <strong>Active</strong>, so
+                    the year is unchanged.{" "}
                     <button onClick={() => onFlagAgain(item.id)}>Flag it again</button>
                   </p>
                 )}
@@ -90,7 +94,14 @@ export function CancelPathsScreen({
                         Keep it
                       </button>
                     )}
-                    <button className="danger-button" id={`cancel-trigger-${item.id}`} aria-haspopup="dialog" aria-expanded={openGuide === item.id} aria-controls={openGuide === item.id ? `cancel-guide-${item.id}` : undefined} onClick={() => setOpenGuide(item.id)}>
+                    <button
+                      className="danger-button"
+                      id={`cancel-trigger-${item.id}`}
+                      aria-haspopup="dialog"
+                      aria-expanded={openGuide === item.id}
+                      aria-controls={openGuide === item.id ? `cancel-guide-${item.id}` : undefined}
+                      onClick={() => setOpenGuide(item.id)}
+                    >
                       Steps to cancel <i>→</i>
                     </button>
                     <small>
@@ -105,7 +116,17 @@ export function CancelPathsScreen({
           );
         })}
       </section>
-      {selectedGuide && <CancellationDrawer key={selectedGuide.id} item={selectedGuide} onClose={closeGuide} onComplete={() => { onConfirm(selectedGuide.id); setOpenGuide(null); }} />}
+      {selectedGuide && (
+        <CancellationDrawer
+          key={selectedGuide.id}
+          item={selectedGuide}
+          onClose={closeGuide}
+          onComplete={() => {
+            onConfirm(selectedGuide.id);
+            setOpenGuide(null);
+          }}
+        />
+      )}
     </>
   );
 }

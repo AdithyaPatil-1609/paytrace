@@ -1,13 +1,23 @@
 "use client";
 
-import { nextMonthSchedule } from "@/lib/calendar";
-import { formatINR } from "@/lib/format";
-import type { Commitment } from "@/lib/types";
+import { nextMonthSchedule } from "@/lib/payments/calendar";
+import { formatINR } from "@/lib/presentation/format";
+import type { Commitment } from "@/lib/payments/types";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
 ];
 
 /**
@@ -79,8 +89,9 @@ export function PaymentCalendar({
 
         {undated.length > 0 && (
           <p className="fridge-foot">
-            Not pinned to a day: {undated.map((item) => item.merchant).join(", ")}. The transfers arrive on uneven
-            dates, so there is no day to write them on. They are still counted in the year.
+            Not pinned to a day: {undated.map((item) => item.merchant).join(", ")}. The transfers
+            arrive on uneven dates, so there is no day to write them on. They are still counted in
+            the year.
           </p>
         )}
       </div>

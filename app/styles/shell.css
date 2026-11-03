@@ -1,0 +1,246 @@
+/* --- top bar ------------------------------------------------- */
+
+.product-chrome {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.product-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 66px;
+  padding: 0 clamp(20px, 5vw, 76px);
+  background: rgba(239, 234, 226, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule-firm);
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ink);
+  font: 700 25px/1 var(--serif);
+  letter-spacing: -0.035em;
+}
+
+.wordmark span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px 8px 8px 2px;
+  background: var(--marigold);
+  color: var(--paper-lift);
+  font: 700 16px/1 var(--sans);
+}
+
+.product-bar > p {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 13px;
+  letter-spacing: 0.22em;
+}
+
+.product-bar i {
+  color: var(--marigold);
+  font-style: normal;
+}
+
+.bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.simulate-button,
+.export-csv {
+  border: 1px solid var(--rule-firm);
+  border-radius: var(--r-sm);
+  padding: 8px 13px;
+  min-height: 44px;
+  background: var(--paper-lift);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 0.14s,
+    color 0.14s;
+}
+
+.simulate-button:hover:not(:disabled),
+.export-csv:hover {
+  border-color: var(--marigold);
+  color: var(--marigold-deep);
+}
+
+.simulate-button {
+  background: var(--marigold-skin);
+  border-color: var(--marigold);
+  white-space: nowrap;
+}
+.simulate-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.simulation-status {
+  margin: 0;
+  padding: 8px clamp(20px, 5vw, 76px);
+  border-bottom: 1px solid var(--rule-firm);
+  background: var(--marigold-skin);
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.persona {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.persona b {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+}
+
+/* --- frame --------------------------------------------------- */
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  max-width: 1540px;
+  min-height: calc(100vh - 66px);
+  margin: 0 auto;
+}
+
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 38px 18px;
+  border-right: 1px solid var(--rule-firm);
+}
+
+.side-nav > p {
+  margin: 0 0 16px 12px;
+  color: var(--ink-faint);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+}
+
+.side-nav > button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  padding: 11px 13px;
+  background: transparent;
+  color: var(--ink-soft);
+  text-align: left;
+  font-size: 15px;
+  cursor: pointer;
+  transition:
+    color 0.14s,
+    border-color 0.14s;
+}
+
+.side-nav > button span {
+  color: var(--ink-faint);
+  font: 500 13px var(--mono);
+}
+
+.side-nav > button:hover {
+  color: var(--ink);
+}
+
+.side-nav > button.active {
+  border-left-color: var(--marigold);
+  border-radius: 0 7px 7px 0;
+  background: var(--marigold-skin);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.side-nav > button.active span {
+  color: var(--marigold-deep);
+}
+
+.side-note {
+  margin-top: auto;
+  padding: 16px 12px;
+  border-top: 1px solid var(--rule-firm);
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.side-note strong,
+.side-note span {
+  display: block;
+}
+
+.side-note strong {
+  margin-bottom: 5px;
+  color: var(--ink-soft);
+}
+
+.main-stage {
+  width: min(1120px, 100%);
+  padding: 50px clamp(22px, 5vw, 72px) 96px;
+  margin: 0 auto;
+}
+
+/* --- screen heading ------------------------------------------ */
+
+.screen-header {
+  max-width: 880px;
+}
+
+.screen-header > p {
+  margin: 0 0 14px;
+  color: var(--marigold-deep);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+}
+
+.screen-header > p span {
+  color: var(--ink-faint);
+}
+
+.screen-header h1 {
+  margin: 0;
+  color: var(--ink);
+  font: 700 clamp(38px, 6vw, 68px)/0.98 var(--serif);
+  letter-spacing: -0.04em;
+}
+
+.screen-header > div {
+  max-width: 64ch;
+  margin-top: 18px;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.viz-heading {
+  margin: 48px 0 16px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule-firm);
+  color: var(--ink);
+  font: 600 25px var(--serif);
+  letter-spacing: -0.025em;
+}

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { detectCommitments } from "../lib/engine";
-import { loadFixtures } from "../lib/fixtures";
-import { annualPriceIncrease, issueDescription, issueGroups } from "../lib/issue-cards";
+import { detectCommitments } from "@/lib/payments/engine";
+import { loadFixtures } from "@/data/fixtures";
+import { annualPriceIncrease, issueDescription, issueGroups } from "@/lib/presentation/issue-cards";
 
 const payments = detectCommitments(loadFixtures());
 const spotify = payments.find((item) => item.merchant === "Spotify")!;

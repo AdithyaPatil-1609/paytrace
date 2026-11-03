@@ -4,10 +4,10 @@
 import { useEffect, useRef } from "react";
 import { EvidencePath } from "@/components/detail/evidence-path";
 import type { SourceInfo } from "@/db/neo4j/dataset";
-import { monthlyCost } from "@/lib/commitment-ui";
-import { formatDate, formatINR } from "@/lib/format";
-import type { Commitment } from "@/lib/types";
-import type { Dataset } from "@/lib/types";
+import { monthlyCost } from "@/lib/presentation/commitment-ui";
+import { formatDate, formatINR } from "@/lib/presentation/format";
+import type { Commitment } from "@/lib/payments/types";
+import type { Dataset } from "@/lib/payments/types";
 import { FindingChallenge } from "./finding-challenge";
 
 export function DetailPanel({
@@ -36,19 +36,50 @@ export function DetailPanel({
     function keys(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
       if (event.key === "Tab") {
-        const controls = Array.from(panel.current?.querySelectorAll<HTMLElement>("button:not(:disabled), summary, [href], input, select, textarea") ?? []).filter(el => el.getClientRects().length);
-        const first = controls[0], last = controls.at(-1);
-        if (event.shiftKey && (document.activeElement === first || document.activeElement === panel.current)) { event.preventDefault(); last?.focus(); }
-        else if (!event.shiftKey && (document.activeElement === last || document.activeElement === panel.current)) { event.preventDefault(); first?.focus(); }
+        const controls = Array.from(
+          panel.current?.querySelectorAll<HTMLElement>(
+            "button:not(:disabled), summary, [href], input, select, textarea"
+          ) ?? []
+        ).filter((el) => el.getClientRects().length);
+        const first = controls[0],
+          last = controls.at(-1);
+        if (
+          event.shiftKey &&
+          (document.activeElement === first || document.activeElement === panel.current)
+        ) {
+          event.preventDefault();
+          last?.focus();
+        } else if (
+          !event.shiftKey &&
+          (document.activeElement === last || document.activeElement === panel.current)
+        ) {
+          event.preventDefault();
+          first?.focus();
+        }
       }
     }
     document.addEventListener("keydown", keys);
-    return () => { document.body.style.overflow = overflow; document.removeEventListener("keydown", keys); previous?.focus(); };
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener("keydown", keys);
+      previous?.focus();
+    };
   }, [onClose]);
   const priceNotices = item.notices.filter((notice) => notice.eventType === "price_change");
   return (
-    <div className="detail-backdrop" role="dialog" aria-modal="true" aria-labelledby="transaction-title" onClick={onClose}>
-      <aside ref={panel} tabIndex={-1} className="detail-panel" onClick={(event) => event.stopPropagation()}>
+    <div
+      className="detail-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="transaction-title"
+      onClick={onClose}
+    >
+      <aside
+        ref={panel}
+        tabIndex={-1}
+        className="detail-panel"
+        onClick={(event) => event.stopPropagation()}
+      >
         <header>
           <div>
             <code>{item.rawNarration}</code>
@@ -60,44 +91,67 @@ export function DetailPanel({
           </button>
         </header>
 
-        <FindingChallenge item={item} dataset={dataset} live={challengeLive} initiallyOpen={challengeInitiallyOpen} />
-        {source.kind === "neo4j" && <details className="detail-accordion"><summary>Linked evidence</summary><EvidencePath item={item} /></details>}
+        <FindingChallenge
+          item={item}
+          dataset={dataset}
+          live={challengeLive}
+          initiallyOpen={challengeInitiallyOpen}
+        />
+        {source.kind === "neo4j" && (
+          <details className="detail-accordion">
+            <summary>Linked evidence</summary>
+            <EvidencePath item={item} />
+          </details>
+        )}
 
-        <details className="detail-accordion" open><summary>Payment overview</summary><section className="detail-facts">
-          <Fact label="This year" value={formatINR(item.annualCost)} />
-          <Fact label="Each charge" value={monthlyCost(item)} />
-          <Fact label="Rhythm" value={item.cadence} />
-          <Fact label="Instrument" value={item.instrument} />
-          <Fact label="Debits seen" value={String(item.debitCount)} />
-          <Fact label="Paying since" value={formatDate(item.startedOn)} />
-          <Fact label="Spent so far" value={formatINR(item.spentToDate)} />
-          <Fact label="Next charge" value={formatDate(item.nextCharge)} />
-          <Fact label="Last opened" value={item.lastOpened ? formatDate(item.lastOpened) : "No record"} />
-          <Fact
-            label="Opens in 12 months"
-            value={item.opensLast12Months === undefined ? "—" : String(item.opensLast12Months)}
-          />
-        </section></details>
+        <details className="detail-accordion" open>
+          <summary>Payment overview</summary>
+          <section className="detail-facts">
+            <Fact label="This year" value={formatINR(item.annualCost)} />
+            <Fact label="Each charge" value={monthlyCost(item)} />
+            <Fact label="Rhythm" value={item.cadence} />
+            <Fact label="Instrument" value={item.instrument} />
+            <Fact label="Debits seen" value={String(item.debitCount)} />
+            <Fact label="Paying since" value={formatDate(item.startedOn)} />
+            <Fact label="Spent so far" value={formatINR(item.spentToDate)} />
+            <Fact label="Next charge" value={formatDate(item.nextCharge)} />
+            <Fact
+              label="Last opened"
+              value={item.lastOpened ? formatDate(item.lastOpened) : "No record"}
+            />
+            <Fact
+              label="Opens in 12 months"
+              value={item.opensLast12Months === undefined ? "—" : String(item.opensLast12Months)}
+            />
+          </section>
+        </details>
 
-        <details className="detail-accordion"><summary>Why it counts as recurring</summary>
+        <details className="detail-accordion">
+          <summary>Why it counts as recurring</summary>
           <p>{item.whyRecurring}</p>
           {item.mandateRef && (
             <p className="detail-mandate">
-              Mandate {item.mandateRef} · status {item.mandateStatus ?? "unknown"} as of {formatDate(asOf)}.
+              Mandate {item.mandateRef} · status {item.mandateStatus ?? "unknown"} as of{" "}
+              {formatDate(asOf)}.
             </p>
           )}
         </details>
 
         {item.issue && (
-          <details className="detail-accordion flagged"><summary>What is wrong</summary>
+          <details className="detail-accordion flagged">
+            <summary>What is wrong</summary>
             <p>{item.issue}</p>
           </details>
         )}
 
-        <details className="detail-accordion"><summary>Notices · {item.notices.length}</summary>
+        <details className="detail-accordion">
+          <summary>Notices · {item.notices.length}</summary>
           <p className="detail-note">
-            Price-change messages · <strong>{priceNotices.length === 0 ? "none" : priceNotices.length}</strong>
-            {priceNotices.length === 0 && item.amountPattern === "step" && " — that empty list is the finding."}
+            Price-change messages ·{" "}
+            <strong>{priceNotices.length === 0 ? "none" : priceNotices.length}</strong>
+            {priceNotices.length === 0 &&
+              item.amountPattern === "step" &&
+              " — that empty list is the finding."}
           </p>
           <ul className="notice-list">
             {item.notices.map((notice) => (
@@ -108,19 +162,23 @@ export function DetailPanel({
                 <p>{notice.text}</p>
               </li>
             ))}
-            {item.notices.length === 0 && <li className="empty">No message is attached to this row.</li>}
+            {item.notices.length === 0 && (
+              <li className="empty">No message is attached to this row.</li>
+            )}
           </ul>
         </details>
 
         {item.holds.length > 0 && (
-          <details className="detail-accordion"><summary>Authorisation holds</summary>
+          <details className="detail-accordion">
+            <summary>Authorisation holds</summary>
             <p className="detail-note">
               Held out of the price. A ₹{item.holds[0].amount} hold is a card check, not the plan.
             </p>
           </details>
         )}
 
-        <details className="detail-accordion"><summary>Evidence · {item.evidenceRows.length} statement lines</summary>
+        <details className="detail-accordion">
+          <summary>Evidence · {item.evidenceRows.length} statement lines</summary>
           <div className="evidence-table">
             {item.evidenceRows.map((row) => (
               <div key={row.txnId}>

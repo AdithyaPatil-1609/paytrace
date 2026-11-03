@@ -1,15 +1,14 @@
-# db/neo4j — live evidence graph
+# Live evidence graph
 
-| File | Job |
+The seed reads synthetic CSVs through the Bolt driver. The current schema constraints and graph relationships are defined in `write.ts`. Start with the root README for setup.
+
+| Module | Responsibility |
 | --- | --- |
-| `client.ts` | Bolt driver + env check (`NEO4J_*`) |
-| `dataset.ts` | Read payments, messages, mandates, patterns from the graph |
-| `analyze.ts` | Cypher that decides commitments, issues, year, cancel paths. Thresholds arrive as `$rules` from `lib/rules.ts` |
-| `graph.ts` | Screen 00: label/relationship census and the three relationship findings |
-| `write.ts` | Graph writers shared by the seed and Simulate |
-| `simulate.ts` | Simulate new autopay inside a transaction that rolls back |
-| `schema.cypher` | Constraints / labels |
-| `seed.cypher` | Local Cypher seed notes |
-| `load-from-csv.cypher` | Same graph for a local Neo4j that can `LOAD CSV` |
-
-App seed (local Neo4j or Aura): `../scripts/seed-neo4j.ts` → `npm run seed`. Tests: `../tests/cypher/cypher.test.ts` → `npm run test:cypher`.
+| `client.ts` | Connection and configured database |
+| `dataset.ts` | Read source records and assemble the live dashboard response |
+| `queries/commitments.ts` | Parameterized Cypher for recurring payments and issues |
+| `commitment-record.ts` | Map a query row to the shared payment type |
+| `analyze.ts` | Run the query with the shared rule thresholds |
+| `graph.ts` | Evidence graph counts, relationship queries and findings |
+| `write.ts` | Write records and connect them to merchants, accounts and mandates |
+| `simulate.ts` and `challenge.ts` | Run hypothetical changes inside temporary transactions |

@@ -5,10 +5,10 @@
 import { ScreenHeader } from "@/components/chrome/screen-header";
 import { AnnualDashboard } from "@/components/visualizations/annual-dashboard";
 import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
-import { splitByBucket } from "@/lib/analysis";
-import { bucketCopy, bucketLabels } from "@/lib/engine";
-import { formatINR } from "@/lib/format";
-import type { Commitment } from "@/lib/types";
+import { splitByBucket } from "@/lib/payments/analysis";
+import { bucketCopy, bucketLabels } from "@/lib/payments/engine";
+import { formatINR } from "@/lib/presentation/format";
+import type { Commitment } from "@/lib/payments/types";
 
 export function AnnualScreen({
   items,
@@ -59,7 +59,8 @@ export function AnnualScreen({
 
       {stoppedValue > 0 && (
         <p className="revoke-banner">
-          A revoke confirmed on screen 3 has taken <strong>{formatINR(stoppedValue)}</strong> out of the year.
+          A revoke confirmed on screen 3 has taken <strong>{formatINR(stoppedValue)}</strong> out of
+          the year.
         </p>
       )}
 

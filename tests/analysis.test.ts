@@ -16,9 +16,9 @@ import {
   unusedTotal,
   upcomingRenewals,
   yearlyTotal
-} from "../lib/analysis";
-import { detectCommitments } from "../lib/engine";
-import { loadFixtures, loadParserFixtures } from "../lib/fixtures";
+} from "@/lib/payments/analysis";
+import { detectCommitments } from "@/lib/payments/engine";
+import { loadFixtures, loadParserFixtures } from "@/data/fixtures";
 
 const dataset = loadFixtures();
 const commitments = detectCommitments(dataset);

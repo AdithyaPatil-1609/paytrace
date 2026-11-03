@@ -4,12 +4,12 @@
  * Run with: npm run demo   (app already running on BASE_URL, default :3000)
  *
  * It checks, in order, the four things a judge needs to see in the video:
- * the Reading Neo4j badge, Screen 00 (the graph itself), an Evidence path
+ * the Reading Neo4j badge, Screen 05 (the graph itself), an Evidence path
  * that names the missing price_change edge, and all four product screens —
  * with Simulate answered by Cypher on the way. Any one missing fails the run.
  *
  * Output: work/demo/paytrace-live.webm and one PNG per step.
- * Flags:  --headed to watch it, --allow-fixture to record the CSV path anyway.
+ * Flags:  --headed to watch it.
  */
 import { mkdirSync, readdirSync, renameSync, rmSync } from "node:fs";
 import path from "node:path";
@@ -18,7 +18,6 @@ import { chromium, type Page } from "playwright";
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 const OUT = path.join(process.cwd(), "work", "demo");
 const headed = process.argv.includes("--headed");
-const allowFixture = process.argv.includes("--allow-fixture");
 
 let step = 0;
 
@@ -69,7 +68,7 @@ async function main() {
 
     // 1. The badge. The CSV clip is the one that scored lower.
     const badge = (await page.locator(".source-badge").innerText()).trim();
-    if (!badge.includes("Reading Neo4j") && !allowFixture) {
+    if (!badge.includes("Reading Neo4j")) {
       const note = await page.locator(".evidence-strip").innerText().catch(() => "");
       throw new Error(
         `The app is on the CSV fixture ("${badge}"). ${note.trim()}\n` +
@@ -80,26 +79,14 @@ async function main() {
     await page.waitForTimeout(1200);
     await shot(page, "badge-reading-neo4j");
 
-    // 2. Screen 00 — the graph before the product.
-    await expectText(page, ".screen-header h1", "Why each payment is here", "Screen 00");
-    await page.locator(".evidence-picker-list button").filter({ hasText: "Spotify" }).first().click();
-    await expectText(page, ".payment-diagram-panel", "Records from Neo4j analysis", "Payment evidence");
-    await shot(page, "screen-00-graph");
-    await page.locator(".evidence-live-details > summary").click();
-    await glide(page, 700);
-    await page.waitForTimeout(800);
-    await shot(page, "screen-00-findings");
-    await page.locator(".graph-finding details summary").first().click();
-    await page.waitForTimeout(1200);
-    await shot(page, "screen-00-cypher");
-
     // 3. Screen 01 — then an Evidence path on the silent hike.
-    await page.locator(".graph-handoff button").click();
+
     await page.evaluate(() => window.scrollTo({ top: 0 }));
     await expectText(page, ".screen-header", "SCREEN 1", "Screen 01");
     await page.waitForTimeout(900);
     await shot(page, "screen-01-all-payments");
     await page.locator(".payment-row", { hasText: "Spotify" }).first().click();
+    await page.getByText("Linked evidence", { exact: true }).click();
     const pathBlock = await expectText(page, ".evidence-path", "Evidence path · Neo4j", "Evidence path");
     await expectText(page, ".path-finding", "silent_hike", "Evidence path finding");
     await pathBlock.scrollIntoViewIfNeeded();
@@ -108,13 +95,13 @@ async function main() {
     await page.locator(".detail-panel header button").click();
 
     // Simulate, answered by Cypher in a rolled-back transaction.
-    const simulate = page.locator(".simulation-card .primary-button");
+    const simulate = page.getByRole("button", { name: "Simulate a new Autopay" });
     await simulate.scrollIntoViewIfNeeded();
     await simulate.click();
-    await expectText(page, ".simulation-card", "rolled back", "Simulate in Neo4j");
+    await expectText(page, ".simulation-status", "Neo4j simulation", "Simulate in Neo4j");
     await page.waitForTimeout(1200);
     await shot(page, "simulate-in-neo4j");
-    await page.locator(".simulation-card .secondary-button").click();
+    await page.getByRole("button", { name: "Reset simulation" }).click();
 
     // 4. Screens 02–04.
     await openScreen(page, "Issues");
@@ -130,11 +117,20 @@ async function main() {
     await openScreen(page, "Annual");
     await expectText(page, ".screen-header", "SCREEN 4", "Screen 04");
     await shot(page, "screen-04-annual");
-    const proof = page.locator(".source-panel.live");
-    await proof.scrollIntoViewIfNeeded();
-    await expectText(page, ".source-panel.live", "Decided in Neo4j", "Screen 04 Neo4j proof");
-    await page.waitForTimeout(1500);
-    await shot(page, "screen-04-decided-in-neo4j");
+    await openScreen(page, "Evidence graph");
+    // 2. Screen 05 — inspect the evidence.
+    await expectText(page, ".screen-header h1", "Why each payment is here", "Screen 05");
+    await page.locator(".evidence-picker-list button").filter({ hasText: "Spotify" }).first().click();
+    await expectText(page, ".payment-diagram-panel", "Records from Neo4j analysis", "Payment evidence");
+    await shot(page, "screen-05-graph");
+    await page.locator(".evidence-live-details > summary").click();
+    await glide(page, 700);
+    await page.waitForTimeout(800);
+    await shot(page, "screen-05-findings");
+    await page.locator(".graph-finding details summary").first().click();
+    await page.waitForTimeout(1200);
+    await shot(page, "screen-05-cypher");
+
   } finally {
     await context.close();
     await browser.close();

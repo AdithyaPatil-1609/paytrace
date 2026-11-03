@@ -1,10 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { groupByCategory, monthlyForecast, unusedTotal, yearlyTotal } from "@/lib/analysis";
-import { spendGroupLabels } from "@/lib/engine";
-import { formatINR } from "@/lib/format";
-import type { Commitment, SpendGroup } from "@/lib/types";
+import {
+  groupByCategory,
+  monthlyForecast,
+  unusedTotal,
+  yearlyTotal
+} from "@/lib/payments/analysis";
+import { spendGroupLabels } from "@/lib/payments/engine";
+import { formatINR } from "@/lib/presentation/format";
+import type { Commitment, SpendGroup } from "@/lib/payments/types";
 
 /** Donut geometry: one ring, drawn as stroked arcs on a single circle. */
 const RADIUS = 78;
@@ -41,7 +46,6 @@ export function AnnualDashboard({
     length: slice.share * CIRCUMFERENCE,
     offset: slices.slice(0, index).reduce((sum, earlier) => sum + earlier.share * CIRCUMFERENCE, 0)
   }));
-
 
   const widest = Math.max(...months.map((month) => month.total), 1);
 
@@ -112,7 +116,10 @@ export function AnnualDashboard({
                 aria-label={`${month.label} ${month.key.slice(0, 4)}, ${formatINR(month.total)}`}
               >
                 <div className="month-plot">
-                  <div className="month-col-bar" style={{ height: `${(month.total / widest) * 100}%` }}>
+                  <div
+                    className="month-col-bar"
+                    style={{ height: `${(month.total / widest) * 100}%` }}
+                  >
                     <span className="month-tip">{formatINR(month.total)}</span>
                   </div>
                 </div>
@@ -147,7 +154,17 @@ export function AnnualDashboard({
   );
 }
 
-function Kpi({ label, value, lead = false, alarm = false }: { label: string; value: string; lead?: boolean; alarm?: boolean }) {
+function Kpi({
+  label,
+  value,
+  lead = false,
+  alarm = false
+}: {
+  label: string;
+  value: string;
+  lead?: boolean;
+  alarm?: boolean;
+}) {
   return (
     <article className={`kpi${lead ? " lead" : ""}${alarm ? " alarm" : ""}`}>
       <span>{label}</span>

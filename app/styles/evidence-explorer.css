@@ -1,0 +1,383 @@
+.payment-evidence-explorer {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  align-items: start;
+  gap: 22px;
+  margin: 28px 0;
+}
+.evidence-picker,
+.payment-diagram-panel {
+  min-width: 0;
+  border: 1px solid var(--rule-firm);
+  border-radius: 14px;
+  background: var(--paper-lift);
+}
+.evidence-picker {
+  padding: 16px 10px;
+}
+.evidence-picker label {
+  display: block;
+  padding: 6px 10px 14px;
+  font: 400 11px var(--mono);
+  letter-spacing: 0.15em;
+  color: var(--ink-soft);
+}
+.evidence-picker input {
+  width: calc(100% - 16px);
+  margin: 0 8px 12px;
+  padding: 10px;
+  border: 1px solid var(--rule-firm);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--paper-lift);
+  font: 400 13px var(--sans);
+  min-height: 44px;
+}
+.evidence-picker-list {
+  max-height: 780px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.evidence-picker-list button {
+  display: block;
+  width: 100%;
+  min-height: 76px;
+  text-align: left;
+  padding: 14px 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.evidence-picker-list button.selected {
+  border-color: var(--marigold);
+  background: var(--marigold-skin);
+}
+.evidence-picker-list button strong {
+  display: block;
+  margin-bottom: 5px;
+  font: 700 15px/1.4 var(--sans);
+  overflow-wrap: anywhere;
+}
+.evidence-picker-list button span,
+.evidence-picker-list button small {
+  display: block;
+  color: var(--ink-soft);
+  font: 400 13px/1.7 var(--sans);
+  overflow-wrap: anywhere;
+}
+.evidence-picker-list button:hover:not(.selected) {
+  background: var(--paper-sink);
+}
+.evidence-picker-list button:focus-visible,
+.evidence-picker input:focus-visible,
+.payment-diagram-panel summary:focus-visible,
+.payment-diagram-scroll:focus-visible {
+  outline: 2px solid var(--marigold);
+  outline-offset: 2px;
+}
+.evidence-picker-empty,
+.evidence-explorer-empty {
+  padding: 14px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+.payment-diagram-panel {
+  overflow: hidden;
+  padding: 18px;
+}
+.evidence-source-note {
+  font: 400 13px/1.6 var(--sans);
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+}
+.payment-diagram-scroll {
+  overflow: auto;
+  max-height: 680px;
+  scrollbar-width: thin;
+  border-radius: 8px;
+}
+.payment-evidence-svg {
+  display: block;
+  width: 100%;
+  min-width: 620px;
+  height: auto;
+}
+.payment-evidence-edge line {
+  stroke: var(--rule-firm);
+  stroke-width: 1.3;
+  stroke-dasharray: 4 4;
+}
+.payment-evidence-edge text {
+  fill: var(--ink-soft);
+  font: 12px var(--mono);
+  letter-spacing: 0.1em;
+  paint-order: stroke;
+  stroke: var(--paper-lift);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.payment-evidence-node {
+  cursor: pointer;
+}
+.payment-evidence-node circle {
+  fill: var(--paper);
+  stroke: var(--plum);
+  stroke-width: 1.8;
+}
+.evidence-node-message circle {
+  stroke: var(--sage);
+}
+.evidence-node-mandate circle {
+  fill: var(--marigold-skin);
+  stroke: var(--marigold-deep);
+}
+.evidence-node-pattern circle {
+  fill: #e9ad9c;
+  stroke: var(--ember);
+}
+.payment-evidence-node:focus {
+  outline: none;
+}
+.payment-evidence-node:focus circle,
+.payment-evidence-node.picked circle {
+  stroke: var(--marigold);
+  stroke-width: 4;
+}
+.evidence-node-label {
+  fill: var(--ink);
+  font: 700 16px var(--sans);
+}
+.evidence-node-caption {
+  fill: var(--ink-soft);
+  font: 400 12px var(--mono);
+}
+.payment-evidence-centre circle {
+  fill: var(--ink);
+  stroke: var(--marigold);
+  stroke-width: 3;
+}
+.payment-evidence-centre text {
+  fill: var(--paper-lift);
+  font: 700 18px var(--sans);
+}
+.payment-evidence-centre .centre-amount {
+  fill: #f4b546;
+  font: 400 12px var(--mono);
+}
+.evidence-more-node circle {
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-dasharray: 3 3;
+}
+.evidence-more-node text {
+  fill: var(--ink-soft);
+  font: 400 9px var(--mono);
+}
+.payment-evidence-legend {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin: 14px 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.payment-evidence-legend li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.payment-evidence-legend i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--plum);
+  border-radius: 50%;
+}
+.payment-evidence-legend .legend-payment {
+  background: var(--ink);
+  border-color: var(--marigold);
+}
+.payment-evidence-legend .legend-message {
+  border-color: var(--sage);
+}
+.payment-evidence-legend .legend-mandate {
+  border-color: var(--marigold-deep);
+  background: var(--marigold-skin);
+}
+.payment-evidence-legend .legend-pattern {
+  border-color: var(--ember);
+  background: #e9ad9c;
+}
+.evidence-sample-note {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.7;
+  border-top: 1px solid var(--rule-firm);
+  padding-top: 16px;
+}
+.evidence-node-detail {
+  border-left: 2px solid var(--marigold);
+  margin: 16px 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.evidence-node-detail p {
+  margin: 4px 0;
+}
+.evidence-records {
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  overflow-wrap: anywhere;
+}
+.evidence-records summary,
+.evidence-live-details > summary {
+  min-height: 44px;
+  padding: 12px 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+.evidence-records ul {
+  padding-left: 20px;
+}
+.evidence-records li {
+  margin-bottom: 12px;
+}
+.evidence-live-details {
+  margin: 28px 0;
+  border-top: 1px solid var(--rule-firm);
+}
+.evidence-live-details pre {
+  max-width: 100%;
+  overflow: auto;
+}
+@media (max-width: 1000px) {
+  .payment-evidence-explorer {
+    grid-template-columns: 1fr;
+  }
+  .evidence-picker-list {
+    max-height: 240px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 540px) {
+  .evidence-picker-list {
+    grid-template-columns: 1fr;
+  }
+  .payment-diagram-panel {
+    padding: 14px;
+  }
+}
+.screen-reading-help {
+  margin: 10px 0 24px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+.screen-reading-help summary {
+  width: fit-content;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 0;
+  font-weight: 600;
+}
+.screen-reading-help p {
+  max-width: 65ch;
+  padding: 14px 18px;
+  margin: 0;
+  border-left: 2px solid var(--marigold);
+  background: var(--paper-lift);
+  line-height: 1.75;
+}
+.issue-card,
+.evidence-picker,
+.payment-diagram-panel {
+  box-shadow: var(--lift-shadow);
+}
+.empty-issue-categories {
+  margin: 32px 0;
+  border-top: 1px solid var(--rule-firm);
+  color: var(--ink-soft);
+}
+.empty-issue-categories summary {
+  min-height: 44px;
+  padding: 14px 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+.empty-issue-categories ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.empty-issue-categories li {
+  display: grid;
+  gap: 4px;
+  border-bottom: 1px solid var(--rule);
+  padding: 14px 0;
+}
+.empty-issue-categories li span {
+  font-size: 14px;
+}
+.evidence-graph-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 0 18px;
+}
+.evidence-graph-controls > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.evidence-graph-controls button {
+  border: 1px solid var(--rule-firm);
+  border-radius: 7px;
+  padding: 9px 12px;
+  min-height: 44px;
+  min-width: 44px;
+  background: var(--paper-lift);
+  color: var(--ink);
+  font: 500 13px var(--sans);
+  cursor: pointer;
+}
+.evidence-graph-controls button:hover:not(:disabled) {
+  background: var(--marigold-skin);
+  border-color: var(--marigold);
+}
+.evidence-graph-controls button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+.evidence-graph-controls output {
+  min-width: 48px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.payment-evidence-svg.has-selection .payment-evidence-node:not(.picked),
+.payment-evidence-svg.has-selection .payment-evidence-edge:not(.selected-edge),
+.payment-evidence-svg.has-selection .evidence-more-node {
+  opacity: 0.25;
+}
+.payment-evidence-svg.has-selection .payment-evidence-node:focus {
+  opacity: 1;
+}
+.payment-evidence-edge.selected-edge line {
+  stroke: var(--marigold-deep);
+  stroke-width: 2.5;
+  stroke-dasharray: none;
+}
+.payment-evidence-edge.selected-edge text {
+  fill: var(--ink);
+  font-weight: 700;
+}

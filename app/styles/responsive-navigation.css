@@ -1,0 +1,342 @@
+/* Responsive payment review and progressive disclosure. */
+button,
+summary {
+  touch-action: manipulation;
+}
+button:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--marigold-deep);
+  outline-offset: 3px;
+}
+.main-stage,
+.app-layout > *,
+.path-card > *,
+.payment-row > *,
+.issue-row > * {
+  min-width: 0;
+}
+.payment-row,
+.issue-row,
+.path-card,
+.detail-panel {
+  overflow-wrap: anywhere;
+}
+.exclusion-note {
+  padding: 20px 24px;
+  border: 1px solid var(--marigold-deep);
+  border-left: 5px solid var(--marigold-deep);
+  border-radius: var(--r-md);
+  background: var(--marigold-skin);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.8;
+}
+.exclusion-note > strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 16px;
+}
+.detail-accordion {
+  margin-top: 14px;
+  border: 1px solid var(--rule-firm);
+  border-radius: var(--r-md);
+  background: var(--paper-lift);
+  padding: 0 16px;
+}
+.detail-accordion > summary,
+.cancel-guide > summary {
+  padding: 16px 0;
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 15px;
+  color: var(--ink);
+}
+.detail-accordion[open] {
+  padding-bottom: 16px;
+}
+.detail-accordion > p {
+  font-size: 15px;
+  line-height: 1.65;
+}
+.detail-accordion .detail-facts {
+  margin-top: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.detail-accordion.flagged {
+  border-color: var(--ember-edge);
+  background: var(--ember-skin);
+}
+.detail-panel {
+  overscroll-behavior: contain;
+  height: 100dvh;
+}
+.detail-panel header button {
+  width: 44px;
+  height: 44px;
+}
+.cancel-guide {
+  align-self: start;
+  padding: 0 20px;
+}
+.cancel-guide .path-copy {
+  padding: 0 0 18px;
+}
+.cancel-guide .path-copy > div {
+  display: block;
+  margin-bottom: 18px;
+}
+.cancel-steps {
+  margin: 9px 0 0;
+  padding-left: 20px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.cancel-steps li + li {
+  margin-top: 8px;
+}
+.path-card.issue .cancel-steps {
+  color: #3f211a;
+}
+
+.calendar-controls {
+  flex-wrap: wrap;
+}
+.calendar-controls button {
+  min-height: 44px;
+}
+@media (min-width: 661px) and (max-width: 1100px) {
+  .table-caption,
+  .issue-caption {
+    display: none;
+  }
+  .payment-row {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.5fr) auto;
+  }
+  .payment-row > b {
+    grid-column: 3;
+  }
+  .payment-row > small {
+    grid-column: 2;
+  }
+  .issue-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  }
+  .issue-row > small {
+    grid-column: 2;
+  }
+  .issue-metrics {
+    grid-template-columns: 1fr;
+  }
+  .path-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .path-action {
+    grid-column: 1;
+  }
+}
+@media (max-width: 660px) {
+  .product-bar {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+  .bar-actions {
+    margin-left: auto;
+    gap: 8px;
+  }
+  .persona {
+    display: none;
+  }
+
+  .screen-header h1 {
+    font-size: clamp(30px, 8vw, 38px);
+  }
+  .year-banner strong,
+  .annual-figure strong,
+  .issue-metric > strong {
+    font-size: clamp(30px, 8vw, 44px);
+  }
+  .cancel-guide {
+    padding: 0 14px;
+  }
+
+  .fridge-head {
+    display: block;
+  }
+  .fridge-head .calendar-controls {
+    margin-top: 14px;
+  }
+  .path-hops li {
+    grid-template-columns: 1fr;
+  }
+  .exclusion-note {
+    padding: 16px;
+  }
+}
+@media (max-width: 660px) {
+  .product-chrome {
+    position: relative;
+  }
+}
+
+/* Chart labels are static text; category buttons remain interactive. */
+.donut-wrap {
+  user-select: none;
+  -webkit-user-select: none;
+  caret-color: transparent;
+  cursor: default;
+}
+.donut-wrap text {
+  pointer-events: none;
+  cursor: default;
+}
+.payment-row {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+.payment-row .pay-plain em,
+.issue-row p,
+.cancel-steps,
+.detail-panel p {
+  line-height: 1.7;
+}
+.legend button {
+  min-height: 44px;
+  gap: 10px;
+}
+.renewal-body,
+.renewal-row > *,
+.fridge-grid > * {
+  min-width: 0;
+}
+.renewal-body {
+  overflow-wrap: anywhere;
+}
+.fridge-grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.fridge-day .note {
+  min-width: 0;
+}
+.fridge-day .note span,
+.fridge-day .note i {
+  font-size: 12px;
+}
+@media (max-width: 660px) {
+  .fridge-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .legend button {
+    grid-template-columns: 10px minmax(0, 1fr) auto;
+  }
+}
+
+/* Statement evidence stays aligned on one line at every screen width. */
+.evidence-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.evidence-table > div {
+  grid-template-columns: 112px minmax(max-content, 1fr) max-content;
+  gap: 16px;
+  width: 100%;
+  min-width: max-content;
+}
+.evidence-table span,
+.evidence-table code,
+.evidence-table b {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+.evidence-table b {
+  grid-column: 3;
+  text-align: right;
+}
+
+/* Phone navigation is a compact disclosure menu with full-size touch targets. */
+.mobile-menu {
+  display: none;
+}
+@media (max-width: 660px) {
+  .product-bar {
+    position: relative;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .wordmark {
+    font-size: 22px;
+  }
+  .mobile-menu {
+    display: block;
+    flex: 0 0 auto;
+  }
+  .mobile-menu > summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--rule-firm);
+    border-radius: var(--r-sm);
+    background: var(--paper-lift);
+    color: var(--ink);
+    list-style: none;
+    cursor: pointer;
+  }
+  .mobile-menu > summary::-webkit-details-marker {
+    display: none;
+  }
+  .mobile-menu[open] > summary {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .mobile-menu nav {
+    position: absolute;
+    top: calc(100% - 2px);
+    left: 16px;
+    right: 16px;
+    z-index: 35;
+    display: grid;
+    gap: 4px;
+    padding: 8px;
+    border: 1px solid var(--rule-firm);
+    border-radius: var(--r-md);
+    background: var(--paper-lift);
+    box-shadow: var(--lift-shadow);
+  }
+  .mobile-menu nav button {
+    min-height: 48px;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--ink);
+    text-align: left;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .mobile-menu nav button[aria-current="page"] {
+    background: var(--marigold-skin);
+    color: var(--ink);
+    box-shadow: inset 3px 0 var(--marigold);
+    font-weight: 700;
+  }
+  .mobile-menu nav button:hover {
+    background: var(--marigold-skin);
+    color: var(--ink);
+  }
+  .bar-actions {
+    flex: 0 0 100%;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .simulate-button,
+  .export-csv {
+    padding: 9px 8px;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+}

@@ -10,8 +10,8 @@ import { analyzeCommitments } from "./analyze";
 import { getNeo4jDriver, neo4jDatabase } from "./client";
 import { linkEvidence, writeMandates, writeMessages, writePayments } from "./write";
 import { simulatedMandate, simulatedNotices, simulatedStatement } from "@/data/simulation";
-import { AS_OF } from "@/lib/fixtures";
-import type { Commitment } from "@/lib/types";
+import { AS_OF } from "@/data/fixtures";
+import type { Commitment } from "@/lib/payments/types";
 
 export async function analyzeWithSimulatedAutopay(): Promise<Commitment[]> {
   const session = getNeo4jDriver().session({ database: neo4jDatabase });

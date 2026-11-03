@@ -1,12 +1,12 @@
 /**
  * App entry (server).
- * 1. Prefer Neo4j live dataset + Cypher commitments + Screen 00 graph findings.
+ * 1. Prefer the live Neo4j dataset, Cypher commitments and evidence graph findings.
  * 2. Else offline CSV fixture.
  * 3. Hand the result to the client shell (components/dashboard.tsx).
  */
 import { Dashboard } from "@/components/dashboard";
 import { hasNeo4jConfig, loadDatasetFromNeo4j, type LoadedDataset, type SourceInfo } from "@/db/neo4j/dataset";
-import { loadFixtures } from "@/lib/fixtures";
+import { loadFixtures } from "@/data/fixtures";
 
 // Read per request, so a change in the graph or in data/raw shows on reload.
 export const dynamic = "force-dynamic";
