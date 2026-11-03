@@ -1,6 +1,6 @@
 import { hasNeo4jConfig } from "@/db/neo4j/client";
 import { challengeInNeo4j } from "@/db/neo4j/challenge";
-import { ChallengeInputError, challengeActions, type ChallengeAction } from "@/lib/challenge";
+import { ChallengeInputError, challengeActions, type ChallengeAction } from "@/lib/scenarios/challenge";
 
 export async function POST(request: Request) {
   let body: unknown;

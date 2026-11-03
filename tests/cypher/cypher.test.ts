@@ -19,11 +19,11 @@ import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/cl
 import { loadGraphFacts } from "../../db/neo4j/graph";
 import { analyzeWithSimulatedAutopay } from "../../db/neo4j/simulate";
 import { writePayments } from "../../db/neo4j/write";
-import { isSilentPriceHike, isTrialConverted, isZombie, unusedTotal, yearlyTotal } from "../../lib/analysis";
-import { detectCommitments } from "../../lib/engine";
-import { AS_OF, loadFixtures, loadParserFixtures } from "../../lib/fixtures";
-import { RULES } from "../../lib/rules";
-import type { Commitment } from "../../lib/types";
+import { isSilentPriceHike, isTrialConverted, isZombie, unusedTotal, yearlyTotal } from "@/lib/payments/analysis";
+import { detectCommitments } from "@/lib/payments/engine";
+import { AS_OF, loadFixtures, loadParserFixtures } from "@/data/fixtures";
+import { RULES } from "@/lib/payments/rules";
+import type { Commitment } from "@/lib/payments/types";
 
 const skip = hasNeo4jConfig() ? false : "Neo4j is not configured. Set NEO4J_* and run npm run seed.";
 
@@ -156,7 +156,7 @@ describe("Cypher engine on the live graph", { skip }, () => {
     assert.equal(await count(), before);
   });
 
-  test("C13. thresholds reach the query from lib/rules.ts, they are not written into it", async () => {
+  test("C13. thresholds reach the query from lib/payments/rules.ts, they are not written into it", async () => {
     const lenient = await analyzeCommitments(session, AS_OF, { ...RULES, zombieDays: 400 });
     const gym = lenient.find((item) => item.merchant === "FitLine Gym")!;
     assert.equal(gym.signals.includes("zombie"), false);

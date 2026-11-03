@@ -3,8 +3,8 @@ import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PaymentEvidenceExplorer } from "../components/visualizations/payment-evidence-graph";
-import { detectCommitments } from "../lib/engine";
-import { loadFixtures } from "../lib/fixtures";
+import { detectCommitments } from "@/lib/payments/engine";
+import { loadFixtures } from "@/data/fixtures";
 
 const dataset = loadFixtures();
 const items = detectCommitments(dataset);

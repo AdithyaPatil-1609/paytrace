@@ -2,7 +2,7 @@
  * One rule book, two runners.
  *
  * The thresholds, ids, and sentences below are the parts of detection that
- * must never drift between lib/engine.ts (the offline CSV path) and
+ * must never drift between lib/payments/engine.ts (the offline CSV path) and
  * db/neo4j/analyze.ts (live Cypher). The engine imports them directly; the
  * Cypher query receives RULES as the $rules parameter, so a change here moves
  * both. tests/cypher/cypher.test.ts asserts the two engines then agree field by field.

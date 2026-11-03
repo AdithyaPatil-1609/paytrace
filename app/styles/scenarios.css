@@ -1,0 +1,134 @@
+.finding-challenge {
+  border: 1px solid var(--rule-firm);
+  border-radius: 10px;
+  padding: 4px 16px 16px;
+  margin: 20px 0;
+  background: var(--paper-lift);
+}
+.finding-challenge > summary {
+  cursor: pointer;
+  padding: 12px 0;
+  min-height: 44px;
+  font-weight: 700;
+}
+.finding-challenge p,
+.finding-challenge li {
+  line-height: 1.7;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.finding-challenge .challenge-demo-label {
+  color: var(--marigold-deep);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.challenge-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 18px 0;
+}
+.challenge-actions:empty {
+  display: none;
+}
+.challenge-advanced {
+  margin-top: 18px;
+  border-top: 1px solid var(--rule-firm);
+  padding-top: 8px;
+}
+.challenge-advanced > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.finding-challenge button {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule-firm);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 600 13px/1.5 var(--sans);
+  cursor: pointer;
+}
+.finding-challenge button:hover:not(:disabled) {
+  border-color: var(--marigold);
+  background: var(--marigold-skin);
+}
+.finding-challenge button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.challenge-hint {
+  color: var(--ink-soft);
+}
+.challenge-merchant {
+  display: grid;
+  gap: 10px;
+}
+.challenge-merchant label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.challenge-merchant input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid var(--rule-firm);
+  border-radius: 6px;
+  background: var(--paper-lift);
+  color: var(--ink);
+  font: inherit;
+}
+.challenge-error {
+  border-left: 3px solid var(--ember);
+  padding: 10px 12px;
+  background: var(--ember-skin);
+}
+.challenge-result {
+  margin-top: 20px;
+  border-top: 1px solid var(--rule-firm);
+  padding-top: 16px;
+}
+.challenge-result h3 {
+  margin-top: 0;
+  font: 600 20px var(--serif);
+}
+.challenge-result ul {
+  padding-left: 20px;
+}
+.challenge-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.challenge-verdict {
+  min-width: 0;
+  border: 1px solid var(--rule-firm);
+  border-radius: 6px;
+  padding: 14px;
+  background: var(--paper);
+}
+.challenge-verdict:last-child {
+  border-top: 3px solid var(--marigold);
+}
+.challenge-verdict h4 {
+  margin: 0;
+  font-size: 14px;
+}
+.challenge-verdict ul {
+  margin-bottom: 0;
+}
+.challenge-verdict li {
+  margin: 8px 0;
+}
+@media (max-width: 540px) {
+  .challenge-actions,
+  .challenge-comparison {
+    grid-template-columns: 1fr;
+  }
+}

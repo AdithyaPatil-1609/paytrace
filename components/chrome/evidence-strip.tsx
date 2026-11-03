@@ -45,8 +45,7 @@ export function EvidenceStrip({ source }: { source: SourceInfo }) {
     <section className="evidence-strip" aria-label="Statement data">
       <p className="evidence-mark">Statement data</p>
       <p className="evidence-copy">
-        {source.note ??
-          "Payments and insights from saved CSV statements."}
+        {source.note ?? "Payments and insights from saved CSV statements."}
       </p>
     </section>
   );

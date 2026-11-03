@@ -1,10 +1,10 @@
 /**
  * Small display helpers shared by the four screens and the detail panel.
- * Money maths stays in lib/analysis.ts and lib/engine.ts — this file only formats.
+ * Money maths stays in lib/payments/analysis.ts and lib/payments/engine.ts — this file only formats.
  */
-import { toCsv } from "@/lib/csv";
-import { formatINR } from "@/lib/format";
-import type { Commitment } from "@/lib/types";
+import { toCsv } from "@/data/csv";
+import { formatINR } from "./format";
+import type { Commitment } from "@/lib/payments/types";
 
 export function monthlyCost(item: Commitment) {
   if (item.cadence === "annual") return "once a year";

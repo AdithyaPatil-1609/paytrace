@@ -10,7 +10,7 @@ import type {
   StatementRow,
   UsageRow,
   CancelMode
-} from "./types";
+} from "@/lib/payments/types";
 
 /** The fixture's as-of date. Every "last opened" and "next charge" is read against it. */
 export const AS_OF = "2026-10-22";

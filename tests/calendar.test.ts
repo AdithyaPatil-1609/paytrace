@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { nextMonthSchedule } from "../lib/calendar";
-import { detectCommitments } from "../lib/engine";
-import { loadFixtures } from "../lib/fixtures";
+import { nextMonthSchedule } from "@/lib/payments/calendar";
+import { detectCommitments } from "@/lib/payments/engine";
+import { loadFixtures } from "@/data/fixtures";
 
 const item = detectCommitments(loadFixtures())[0];
 test("next-month schedule crosses year boundaries and clamps month-end payments", () => {

@@ -2,14 +2,15 @@
  * Live Neo4j only — multi-hop walk Payment → Merchant ← Message / Mandate.
  * Hidden on the offline CSV path so we never fake relationship types.
  */
-import { formatDate, formatINR } from "@/lib/format";
-import type { Commitment } from "@/lib/types";
+import { formatDate, formatINR } from "@/lib/presentation/format";
+import type { Commitment } from "@/lib/payments/types";
 
 export function EvidencePath({ item }: { item: Commitment }) {
   const latest = item.evidenceRows[item.evidenceRows.length - 1];
   const priceNotices = item.notices.filter((notice) => notice.eventType === "price_change");
   const silentHike =
-    item.signals.includes("silent_hike") || (item.amountPattern === "step" && priceNotices.length === 0);
+    item.signals.includes("silent_hike") ||
+    (item.amountPattern === "step" && priceNotices.length === 0);
   const hops: { edge: string; to: string; detail: string }[] = [
     {
       edge: "-[:PAID_TO]->",
@@ -47,7 +48,10 @@ export function EvidencePath({ item }: { item: Commitment }) {
   hops.push({
     edge: "-[:GROUPED_INTO]->",
     to: `Commitment · ${item.merchant}`,
-    detail: item.stopMoney || item.cancellationPath || "Cancel path lives on the Pattern that matched the narration"
+    detail:
+      item.stopMoney ||
+      item.cancellationPath ||
+      "Cancel path lives on the Pattern that matched the narration"
   });
 
   return (
@@ -74,8 +78,10 @@ export function EvidencePath({ item }: { item: Commitment }) {
       {silentHike && (
         <p className="path-finding">
           Finding: amount stepped
-          {item.previousAmount !== undefined ? ` ${formatINR(item.previousAmount)} → ${formatINR(item.amount)}` : ""} with{" "}
-          <strong>no</strong> <code>price_change</code> Message → <code>silent_hike</code>
+          {item.previousAmount !== undefined
+            ? ` ${formatINR(item.previousAmount)} → ${formatINR(item.amount)}`
+            : ""}{" "}
+          with <strong>no</strong> <code>price_change</code> Message → <code>silent_hike</code>
         </p>
       )}
     </section>

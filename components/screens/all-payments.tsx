@@ -4,9 +4,9 @@
  */
 import { ScreenHeader } from "@/components/chrome/screen-header";
 import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
-import { monthlyCost } from "@/lib/commitment-ui";
-import { formatINR } from "@/lib/format";
-import type { Commitment } from "@/lib/types";
+import { monthlyCost } from "@/lib/presentation/commitment-ui";
+import { formatINR } from "@/lib/presentation/format";
+import type { Commitment } from "@/lib/payments/types";
 
 export function AllPaymentsScreen({
   items,
@@ -41,7 +41,9 @@ export function AllPaymentsScreen({
               <s>{formatINR(baseline)}</s> → <b>{formatINR(total)}</b> after one new autopay
             </p>
           )}
-          <small>{items.length} recurring commitments from statement lines and payment messages.</small>
+          <small>
+            {items.length} recurring commitments from statement lines and payment messages.
+          </small>
         </div>
         <div className="year-note">
           <b>{simulated ? "New autopay is included" : "A clear annual total"}</b>
@@ -64,7 +66,9 @@ export function AllPaymentsScreen({
         <div className="payment-rows">
           {items.map((item) => (
             <button
-              className={["payment-row", item.signals.includes("new") ? "is-new" : ""].join(" ").trim()}
+              className={["payment-row", item.signals.includes("new") ? "is-new" : ""]
+                .join(" ")
+                .trim()}
               data-row={item.id}
               key={item.id}
               onClick={() => onOpen(item.id)}
@@ -85,14 +89,14 @@ export function AllPaymentsScreen({
         </div>
       </section>
       <p className="exclusion-note">
-        <strong>Not added to this list:</strong> one Swiggy order, a transfer to Rahul, salary credits, the
-        credit-card repayment, and YouTube&apos;s ₹1 authorisation. One-off debits have no second debit or active mandate; credits, card repayments, and
-        authorisation holds are excluded separately. Open any row above to see the rule that kept it.
+        <strong>Not added to this list:</strong> one Swiggy order, a transfer to Rahul, salary
+        credits, the credit-card repayment, and YouTube&apos;s ₹1 authorisation. One-off debits have
+        no second debit or active mandate; credits, card repayments, and authorisation holds are
+        excluded separately. Open any row above to see the rule that kept it.
       </p>
 
       <h2 className="viz-heading">Next month’s payments</h2>
       <RenewalCalendar items={items} asOf={asOf} onOpen={onOpen} />
-
     </>
   );
 }

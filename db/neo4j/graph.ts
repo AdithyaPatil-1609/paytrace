@@ -1,14 +1,14 @@
 /**
- * Screen 00 reads the graph itself, not the commitments derived from it.
+ * The evidence graph page can show findings derived from stored relationships.
  *
  * Each finding is one Cypher pattern over relationships: a Message that is
  * absent, a chain from a trial notice to a paid debit, money that kept moving
  * after the last open. The query text ships with the result so the screen can
  * show exactly what ran. There is no CSV twin of this file; offline mode has
- * no graph, so Screen 00 says so instead of imitating it.
+ * no live graph, so the page labels its CSV evidence source.
  */
 import type { CypherRunner } from "./analyze";
-import { RULES } from "@/lib/rules";
+import { RULES } from "@/lib/payments/rules";
 
 export type GraphFinding<Row> = { title: string; cypher: string; rows: Row[] };
 

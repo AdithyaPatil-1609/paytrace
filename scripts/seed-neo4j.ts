@@ -20,7 +20,7 @@ import {
   readNotifications,
   readStatement,
   readUsage
-} from "../lib/fixtures";
+} from "@/data/fixtures";
 
 async function main() {
   const { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } = await import("../db/neo4j/client");

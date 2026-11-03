@@ -19,7 +19,12 @@ export function ScreenHeader({
       </p>
       <h1>{title}</h1>
       <div>{copy}</div>
-      {help && <details className="screen-reading-help"><summary>How to read this</summary><p>{help}</p></details>}
+      {help && (
+        <details className="screen-reading-help">
+          <summary>How to read this</summary>
+          <p>{help}</p>
+        </details>
+      )}
     </header>
   );
 }

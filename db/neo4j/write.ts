@@ -5,7 +5,7 @@
  * simulated row is linked exactly the way a seeded row is.
  */
 import type { CypherRunner } from "./analyze";
-import type { DictionaryEntry, MandateRow, NotificationRow, StatementRow, UsageRow } from "@/lib/types";
+import type { DictionaryEntry, MandateRow, NotificationRow, StatementRow, UsageRow } from "@/lib/payments/types";
 
 export const CONSTRAINTS = [
   "CREATE CONSTRAINT pay_person_persona IF NOT EXISTS FOR (n:Person) REQUIRE n.persona IS UNIQUE",

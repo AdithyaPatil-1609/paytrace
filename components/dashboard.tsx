@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { MobileNavigation } from "@/components/chrome/mobile-navigation";
 import { EvidenceStrip } from "@/components/chrome/evidence-strip";
 import { DetailPanel } from "@/components/detail/detail-panel";
@@ -19,12 +19,16 @@ import {
 import { withSimulatedAutopay } from "@/data/simulation";
 import type { SourceInfo } from "@/db/neo4j/dataset";
 import type { GraphFacts } from "@/db/neo4j/graph";
-import { yearlyTotal } from "@/lib/analysis";
-import { downloadCommitmentsCsv } from "@/lib/commitment-ui";
-import { detectCommitments } from "@/lib/engine";
-import type { Commitment, Dataset } from "@/lib/types";
+import { usePaymentReview } from "./hooks/use-payment-review";
+import { downloadCommitmentsCsv } from "@/lib/presentation/commitment-ui";
+import type { Commitment, Dataset } from "@/lib/payments/types";
 
-type DashboardProps = { dataset: Dataset; source: SourceInfo; commitments?: Commitment[]; graph?: GraphFacts };
+type DashboardProps = {
+  dataset: Dataset;
+  source: SourceInfo;
+  commitments?: Commitment[];
+  graph?: GraphFacts;
+};
 type Screen = "graph" | "annual" | "list" | "issues" | "paths";
 
 const screens: { id: Screen; number: string; label: string }[] = [
@@ -36,85 +40,36 @@ const screens: { id: Screen; number: string; label: string }[] = [
 ];
 
 export function Dashboard({ dataset, source, commitments, graph }: DashboardProps) {
-  const live = Boolean(commitments && commitments.length > 0);
   const [screen, setScreen] = useState<Screen>("list");
-  const [simulated, setSimulated] = useState(false);
-  // Live Simulate: the rows Cypher returned inside a rolled-back transaction.
-  const [liveSimulation, setLiveSimulation] = useState<Commitment[] | null>(null);
-  const [simulating, setSimulating] = useState(false);
-  const [revoked, setRevoked] = useState<string[]>([]);
-  const [kept, setKept] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [challengeOpen, setChallengeOpen] = useState(false);
-  function openPayment(id: string) { setChallengeOpen(false); setOpenId(id); }
+  function openPayment(id: string) {
+    setChallengeOpen(false);
+    setOpenId(id);
+  }
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
-  // Live: Neo4j decides every row, Simulate included. The TypeScript engine
-  // only runs on the offline fixture, or if the graph cannot simulate.
-  const detected = useMemo(() => {
-    if (live && !simulated) return commitments!;
-    if (live && liveSimulation) return liveSimulation;
-    return detectCommitments(simulated ? withSimulatedAutopay(dataset) : dataset);
-  }, [dataset, simulated, commitments, live, liveSimulation]);
-
-  // The rows before Simulate: their total drives the before-and-after
-  // reading, and their ids tell Reset what the simulation added.
-  const baseDetected = useMemo(
-    () => (live ? commitments! : detectCommitments(dataset)),
-    [dataset, commitments, live]
-  );
-  const baseline = yearlyTotal(baseDetected);
-  const active = detected.filter((item) => !revoked.includes(item.id));
-  const total = yearlyTotal(active);
-  const fullYear = yearlyTotal(detected);
-  const stoppedValue = fullYear - total;
-  // Keeping a row settles the warning across every screen, not just the one
-  // the decision was made on.
-  const leakage = yearlyTotal(active.filter((item) => item.kind === "unused"));
-  const debt = yearlyTotal(active.filter((item) => item.bucket === "debt"));
+  const {
+    live,
+    simulated,
+    simulating,
+    liveSimulation,
+    revoked,
+    kept,
+    detected,
+    active,
+    baseline,
+    total,
+    stoppedValue,
+    leakage,
+    debt,
+    simulate,
+    resetSimulation,
+    confirmRevoke,
+    keepIt,
+    flagAgain
+  } = usePaymentReview(dataset, commitments);
   const openItem = active.find((item) => item.id === openId) ?? null;
-
-  async function simulate() {
-    if (simulating || simulated) return;
-    setScreen("list");
-    if (live) {
-      setSimulating(true);
-      try {
-        const response = await fetch("/api/simulate", { method: "POST" });
-        if (response.ok) {
-          const body = (await response.json()) as { commitments: Commitment[] };
-          setLiveSimulation(body.commitments);
-        }
-      } catch {
-        // The fixture path below still answers; the status says which ran.
-      } finally {
-        setSimulating(false);
-      }
-    }
-    setSimulated(true);
-  }
-
-  function resetSimulation() {
-    setSimulated(false);
-    setLiveSimulation(null);
-    // Forget any decision taken on a row that only the simulation created.
-    const baseIds = new Set(baseDetected.map((item) => item.id));
-    setRevoked((current) => current.filter((id) => baseIds.has(id)));
-    setKept((current) => current.filter((id) => baseIds.has(id)));
-  }
-
-  function confirmRevoke(id: string) {
-    setRevoked((current) => (current.includes(id) ? current : [...current, id]));
-    setKept((current) => current.filter((entry) => entry !== id));
-  }
-
-  function keepIt(id: string) {
-    setKept((current) => (current.includes(id) ? current : [...current, id]));
-  }
-
-  function flagAgain(id: string) {
-    setKept((current) => current.filter((entry) => entry !== id));
-  }
 
   return (
     <main className="paytrace-shell">
@@ -134,12 +89,27 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
           <div className="bar-actions">
             <button
               className="simulate-button"
-              onClick={simulated ? resetSimulation : simulate}
+              onClick={
+                simulated
+                  ? resetSimulation
+                  : () => {
+                      setScreen("list");
+                      void simulate();
+                    }
+              }
               disabled={simulating}
               aria-busy={simulating}
-              title={simulated ? "Remove the simulated autopay" : "Add a synthetic autopay and rerun detection"}
+              title={
+                simulated
+                  ? "Remove the simulated autopay"
+                  : "Add a synthetic autopay and rerun detection"
+              }
             >
-              {simulating ? "Simulating…" : simulated ? "Reset simulation" : "Simulate a new Autopay"}
+              {simulating
+                ? "Simulating…"
+                : simulated
+                  ? "Reset simulation"
+                  : "Simulate a new Autopay"}
             </button>
             <button className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
               ↓ Export CSV
@@ -151,9 +121,14 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
           </div>
         </header>
         <EvidenceStrip source={source} />
-        {simulated && <p className="simulation-status" role="status">
-          Synthetic demo: Headspace autopay added · {live && liveSimulation ? "Neo4j simulation; stored records unchanged." : "Offline simulation using a temporary copy of the records."}
-        </p>}
+        {simulated && (
+          <p className="simulation-status" role="status">
+            Synthetic demo: Headspace autopay added ·{" "}
+            {live && liveSimulation
+              ? "Neo4j simulation; stored records unchanged."
+              : "Offline simulation using a temporary copy of the records."}
+          </p>
+        )}
       </div>
 
       <div className="app-layout">
@@ -171,13 +146,24 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
           ))}
           <div className="side-note">
             <strong>Cancellation guidance</strong>
-            <span>Follow the steps in your payment app or with your provider. Mark the payment handled here once complete.</span>
+            <span>
+              Follow the steps in your payment app or with your provider. Mark the payment handled
+              here once complete.
+            </span>
           </div>
         </aside>
 
         <section className="main-stage">
           {screen === "graph" && (
-            <EvidenceGraphScreen graph={graph} source={source} items={active} dictionary={dataset.dictionary} recordsLive={live && (!simulated || Boolean(liveSimulation))} onOpen={openPayment} onContinue={() => setScreen("list")} />
+            <EvidenceGraphScreen
+              graph={graph}
+              source={source}
+              items={active}
+              dictionary={dataset.dictionary}
+              recordsLive={live && (!simulated || Boolean(liveSimulation))}
+              onOpen={openPayment}
+              onContinue={() => setScreen("list")}
+            />
           )}
           {screen === "list" && (
             <AllPaymentsScreen
@@ -194,8 +180,14 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
               allItems={active}
               kept={kept}
               onOpen={openPayment}
-              onChallenge={(id) => { setChallengeOpen(true); setOpenId(id); }}
-              onGoToCancel={(id) => { setCancelTarget(id); setScreen("paths"); }}
+              onChallenge={(id) => {
+                setChallengeOpen(true);
+                setOpenId(id);
+              }}
+              onGoToCancel={(id) => {
+                setCancelTarget(id);
+                setScreen("paths");
+              }}
             />
           )}
           {screen === "paths" && (
@@ -225,7 +217,16 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
       </div>
 
       {openItem && (
-        <DetailPanel key={openItem.id} item={openItem} asOf={dataset.asOf} source={source} dataset={simulated ? withSimulatedAutopay(dataset) : dataset} challengeLive={live && !simulated} challengeInitiallyOpen={challengeOpen} onClose={() => setOpenId(null)} />
+        <DetailPanel
+          key={openItem.id}
+          item={openItem}
+          asOf={dataset.asOf}
+          source={source}
+          dataset={simulated ? withSimulatedAutopay(dataset) : dataset}
+          challengeLive={live && !simulated}
+          challengeInitiallyOpen={challengeOpen}
+          onClose={() => setOpenId(null)}
+        />
       )}
     </main>
   );
