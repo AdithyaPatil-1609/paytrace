@@ -110,7 +110,6 @@ export function AllPaymentsScreen({
               data-row={item.id}
               key={item.id}
               variants={reduceMotion ? immediateRows : rowVariants}
-              whileHover={reduceMotion ? undefined : { scale: 1.01, boxShadow: "0 5px 14px -8px rgba(36,18,49,0.24)" }}
               whileTap={reduceMotion ? undefined : { scale: 0.997 }}
               onClick={() => onOpen(item.id)}
             >

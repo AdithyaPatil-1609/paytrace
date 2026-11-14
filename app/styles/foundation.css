@@ -1,39 +1,52 @@
 /* ---------------------------------------------------------------
-   Paytrace. Warm paper, aubergine ink, marigold.
-   The page sits on a ruled grid, the way a ledger does. Surfaces
-   lift off the paper by a millimetre, never more.
+   Paytrace. A warm ledger: ivory paper, aubergine ink, marigold.
+   The page sits on faint ruled lines, the way a ledger does, under
+   soft marigold and terracotta light. Surfaces lift a little, never
+   float. Every text colour here clears 4.5:1 on the surface it sits on.
    --------------------------------------------------------------- */
 
 :root {
-  --paper: #eee9e2;
-  --paper-lift: #fcfaf6;
-  --paper-sink: #e5ded4;
+  --paper: #f5efe6;
+  --paper-lift: #fffcf7;
+  --paper-sink: #ece4d8;
 
-  --ink: #241231;
-  --ink-soft: #5c4a66;
-  --ink-faint: #726479;
+  --ink: #2a1730;
+  --ink-soft: #5a4762;
+  --ink-faint: #6f6075;
 
-  --marigold: #dd8c17;
-  --marigold-deep: #a9660a;
-  --marigold-skin: #fbeed6;
+  --marigold: #e8952a;
+  --marigold-bright: #f2a43a;
+  --marigold-deep: #9a5807;
+  --marigold-skin: #fcefd9;
 
-  --ember: #b4402a;
-  --ember-skin: #f7e3dd;
+  --ember: #a8391f;
+  --ember-deep: #8a2b17;
+  --ember-skin: #f9e4dc;
 
   --plum: #6d3a63;
-  --sage: #4f7a62;
+  --sage: #3f6a52;
+  --sage-skin: #e3eee6;
 
-  --rule: rgba(36, 18, 49, 0.1);
-  --rule-firm: rgba(36, 18, 49, 0.18);
-  --lift-shadow: 0 1px 3px rgba(36, 18, 49, 0.04), 0 8px 24px -16px rgba(36, 18, 49, 0.25);
+  /* the aubergine of the sidebar */
+  --night: #2b1631;
+  --night-raised: #3a1e3f;
+  --night-text: #efe3d3;
+  --night-muted: #bfa9bd;
 
-  --sans: "DM Sans", system-ui, sans-serif;
+  --rule: rgba(42, 23, 48, 0.09);
+  --rule-firm: rgba(42, 23, 48, 0.15);
+  --lift-shadow: 0 1px 2px rgba(42, 23, 48, 0.05), 0 14px 34px -20px rgba(92, 46, 18, 0.32);
+  --lift-shadow-hover: 0 2px 4px rgba(42, 23, 48, 0.06), 0 22px 44px -22px rgba(92, 46, 18, 0.42);
+
+  --sans: "IBM Plex Sans", system-ui, sans-serif;
   --serif: "Fraunces", Georgia, serif;
-  --mono: "DM Mono", ui-monospace, monospace;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {

@@ -1,0 +1,388 @@
+/* ---------------------------------------------------------------
+   Warm ledger, refined.
+   The visual layer over the screen styles: page light, the shell,
+   surfaces and numbers. Motion lives in the components (framer-motion);
+   the transitions here are only hover and focus feedback.
+   --------------------------------------------------------------- */
+
+/* --- the page: ivory paper, ruled like a ledger, under warm light --- */
+
+body {
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(1100px 620px at 88% -8%, rgba(232, 149, 42, 0.16), transparent 62%),
+    radial-gradient(900px 600px at -6% 34%, rgba(168, 57, 31, 0.08), transparent 60%),
+    radial-gradient(800px 520px at 60% 108%, rgba(109, 58, 99, 0.09), transparent 62%),
+    repeating-linear-gradient(to bottom, transparent 0 31px, rgba(42, 23, 48, 0.035) 31px 32px);
+  background-attachment: fixed;
+  font-feature-settings: "tnum" 1;
+}
+
+::selection {
+  background: rgba(232, 149, 42, 0.32);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--marigold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* --- header: frosted glass, one quiet row --- */
+
+.product-bar {
+  min-height: 64px;
+  background: rgba(255, 252, 247, 0.72);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.wordmark {
+  letter-spacing: -0.02em;
+}
+
+.wordmark span {
+  background: linear-gradient(140deg, var(--marigold-bright), var(--marigold) 55%, #c9731a);
+  color: var(--night);
+  box-shadow: 0 6px 14px -6px rgba(232, 149, 42, 0.7);
+}
+
+.product-bar > p {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+}
+
+.simulate-button,
+.export-csv {
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 600;
+  transition: background-color 0.18s var(--ease-out), border-color 0.18s var(--ease-out),
+    box-shadow 0.18s var(--ease-out), transform 0.18s var(--ease-out);
+}
+
+.simulate-button {
+  border-color: transparent;
+  background: linear-gradient(140deg, var(--marigold-bright), var(--marigold));
+  color: var(--night);
+  box-shadow: 0 8px 18px -10px rgba(201, 115, 26, 0.85);
+}
+
+.simulate-button:hover:not(:disabled) {
+  border-color: transparent;
+  color: var(--night);
+  box-shadow: 0 12px 22px -10px rgba(201, 115, 26, 0.95);
+  transform: translateY(-1px);
+}
+
+.export-csv {
+  background: rgba(255, 252, 247, 0.8);
+}
+
+.export-csv:hover {
+  background: var(--paper-lift);
+}
+
+.persona b {
+  background: linear-gradient(140deg, var(--night-raised), var(--night));
+  color: var(--marigold-bright);
+}
+
+.source-badge {
+  border-radius: 999px;
+}
+
+/* The evidence strip: what the page is reading, as a calm second line. */
+.evidence-strip,
+.evidence-strip.live {
+  background: rgba(245, 239, 230, 0.66);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.evidence-counts div {
+  padding: 3px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 252, 247, 0.7);
+}
+
+.evidence-counts dd {
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+/* --- sidebar: a deep aubergine panel, the active screen lit in marigold --- */
+
+.side-nav {
+  margin: 18px 0 18px 18px;
+  padding: 26px 12px 18px;
+  border: 0;
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(260px 220px at 20% 0%, rgba(232, 149, 42, 0.18), transparent 70%),
+    linear-gradient(180deg, var(--night-raised), var(--night));
+  box-shadow: 0 24px 48px -28px rgba(43, 22, 49, 0.75);
+  align-self: start;
+  position: sticky;
+  top: 150px;
+}
+
+.side-nav > p {
+  margin-left: 12px;
+  color: var(--night-muted);
+  letter-spacing: 0.22em;
+}
+
+.side-nav > button {
+  margin: 2px 0;
+  border-radius: var(--r-md);
+  color: var(--night-text);
+  transition: background-color 0.18s var(--ease-out), color 0.18s var(--ease-out);
+}
+
+.side-nav > button span {
+  color: var(--night-muted);
+}
+
+.side-nav > button:hover {
+  background: rgba(239, 227, 211, 0.08);
+  color: #fff8ef;
+}
+
+/* The lit item: the pill is the sliding layoutId element from the dashboard,
+   so the marigold glides from item to item instead of jumping. */
+.side-nav > button {
+  isolation: isolate;
+}
+
+.side-nav > button.active {
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--night);
+}
+
+.side-nav > button.active span {
+  color: rgba(43, 22, 49, 0.72);
+}
+
+.side-nav > button .motion-active-rail {
+  inset: 0;
+  width: auto;
+  height: auto;
+  z-index: -1;
+  border-radius: var(--r-md);
+  background: linear-gradient(140deg, var(--marigold-bright), var(--marigold));
+  box-shadow: 0 10px 22px -12px rgba(232, 149, 42, 0.9);
+}
+
+.side-note {
+  border-top-color: rgba(239, 227, 211, 0.14);
+  color: var(--night-muted);
+}
+
+.side-note strong {
+  color: var(--night-text);
+}
+
+/* --- screen heading --- */
+
+.screen-header > p {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1px solid rgba(232, 149, 42, 0.35);
+  border-radius: 999px;
+  background: rgba(252, 239, 217, 0.7);
+  font-weight: 600;
+}
+
+.screen-header h1 {
+  font-size: clamp(38px, 4.6vw, 60px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.screen-header > div {
+  font-size: 16px;
+}
+
+/* --- surfaces: every card is the same paper, lifted the same amount --- */
+
+.year-banner,
+.annual-figure,
+.data-panel,
+.issues-table,
+.issue-card,
+.kpi-row,
+.graph-census > div,
+.graph-focus,
+.graph-finding,
+.graph-handoff,
+.fridge {
+  border-color: var(--rule);
+  border-radius: var(--r-lg);
+  background-color: var(--paper-lift);
+  box-shadow: var(--lift-shadow);
+}
+
+/* The year: the hero number of the product, under its own warm light. */
+.year-banner {
+  position: relative;
+  overflow: hidden;
+  padding: 30px 32px;
+  background-image: radial-gradient(520px 240px at 0% 0%, rgba(232, 149, 42, 0.14), transparent 70%);
+}
+
+.year-banner div > span,
+.annual-figure > span,
+.kpi > span {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+
+.year-banner strong {
+  font-size: clamp(44px, 5vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.year-note {
+  border-radius: var(--r-md);
+}
+
+/* Big figures read as numbers first: tabular, tight, in the display face. */
+.annual-figure strong,
+.kpi strong {
+  letter-spacing: -0.03em;
+}
+
+.annual-figure.accent {
+  border-color: transparent;
+  background: linear-gradient(150deg, #b8452a, var(--ember-deep) 60%, #6e2213);
+  box-shadow: 0 22px 40px -22px rgba(138, 43, 23, 0.85);
+}
+
+.annual-figure.accent > span {
+  color: #f4c4b4;
+}
+
+.annual-figure.accent strong {
+  color: #fff4ee;
+}
+
+.annual-figure.accent small {
+  color: #f4cdbf;
+}
+
+.annual-figure.muted {
+  border-style: dashed;
+  background: rgba(255, 252, 247, 0.5);
+  box-shadow: none;
+}
+
+.kpi {
+  background: var(--paper-lift);
+}
+
+.kpi.alarm {
+  background: var(--ember-skin);
+}
+
+/* --- the payment table --- */
+
+.table-caption {
+  background: rgba(236, 228, 216, 0.6);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.payment-row {
+  transition: background-color 0.16s var(--ease-out), box-shadow 0.16s var(--ease-out);
+}
+
+.payment-row:hover {
+  background: rgba(252, 239, 217, 0.55);
+  box-shadow: inset 3px 0 0 var(--marigold);
+}
+
+.raw-narration {
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* --- issue cards --- */
+
+.issue-card {
+  transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+}
+
+.issue-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--lift-shadow-hover);
+}
+
+.issue-card-badge {
+  border-radius: 999px;
+  letter-spacing: 0.06em;
+}
+
+/* Charge history: quiet bars, the one that changed in ember. */
+.issue-history rect.charge-recorded {
+  fill: rgba(90, 71, 98, 0.55);
+}
+
+.issue-history rect.charge-increased {
+  fill: var(--ember);
+}
+
+.issue-history rect.charge-notice {
+  fill: var(--marigold);
+}
+
+/* --- the fridge calendar --- */
+
+.fridge-day {
+  border-radius: var(--r-md);
+}
+
+.fridge-day .note {
+  border-radius: 8px;
+}
+
+/* --- touch: every tappable row is at least 44px tall --- */
+
+.bucket-rows button {
+  min-height: 44px;
+}
+
+/* --- motion safety: hover lifts stop for anyone who prefers less motion --- */
+
+@media (prefers-reduced-motion: reduce) {
+  .issue-card:hover,
+  .simulate-button:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* --- small screens: the sidebar is replaced by the menu, so it never shows --- */
+
+@media (max-width: 900px) {
+  .side-nav {
+    position: static;
+    margin: 0;
+  }
+
+  .year-banner {
+    padding: 22px;
+  }
+}

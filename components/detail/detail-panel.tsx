@@ -30,7 +30,7 @@ export function DetailPanel({
   challengeInitiallyOpen?: boolean;
   onClose: () => void;
 }) {
-  const panel = useRef<HTMLAsideElement>(null);
+  const panel = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;

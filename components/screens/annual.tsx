@@ -7,7 +7,9 @@
 import { ScreenHeader } from "@/components/chrome/screen-header";
 import { AnnualDashboard } from "@/components/visualizations/annual-dashboard";
 import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
+import { motion, useReducedMotion } from "framer-motion";
 import { AnimatedINR } from "@/components/motion/animated-inr";
+import { reveal } from "@/components/motion/reveal";
 import { splitByBucket } from "@/lib/payments/analysis";
 import { bucketCopy, bucketLabels } from "@/lib/payments/engine";
 import { formatINR } from "@/lib/presentation/format";
@@ -30,6 +32,7 @@ export function AnnualScreen({
   asOf: string;
   onOpen: (id: string) => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const split = splitByBucket(items);
   const largest = Math.max(...split.map((group) => group.total), 1);
 
@@ -43,21 +46,21 @@ export function AnnualScreen({
         help="The estimate groups recurring payments by their status. Review unused services before treating their cost as potential savings. Bills and loan repayments remain obligations; estimated spending is not a confirmed future bill."
       />
       <section className="annual-headline">
-        <article className="annual-figure">
+        <motion.article className="annual-figure" {...reveal(0, reduceMotion)}>
           <span>COMMITTED TO LEAVE</span>
           <strong><AnimatedINR value={total} /></strong>
           <small>Over the next twelve months, across the savings account and the card.</small>
-        </article>
-        <article className="annual-figure accent">
+        </motion.article>
+        <motion.article className="annual-figure accent" {...reveal(1, reduceMotion)}>
           <span>STILL DEBITING, NOT USED</span>
           <strong><AnimatedINR value={leakage} /></strong>
           <small>The part of the year that a decision can remove.</small>
-        </article>
-        <article className="annual-figure muted">
+        </motion.article>
+        <motion.article className="annual-figure muted" {...reveal(2, reduceMotion)}>
           <span>HOME-LOAN EMI</span>
           <strong><AnimatedINR value={debt} /></strong>
           <small>Loan repayments must be managed with the lender.</small>
-        </article>
+        </motion.article>
       </section>
 
       {stoppedValue > 0 && (

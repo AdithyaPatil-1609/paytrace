@@ -19,13 +19,11 @@ function AnimatedValue({ value, currency }: { value: number; currency: boolean }
   useMotionValueEvent(spring, "change", latest => {
     setDisplayed(Math.round(latest));
   });
+  // jump() lands on the value at once and still notifies the listener above,
+  // so reduced motion gets the final figure with no count-up and no setState here.
   useEffect(() => {
-    if (reduceMotion) {
-      spring.jump(value);
-      setDisplayed(value);
-    } else {
-      spring.set(value);
-    }
+    if (reduceMotion) spring.jump(value);
+    else spring.set(value);
   }, [value, reduceMotion, spring]);
 
   return (

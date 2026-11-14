@@ -221,7 +221,7 @@
     0 12px 26px -14px rgba(103, 18, 8, 0.75);
 }
 
-.annual-figure.accent span {
+.annual-figure.accent > span {
   color: #eeae9e;
 }
 .annual-figure.accent strong {
@@ -246,7 +246,7 @@
 .kpi.alarm {
   background: var(--ember-skin);
 }
-.kpi.alarm span {
+.kpi.alarm > span {
   color: var(--ember-deep);
 }
 .kpi.alarm strong {

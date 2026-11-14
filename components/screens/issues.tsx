@@ -1,4 +1,6 @@
+import { motion, useReducedMotion } from "framer-motion";
 import { ScreenHeader } from "@/components/chrome/screen-header";
+import { reveal } from "@/components/motion/reveal";
 import { formatDate, formatINR } from "@/lib/presentation/format";
 import {
   annualPriceIncrease,
@@ -22,6 +24,7 @@ export function IssuesScreen({
   onGoToCancel: (id: string) => void;
   onChallenge: (id: string) => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const groups = issueGroups(allItems, kept);
   const findings = groups.reduce((sum, group) => sum + group.rows.length, 0);
   const paymentCount = new Set(groups.flatMap((group) => group.rows.map((item) => item.id))).size;
@@ -74,8 +77,8 @@ export function IssuesScreen({
                 <p className="issue-category-empty">None found in the available records.</p>
               ) : (
                 <div className="issue-card-grid">
-                  {group.rows.map((item) => (
-                    <article className="issue-card" data-row={item.id} key={item.id}>
+                  {group.rows.map((item, index) => (
+                    <motion.article className="issue-card" data-row={item.id} key={item.id} {...reveal(index, reduceMotion)}>
                       <header className="issue-card-header">
                         <div>
                           <h3>{item.product || item.merchant}</h3>
@@ -114,7 +117,7 @@ export function IssuesScreen({
                           View evidence<span className="issues-sr-only"> for {item.merchant}</span>
                         </button>
                       </div>
-                    </article>
+                    </motion.article>
                   ))}
                 </div>
               )}

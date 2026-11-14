@@ -16,7 +16,7 @@
   display: grid;
 }
 
-.year-banner span {
+.year-banner div > span {
   color: var(--ink-faint);
   font-size: 13px;
   letter-spacing: 0.18em;

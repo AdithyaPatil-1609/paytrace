@@ -15,7 +15,7 @@
   box-shadow: var(--lift-shadow);
 }
 
-.annual-figure span {
+.annual-figure > span {
   color: var(--ink-faint);
   font-size: 13px;
   letter-spacing: 0.18em;
@@ -74,7 +74,7 @@
   background: var(--paper-lift);
 }
 
-.kpi span {
+.kpi > span {
   display: block;
   color: var(--ink-faint);
   font-size: 13px;
