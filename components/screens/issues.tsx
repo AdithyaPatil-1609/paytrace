@@ -1,10 +1,9 @@
 import { ScreenHeader } from "@/components/chrome/screen-header";
-import { formatDate, formatINR } from "@/lib/presentation/format";
+import { formatINR } from "@/lib/presentation/format";
 import {
   annualPriceIncrease,
   issueDescription,
-  issueGroups,
-  type IssueCategory
+  issueGroups
 } from "@/lib/presentation/issue-cards";
 import type { Commitment } from "@/lib/payments/types";
 import { challengeChoices } from "@/lib/scenarios/challenge-ui";
@@ -84,7 +83,6 @@ export function IssuesScreen({
                         <span className={`issue-card-badge badge-${group.id}`}>{group.badge}</span>
                       </header>
                       <p className="issue-card-explanation">{issueDescription(item, group.id)}</p>
-                      <ChargeHistory item={item} category={group.id} />
                       <div className="issue-card-actions">
                         <button
                           className="issue-card-link"
@@ -135,80 +133,5 @@ export function IssuesScreen({
         </details>
       )}
     </>
-  );
-}
-
-function ChargeHistory({ item, category }: { item: Commitment; category: IssueCategory }) {
-  const notice =
-    category === "trial"
-      ? item.notices.find((entry) => entry.eventType === "trial_ending")
-      : undefined;
-  const charges = [...item.priceSeries].sort((first, second) =>
-    first.date.localeCompare(second.date)
-  );
-  const points =
-    notice && charges[0] && notice.sentOn < charges[0].date
-      ? [{ date: notice.sentOn, amount: 0 }, ...charges]
-      : charges;
-  if (points.length === 0)
-    return <p className="issue-category-empty">No dated charges available.</p>;
-  const ceiling = Math.max(1, ...points.map((point) => point.amount));
-  const changeIndex = charges.findIndex((point) => point.amount !== charges[0]?.amount);
-  const slot = 720 / points.length;
-  return (
-    <figure className="issue-history">
-      <svg
-        viewBox="0 0 720 92"
-        role="img"
-        aria-label={`${item.merchant}: ${charges.length} recorded charges, ${formatINR(charges[0]?.amount ?? 0)} to ${formatINR(charges.at(-1)?.amount ?? 0)}. Each bar is one charge; spacing does not represent elapsed time.`}
-        preserveAspectRatio="none"
-      >
-        {points.map((point, index) => {
-          const height = Math.max(2, (point.amount / ceiling) * 86);
-          const changed = category === "price" && point === charges[changeIndex];
-          return (
-            <rect
-              key={`${point.date}-${index}`}
-              x={index * slot}
-              y={90 - height}
-              width={Math.max(1, slot - Math.min(5, slot * 0.1))}
-              height={height}
-              className={
-                changed
-                  ? "charge-increased"
-                  : point.amount === 0
-                    ? "charge-notice"
-                    : "charge-recorded"
-              }
-            >
-              <title>
-                {point.amount === 0 ? "Trial-ending notice" : "Recorded charge"} ·{" "}
-                {formatDate(point.date)} · {formatINR(point.amount)}
-              </title>
-            </rect>
-          );
-        })}
-      </svg>
-      <figcaption>
-        <span>{formatDate(points[0].date)}</span>
-        <span>{formatDate(points.at(-1)!.date)}</span>
-      </figcaption>
-      <details className="issue-charge-details">
-        <summary>View dated charges</summary>
-        <p>
-          Each bar is one recorded charge. Bar spacing does not represent elapsed time.
-          {notice
-            ? " An orange baseline marks the trial-ending notice, not a payment or a confirmed trial start date."
-            : ""}
-        </p>
-        <ul>
-          {charges.map((point, index) => (
-            <li key={`${point.date}-${index}`}>
-              {formatDate(point.date)} · {formatINR(point.amount)}
-            </li>
-          ))}
-        </ul>
-      </details>
-    </figure>
   );
 }
