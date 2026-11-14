@@ -1,12 +1,18 @@
 """Scores Job 3 (bank alert -> PaymentEvent JSON) against a set in ml/data/.
 
-    python3 ml/eval_alerts.py                    # the 20 hand-written alerts, with the JSON schema
-    python3 ml/eval_alerts.py --set alerts_test  # another set
+    python3 ml/eval_alerts.py                    # the 20 hand-written alerts, Ollama qwen3:14b with the JSON schema
+    python3 ml/eval_alerts.py --set alerts_test  # the held-out generated set
     python3 ml/eval_alerts.py --no-schema        # prompt only, for comparison
+
+An MLX model, with or without the fine-tuned adapter (run with ml/.venv/bin/python):
+
+    ml/.venv/bin/python ml/eval_alerts.py --set alerts_test --mlx mlx-community/Qwen3-8B-4bit --label qwen3-8b-base
+    ml/.venv/bin/python ml/eval_alerts.py --set alerts_test --mlx mlx-community/Qwen3-8B-4bit \\
+        --adapter ml/adapters/qwen3-8b-alerts --label qwen3-8b-tuned
 
 An alert counts as correct only when all seven fields match. A row marked
 "dropped" (it holds an OTP or PIN) is correct only if it never reaches the
-model. Writes ml/results/<set>_<mode>_<version>.md.
+model. Writes ml/results/<set>_<label>_<version>.md.
 """
 import json
 import statistics
@@ -38,19 +44,33 @@ def field_ok(expected, got):
     return norm(got) == norm(expected)
 
 
+def option(name):
+    return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else None
+
+
 def main():
     use_schema = "--no-schema" not in sys.argv
-    mode = "schema" if use_schema else "prompt-only"
-    test_set = sys.argv[sys.argv.index("--set") + 1] if "--set" in sys.argv else "alerts_dev"
+    test_set = option("--set") or "alerts_dev"
+    ask = None
+    if option("--mlx"):
+        from mlx_backend import MlxModel  # imported here so the Ollama path needs no MLX install
+
+        model = MlxModel(option("--mlx"), adapter=option("--adapter"))
+        ask = model.ask
+        name = option("--mlx") + (f" + adapter {option('--adapter')}" if option("--adapter") else "")
+        mode = option("--label") or ("mlx-tuned" if option("--adapter") else "mlx-base")
+    else:
+        name = MODEL
+        mode = "schema" if use_schema else "prompt-only"
     rows = [json.loads(line) for line in (HERE / "data" / f"{test_set}.jsonl").read_text().splitlines() if line.strip()]
 
     field_hits = defaultdict(int)
     tag_hits = defaultdict(lambda: [0, 0])
     times, misses, correct, scored = [], [], 0, 0
 
-    print(f"Scoring {MODEL} ({VERSION}, {mode}) on {test_set}: {len(rows)} alerts...\n")
+    print(f"Scoring {name} ({VERSION}, {mode}) on {test_set}: {len(rows)} alerts...\n")
     for index, row in enumerate(rows, 1):
-        got, raw, seconds = extract(row["msg"], row["received"], use_schema=use_schema)
+        got, raw, seconds = extract(row["msg"], row["received"], use_schema=use_schema, ask=ask)
         if row.get("dropped"):
             ok = raw == "DROPPED"
             wrong = [] if ok else ["should have been dropped before the model"]
@@ -79,7 +99,7 @@ def main():
 
     total = len(rows)
     lines = [
-        f"# Job 3 · alert extraction · {MODEL} · {VERSION} · {mode}",
+        f"# Job 3 · alert extraction · {name} · {VERSION} · {mode}",
         "",
         f"Set: `ml/data/{test_set}.jsonl`, {total} synthetic alerts, none of which appear in the prompt.",
         "An alert is correct only when all seven fields match; a secret-bearing alert only when it is dropped before the model.",

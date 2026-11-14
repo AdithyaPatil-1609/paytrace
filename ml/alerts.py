@@ -105,16 +105,11 @@ def clean(event):
     return event
 
 
-def extract(message, received_on, use_schema=True):
-    """Returns (parsed JSON or None, raw reply, seconds). A secret is dropped: (None, "DROPPED", 0)."""
-    if has_secret(message):
-        return None, "DROPPED", 0.0
+def ask_ollama(messages, use_schema=True):
+    """Sends the chat to local Ollama and returns the raw reply."""
     body = {
         "model": MODEL,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"Received {received_on}. {message}"},
-        ],
+        "messages": messages,
         "stream": False,
         "think": False,
         "options": {"temperature": 0},
@@ -124,15 +119,42 @@ def extract(message, received_on, use_schema=True):
     request = urllib.request.Request(
         OLLAMA_URL, data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}
     )
-    started = time.time()
     with urllib.request.urlopen(request, timeout=120) as response:
-        raw = json.loads(response.read())["message"]["content"].strip()
-    seconds = time.time() - started
+        return json.loads(response.read())["message"]["content"].strip()
+
+
+def parse_json(raw):
+    """The JSON object in a reply, tolerating code fences or stray text around it."""
+    start, end = raw.find("{"), raw.rfind("}")
+    if start == -1 or end <= start:
+        return None
     try:
-        event = clean(json.loads(raw))
-        return event, json.dumps(event, separators=(",", ":")), seconds
+        parsed = json.loads(raw[start:end + 1])
     except json.JSONDecodeError:
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def extract(message, received_on, use_schema=True, ask=None):
+    """Returns (parsed JSON or None, raw reply, seconds). A secret is dropped: (None, "DROPPED", 0).
+
+    `ask` takes the chat messages and returns the model's raw reply. It defaults
+    to Ollama; ml/mlx_backend.py supplies one for MLX models and adapters. The
+    secret filter, the prompt and the guardrails are the same for every backend.
+    """
+    if has_secret(message):
+        return None, "DROPPED", 0.0
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": f"Received {received_on}. {message}"},
+    ]
+    started = time.time()
+    raw = ask(messages) if ask else ask_ollama(messages, use_schema=use_schema)
+    seconds = time.time() - started
+    event = clean(parse_json(raw))
+    if event is None:
         return None, raw, seconds
+    return event, json.dumps(event, separators=(",", ":")), seconds
 
 
 if __name__ == "__main__":

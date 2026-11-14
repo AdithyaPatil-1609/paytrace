@@ -11,3 +11,8 @@ coverage/
 # Generated TypeScript cache and local review exports
 *.tsbuildinfo
 work/
+
+# model work: local environment, caches and training checkpoints
+ml/.venv/
+__pycache__/
+ml/adapters/*/0*_adapters.safetensors
