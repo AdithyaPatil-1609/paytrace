@@ -32,6 +32,9 @@ from alerts import SYSTEM_PROMPT, has_secret  # noqa: E402
 HERE = Path(__file__).parent
 SEED = 20261121
 PER_TEMPLATE = {"train": 6, "test": 5}
+# More training rows per template, drawn from their own random stream so the
+# test set stays byte-for-byte the same and earlier scores remain comparable.
+EXTRA_TRAIN_PER_TEMPLATE = 6
 FIELDS = ["kind", "merchantText", "amountPaise", "occurredOn", "dueOn", "reference", "accountHint"]
 
 # name variants as they appear in alerts, and a realistic amount range in rupees
@@ -497,13 +500,41 @@ def main():
     rng.shuffle(train_rows)
     valid_count = len(train_rows) // 10
     valid_rows, train_rows = train_rows[:valid_count], train_rows[valid_count:]
+    secrets = secret_rows(rng)
+
+    extra_rng = random.Random(SEED + 1)
+    extra_rows = build(TRAIN, EXTRA_TRAIN_PER_TEMPLATE, extra_rng)
+    extra_rng.shuffle(extra_rows)
+    extra_valid = len(extra_rows) // 10
+    valid_rows += extra_rows[:extra_valid]
+    train_rows += extra_rows[extra_valid:]
+    extra_rng.shuffle(train_rows)
+
+    # No alert may sit on both sides of a split. A few templates have only a
+    # handful of possible outputs, so repeats are dropped: from train first,
+    # then from valid if train already holds them. The test set is never
+    # edited; an overlap with it is an error.
+    unique, kept = set(), []
+    for row in train_rows:
+        if row["msg"] not in unique:
+            unique.add(row["msg"])
+            kept.append(row)
+    train_rows = kept
+    valid_seen, kept = set(), []
+    for row in valid_rows:
+        if row["msg"] not in unique and row["msg"] not in valid_seen:
+            valid_seen.add(row["msg"])
+            kept.append(row)
+    valid_rows = kept
+    test_seen = {row["msg"] for row in test_rows}
+    assert not (test_seen & unique or test_seen & valid_seen), "a test alert also appears in train or valid"
 
     mlx = HERE / "data" / "mlx"
     mlx.mkdir(parents=True, exist_ok=True)
     for name, rows in [("train", train_rows), ("valid", valid_rows), ("test", test_rows)]:
         (mlx / f"{name}.jsonl").write_text("".join(json.dumps(chat(row), ensure_ascii=False) + "\n" for row in rows))
 
-    scored = [scorer_row(row) for row in test_rows] + secret_rows(rng)
+    scored = [scorer_row(row) for row in test_rows] + secrets
     (HERE / "data" / "alerts_test.jsonl").write_text(
         "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in scored))
 
