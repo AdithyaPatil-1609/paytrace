@@ -13,8 +13,11 @@ import urllib.request
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL = "qwen3:14b"
-# Bump when SYSTEM_PROMPT changes, so results are never compared across prompts.
-PROMPT_VERSION = "v1"
+# Bump when the prompt, the guardrails or the secret filter change, so results
+# are never compared across versions.
+# v1: prompt only.  v2: same prompt, plus the guardrails in clean() and a
+# secret filter that needs an actual code, not just the word "PIN".
+VERSION = "v2"
 
 KINDS = [
     "mandate_request",
@@ -29,7 +32,17 @@ KINDS = [
 ]
 
 # Checked in code, before the model, so a secret is never sent anywhere.
-SECRET = re.compile(r"\b(otp|one[- ]time password|pin|password|cvv|passcode)\b", re.IGNORECASE)
+# Standard warnings ("never share your OTP") are removed first. What is left
+# is dropped if it still names a secret AND holds a standalone 4-8 digit code,
+# wherever the code sits ("OTP for txn of Rs 649 is 482199"). The word alone is
+# not enough: "approve with your UPI PIN" carries no secret. When unsure, drop:
+# losing an alert is better than sending an OTP to a model.
+_WARNING = re.compile(r"\b(?:never|do not|don't|dont)\s+share\b[^.!]*", re.IGNORECASE)
+# Amounts are not codes: "Rs 1499", "INR 2000.00", "₹ 1,500".
+_AMOUNT = re.compile(r"(?:\brs\.?|\binr|₹)\s*[\d,]+(?:\.\d+)?", re.IGNORECASE)
+_SECRET_WORD = re.compile(r"\b(?:otp|one[- ]time password|pin|password|passcode|cvv)\b", re.IGNORECASE)
+# Not part of a masked account (XX9912, **9912), a date (11-11-2026) or an amount (1500.00).
+_CODE = re.compile(r"(?<![\w*/.,-])\d{4,8}(?![\w/,-]|\.\d)")
 
 SYSTEM_PROMPT = """You read one Indian bank alert (SMS or email) and extract a PaymentEvent. Reply with JSON only.
 Fields: kind, merchantText, amountPaise, occurredOn, dueOn, reference, accountHint.
@@ -77,7 +90,19 @@ SCHEMA = {
 
 
 def has_secret(message):
-    return bool(SECRET.search(message))
+    rest = _AMOUNT.sub(" ", _WARNING.sub(" ", message))
+    return bool(_SECRET_WORD.search(rest) and _CODE.search(rest))
+
+
+def clean(event):
+    """The spec's own rules, enforced in code rather than trusted to the model."""
+    if event is None:
+        return None
+    if event.get("kind") == "not_payment":
+        return {field: (event["kind"] if field == "kind" else None) for field in event}
+    if event.get("kind") != "debit_scheduled":
+        event["dueOn"] = None
+    return event
 
 
 def extract(message, received_on, use_schema=True):
@@ -104,7 +129,8 @@ def extract(message, received_on, use_schema=True):
         raw = json.loads(response.read())["message"]["content"].strip()
     seconds = time.time() - started
     try:
-        return json.loads(raw), raw, seconds
+        event = clean(json.loads(raw))
+        return event, json.dumps(event, separators=(",", ":")), seconds
     except json.JSONDecodeError:
         return None, raw, seconds
 

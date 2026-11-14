@@ -6,7 +6,7 @@
 
 An alert counts as correct only when all seven fields match. A row marked
 "dropped" (it holds an OTP or PIN) is correct only if it never reaches the
-model. Writes ml/results/<set>_<mode>_prompt-<version>.md.
+model. Writes ml/results/<set>_<mode>_<version>.md.
 """
 import json
 import statistics
@@ -15,7 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from alerts import MODEL, PROMPT_VERSION, extract  # noqa: E402
+from alerts import MODEL, VERSION, extract  # noqa: E402
 
 HERE = Path(__file__).parent
 FIELDS = ["kind", "merchantText", "amountPaise", "occurredOn", "dueOn", "reference", "accountHint"]
@@ -48,7 +48,7 @@ def main():
     tag_hits = defaultdict(lambda: [0, 0])
     times, misses, correct, scored = [], [], 0, 0
 
-    print(f"Scoring {MODEL} (prompt {PROMPT_VERSION}, {mode}) on {test_set}: {len(rows)} alerts...\n")
+    print(f"Scoring {MODEL} ({VERSION}, {mode}) on {test_set}: {len(rows)} alerts...\n")
     for index, row in enumerate(rows, 1):
         got, raw, seconds = extract(row["msg"], row["received"], use_schema=use_schema)
         if row.get("dropped"):
@@ -79,7 +79,7 @@ def main():
 
     total = len(rows)
     lines = [
-        f"# Job 3 · alert extraction · {MODEL} · prompt {PROMPT_VERSION} · {mode}",
+        f"# Job 3 · alert extraction · {MODEL} · {VERSION} · {mode}",
         "",
         f"Set: `ml/data/{test_set}.jsonl`, {total} synthetic alerts, none of which appear in the prompt.",
         "An alert is correct only when all seven fields match; a secret-bearing alert only when it is dropped before the model.",
@@ -102,7 +102,7 @@ def main():
         for row, raw, wrong in misses:
             lines.append(f"- `{row['msg'][:100]}` → `{raw}` (wrong: {', '.join(wrong)})")
 
-    out = HERE / "results" / f"{test_set}_{mode}_prompt-{PROMPT_VERSION}.md"
+    out = HERE / "results" / f"{test_set}_{mode}_{VERSION}.md"
     out.write_text("\n".join(lines) + "\n")
     print("\n" + "\n".join(lines[5:16]))
     print(f"\nSaved {out.relative_to(HERE.parent)}")
