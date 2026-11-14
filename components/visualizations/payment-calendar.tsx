@@ -1,6 +1,5 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
 import { nextMonthSchedule } from "@/lib/payments/calendar";
 import { formatINR } from "@/lib/presentation/format";
 import type { Commitment } from "@/lib/payments/types";
@@ -35,7 +34,6 @@ export function PaymentCalendar({
   asOf: string;
   onOpen: (id: string) => void;
 }) {
-  const reduceMotion = useReducedMotion();
   const { year, month, rows: dues, undated, blanks, length } = nextMonthSchedule(items, asOf);
   const monthTotal = dues.reduce((sum, due) => sum + due.item.amount, 0);
 
@@ -70,31 +68,20 @@ export function PaymentCalendar({
             return (
               <div className={onThisDay.length ? "fridge-day has-notes" : "fridge-day"} key={day}>
                 <b>{day}</b>
-                {onThisDay.map(({ item }, noteIndex) => {
-                  const tilt = noteIndex % 2 === 0 ? -0.6 : 0.7;
-                  return (
-                    <motion.button
-                      key={item.id}
-                      className={`note note-${item.bucket}`}
-                      initial={reduceMotion ? false : { opacity: 0, scale: 0.8, rotate: tilt }}
-                      animate={{ opacity: 1, scale: 1, rotate: tilt }}
-                      transition={reduceMotion ? { duration: 0 } : {
-                        type: "spring", stiffness: 440, damping: 24,
-                        delay: Math.min(index * 0.05 + noteIndex * 0.03, 0.7)
-                      }}
-                      whileHover={reduceMotion ? undefined : { scale: 1.05, rotate: 0 }}
-                      whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-                      onClick={() => onOpen(item.id)}
-                      title={`${item.merchant} — ${formatINR(item.amount)}`}
-                    >
-                      <span>{item.merchant}</span>
-                      <i>
-                        {item.amountPattern === "variable" ? "~" : ""}
-                        {formatINR(item.amount)}
-                      </i>
-                    </motion.button>
-                  );
-                })}
+                {onThisDay.map(({ item }) => (
+                  <button
+                    key={item.id}
+                    className={`note note-${item.bucket}`}
+                    onClick={() => onOpen(item.id)}
+                    title={`${item.merchant} — ${formatINR(item.amount)}`}
+                  >
+                    <span>{item.merchant}</span>
+                    <i>
+                      {item.amountPattern === "variable" ? "~" : ""}
+                      {formatINR(item.amount)}
+                    </i>
+                  </button>
+                ))}
               </div>
             );
           })}

@@ -6,7 +6,6 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { MobileNavigation } from "@/components/chrome/mobile-navigation";
 import { EvidenceStrip } from "@/components/chrome/evidence-strip";
 import { DetailPanel } from "@/components/detail/detail-panel";
@@ -44,7 +43,6 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
   const [screen, setScreen] = useState<Screen>("list");
   const [openId, setOpenId] = useState<string | null>(null);
   const [challengeOpen, setChallengeOpen] = useState(false);
-  const reduceMotion = useReducedMotion();
   function openPayment(id: string) {
     setChallengeOpen(false);
     setOpenId(id);
@@ -136,31 +134,16 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
       <div className="app-layout">
         <aside className="side-nav">
           <p>YOUR PAYMENTS</p>
-          <LayoutGroup id="paytrace-sidebar">
-            {screens.map((item) => (
-              <button
-                key={item.id}
-                className={screen === item.id ? "active" : ""}
-                aria-current={screen === item.id ? "page" : undefined}
-                onClick={() => setScreen(item.id)}
-              >
-                {screen === item.id && (
-                  <motion.span
-                    className="motion-active-rail"
-                    layoutId="paytrace-active-rail"
-                    aria-hidden="true"
-                    transition={
-                      reduceMotion
-                        ? { duration: 0 }
-                        : { type: "spring", stiffness: 460, damping: 38 }
-                    }
-                  />
-                )}
-                <span>{item.number}</span>
-                {item.label}
-              </button>
-            ))}
-          </LayoutGroup>
+          {screens.map((item) => (
+            <button
+              key={item.id}
+              className={screen === item.id ? "active" : ""}
+              onClick={() => setScreen(item.id)}
+            >
+              <span>{item.number}</span>
+              {item.label}
+            </button>
+          ))}
           <div className="side-note">
             <strong>Cancellation guidance</strong>
             <span>
@@ -171,15 +154,6 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
         </aside>
 
         <section className="main-stage">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={screen}
-              className="motion-screen"
-              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
-              transition={{ duration: reduceMotion ? 0 : 0.14, ease: "easeOut" }}
-            >
           {screen === "graph" && (
             <EvidenceGraphScreen
               graph={graph}
@@ -239,13 +213,10 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
               onOpen={openPayment}
             />
           )}
-            </motion.div>
-          </AnimatePresence>
         </section>
       </div>
 
-      <AnimatePresence>
-        {openItem && (
+      {openItem && (
         <DetailPanel
           key={openItem.id}
           item={openItem}
@@ -257,7 +228,6 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
           onClose={() => setOpenId(null)}
         />
       )}
-      </AnimatePresence>
     </main>
   );
 }
