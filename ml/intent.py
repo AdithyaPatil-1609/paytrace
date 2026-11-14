@@ -11,6 +11,9 @@ import urllib.request
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL = "qwen3:14b"
+# Bump when SYSTEM_PROMPT changes, so results are never compared across prompts.
+# v2: upcoming_total is "will go out or leave", set_aside is "keep, save or leave aside".
+PROMPT_VERSION = "v2"
 
 INTENTS = [
     "why_debit",
@@ -29,10 +32,10 @@ Reply with JSON only, with exactly these fields: intent, merchant, amount, perio
 
 Intents:
 - why_debit: asks why a specific past charge or debit happened.
-- upcoming_total: asks how much will go out in a coming period.
+- upcoming_total: asks what or how much will go out or leave their account in a coming period, including "before <day>".
 - mandate_status: asks whether an autopay or mandate is active, paused or cancelled.
 - charged_after_cancel: says they cancelled or stopped something but were still charged.
-- set_aside: asks how much money to keep aside before a date or before salary.
+- set_aside: asks how much money to keep, save or leave aside before a date or before salary.
 - list_by_merchant: asks what they pay one particular business.
 - spend_total: asks how much they spent in a past period.
 - how_to_cancel: asks how to stop or cancel a payment.

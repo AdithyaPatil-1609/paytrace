@@ -1,4 +1,4 @@
-# Job 1 · intent routing · qwen3:14b · schema
+# Job 1 · intent routing · qwen3:14b · prompt v1 · prompt-only
 
 Test set: `ml/data/intent_test.jsonl`, 40 questions none of which appear in the prompt.
 A question is correct only when intent, merchant, amount and period all match.
@@ -10,8 +10,8 @@ A question is correct only when intent, merchant, amount and period all match.
 | merchant correct | 40/40 (100%) |
 | amount correct | 40/40 (100%) |
 | period correct | 40/40 (100%) |
-| Median time | 1.9 s |
-| Slowest | 2.2 s |
+| Median time | 2.0 s |
+| Slowest | 2.4 s |
 
 | Category | Correct |
 | --- | --- |
