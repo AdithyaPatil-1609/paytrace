@@ -1,0 +1,17 @@
+/* Motion overrides only; existing CSS rules remain unchanged. */
+.side-nav > button { position: relative; }
+.side-nav > button.active { border-left-color: transparent; }
+.side-nav > button .motion-active-rail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--marigold);
+  pointer-events: none;
+}
+.detail-backdrop[data-motion-drawer],
+.detail-backdrop[data-motion-drawer] .detail-panel { animation: none; }
+.motion-screen { min-width: 0; }
+.fridge-day .note { transition: none; }

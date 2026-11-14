@@ -1,7 +1,10 @@
 /**
  * Side drawer for one commitment: facts, notices, statement proof, Evidence path.
  */
+"use client";
+
 import { useEffect, useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { EvidencePath } from "@/components/detail/evidence-path";
 import type { SourceInfo } from "@/db/neo4j/dataset";
 import { monthlyCost } from "@/lib/presentation/commitment-ui";
@@ -27,7 +30,8 @@ export function DetailPanel({
   challengeInitiallyOpen?: boolean;
   onClose: () => void;
 }) {
-  const panel = useRef<HTMLElement>(null);
+  const panel = useRef<HTMLAsideElement>(null);
+  const reduceMotion = useReducedMotion();
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
@@ -67,17 +71,26 @@ export function DetailPanel({
   }, [onClose]);
   const priceNotices = item.notices.filter((notice) => notice.eventType === "price_change");
   return (
-    <div
+    <motion.div
+      data-motion-drawer
       className="detail-backdrop"
       role="dialog"
       aria-modal="true"
       aria-labelledby="transaction-title"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0 : 0.22 }}
       onClick={onClose}
     >
-      <aside
+      <motion.aside
         ref={panel}
         tabIndex={-1}
         className="detail-panel"
+        initial={reduceMotion ? false : { x: "100%" }}
+        animate={{ x: 0 }}
+        exit={reduceMotion ? { x: 0 } : { x: "100%" }}
+        transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 360, damping: 36, mass: 0.95 }}
         onClick={(event) => event.stopPropagation()}
       >
         <header>
@@ -190,8 +203,8 @@ export function DetailPanel({
             ))}
           </div>
         </details>
-      </aside>
-    </div>
+      </motion.aside>
+    </motion.div>
   );
 }
 

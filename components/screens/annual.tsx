@@ -2,9 +2,12 @@
  * Screen 04 — Annual
  * The next twelve months: totals, charts, five-way split.
  */
+"use client";
+
 import { ScreenHeader } from "@/components/chrome/screen-header";
 import { AnnualDashboard } from "@/components/visualizations/annual-dashboard";
 import { PaymentCalendar } from "@/components/visualizations/payment-calendar";
+import { AnimatedINR } from "@/components/motion/animated-inr";
 import { splitByBucket } from "@/lib/payments/analysis";
 import { bucketCopy, bucketLabels } from "@/lib/payments/engine";
 import { formatINR } from "@/lib/presentation/format";
@@ -42,17 +45,17 @@ export function AnnualScreen({
       <section className="annual-headline">
         <article className="annual-figure">
           <span>COMMITTED TO LEAVE</span>
-          <strong>{formatINR(total)}</strong>
+          <strong><AnimatedINR value={total} /></strong>
           <small>Over the next twelve months, across the savings account and the card.</small>
         </article>
         <article className="annual-figure accent">
           <span>STILL DEBITING, NOT USED</span>
-          <strong>{formatINR(leakage)}</strong>
+          <strong><AnimatedINR value={leakage} /></strong>
           <small>The part of the year that a decision can remove.</small>
         </article>
         <article className="annual-figure muted">
           <span>HOME-LOAN EMI</span>
-          <strong>{formatINR(debt)}</strong>
+          <strong><AnimatedINR value={debt} /></strong>
           <small>Loan repayments must be managed with the lender.</small>
         </article>
       </section>

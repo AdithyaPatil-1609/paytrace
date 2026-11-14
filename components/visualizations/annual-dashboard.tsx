@@ -9,6 +9,7 @@ import {
 } from "@/lib/payments/analysis";
 import { spendGroupLabels } from "@/lib/payments/engine";
 import { formatINR } from "@/lib/presentation/format";
+import { AnimatedCount, AnimatedINR } from "@/components/motion/animated-inr";
 import type { Commitment, SpendGroup } from "@/lib/payments/types";
 
 /** Donut geometry: one ring, drawn as stroked arcs on a single circle. */
@@ -52,10 +53,10 @@ export function AnnualDashboard({
   return (
     <section className="viz-block">
       <div className="kpi-row">
-        <Kpi label="Committed this year" value={formatINR(year)} lead />
-        <Kpi label="Average month" value={formatINR(monthlyAverage)} />
-        <Kpi label="Going to things unused" value={formatINR(leak)} alarm />
-        <Kpi label="Active commitments" value={String(items.length)} />
+        <Kpi label="Committed this year" value={year} lead />
+        <Kpi label="Average month" value={monthlyAverage} />
+        <Kpi label="Going to things unused" value={leak} alarm />
+        <Kpi label="Active commitments" value={items.length} count />
       </div>
 
       <div className="viz-split">
@@ -158,17 +159,19 @@ function Kpi({
   label,
   value,
   lead = false,
-  alarm = false
+  alarm = false,
+  count = false
 }: {
   label: string;
-  value: string;
+  value: number;
   lead?: boolean;
   alarm?: boolean;
+  count?: boolean;
 }) {
   return (
     <article className={`kpi${lead ? " lead" : ""}${alarm ? " alarm" : ""}`}>
       <span>{label}</span>
-      <strong>{value}</strong>
+      <strong>{count ? <AnimatedCount value={value} /> : <AnimatedINR value={value} />}</strong>
     </article>
   );
 }
