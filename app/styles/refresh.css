@@ -1,43 +1,25 @@
 /* ---------------------------------------------------------------
-   Light Aurora, with dark red for problems.
-   The visual layer over the screen styles: the aurora light, a 3D
-   network behind the page, white glass surfaces that tilt in 3D under
-   the pointer, and one consistent dark red for every warning. Red is
-   never decoration: the aurora and the network use violet, cyan and
-   gold only.
+   The ledger: a quiet page that puts the numbers first.
+   The page is plain paper with a faint, still grid, like a ledger
+   sheet; nothing behind the content moves. Surfaces are solid white,
+   violet marks the brand and the current screen, and one danger red
+   marks every warning. Red is never decoration.
    --------------------------------------------------------------- */
 
-/* --- the page: lavender-white under drifting aurora light --- */
+/* --- the page: paper with a faint, still ledger grid --- */
 
 body {
   background-color: var(--paper);
+  background-image:
+    linear-gradient(rgba(30, 27, 75, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 27, 75, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-attachment: fixed;
   font-feature-settings: "tnum" 1;
 }
 
-/* The aurora: three soft lights that drift slowly behind everything. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: -20vmax;
-  z-index: -2;
-  pointer-events: none;
-  background:
-    radial-gradient(38vmax 30vmax at 18% 22%, rgba(139, 92, 246, 0.30), transparent 70%),
-    radial-gradient(34vmax 28vmax at 82% 12%, rgba(6, 182, 212, 0.22), transparent 70%),
-    radial-gradient(36vmax 30vmax at 70% 82%, rgba(245, 158, 11, 0.20), transparent 70%),
-    radial-gradient(30vmax 26vmax at 12% 86%, rgba(99, 102, 241, 0.20), transparent 70%);
-  filter: saturate(1.15);
-  animation: aurora-drift 22s ease-in-out infinite alternate;
-}
-
-@keyframes aurora-drift {
-  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-  50% { transform: translate3d(3vmax, -2vmax, 0) rotate(8deg) scale(1.06); }
-  100% { transform: translate3d(-3vmax, 2vmax, 0) rotate(-6deg) scale(1.02); }
-}
-
 ::selection {
-  background: rgba(139, 92, 246, 0.28);
+  background: rgba(139, 92, 246, 0.24);
   color: var(--ink);
 }
 
@@ -45,16 +27,6 @@ body::before {
   outline: 3px solid var(--marigold-bright);
   outline-offset: 2px;
   border-radius: 6px;
-}
-
-/* The 3D network sits behind the shell and in front of the aurora. */
-.graph-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
 }
 
 /* --- header: solid white, so headings never show through when scrolled --- */
@@ -152,20 +124,26 @@ body::before {
   color: var(--marigold-deep);
 }
 
-/* --- sidebar: a white glass panel, the active screen lit in violet --- */
+/* --- sidebar: one continuous panel down the left edge, the active screen lit in violet --- */
+
+/* The layout always starts at the left edge, so the sidebar touches it at every width. */
+.app-layout {
+  max-width: none;
+}
 
 .side-nav {
-  margin: 18px 0 18px 18px;
-  padding: 24px 12px 18px;
-  border: 1px solid var(--glass-edge);
-  border-radius: var(--r-lg);
-  background: var(--glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: var(--lift-shadow);
+  margin: 0;
+  padding: 28px 14px 22px;
+  border: 0;
+  border-right: 1px solid var(--glass-edge);
+  border-radius: 0;
+  background: var(--paper-lift);
+  box-shadow: 14px 0 34px -30px rgba(91, 33, 182, 0.45);
   align-self: start;
   position: sticky;
-  top: 150px;
+  top: var(--chrome-h, 142px);
+  height: calc(100vh - var(--chrome-h, 142px));
+  overflow-y: auto;
 }
 
 .side-nav > p {
@@ -212,18 +190,7 @@ body::before {
   color: var(--ink);
 }
 
-/* Text that sits straight on the page keeps a soft halo of paper around it,
-   so it stays crisp over the 3D network behind. */
-.screen-header > div,
-.issue-category-header,
-.issue-category-description,
-.viz-heading,
-.exclusion-note,
-.renewal-month {
-  text-shadow: 0 0 10px var(--paper), 0 0 18px var(--paper);
-}
-
-/* --- screen heading: a violet-to-cyan headline --- */
+/* --- screen heading: solid ink, the eyebrow in violet --- */
 
 .screen-header > p {
   display: inline-flex;
@@ -246,13 +213,10 @@ body::before {
   line-height: 1.04;
   letter-spacing: -0.035em;
   text-wrap: balance;
-  background: linear-gradient(110deg, var(--ink) 0%, #4c1d95 45%, var(--cyan-deep) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--ink);
 }
 
-/* --- surfaces: white glass, the same lift everywhere --- */
+/* --- surfaces: solid white, the same lift everywhere --- */
 
 .year-banner,
 .annual-figure,
@@ -287,23 +251,19 @@ body::before {
 .graph-handoff,
 .fridge,
 .renewal-row {
-  background-color: var(--glass);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background-color: var(--paper-lift);
 }
 
 .path-card {
   overflow: hidden;
 }
 
-/* The year: the hero number, lit by its own aurora. */
+/* The year: the hero number, with a violet rule down its left edge. */
 .year-banner {
   position: relative;
   overflow: hidden;
   padding: 30px 32px;
-  background-image:
-    radial-gradient(420px 220px at 0% 0%, rgba(139, 92, 246, 0.18), transparent 70%),
-    radial-gradient(360px 200px at 100% 100%, rgba(6, 182, 212, 0.14), transparent 70%);
+  box-shadow: inset 4px 0 0 var(--marigold), var(--lift-shadow);
 }
 
 .year-banner strong {
@@ -389,7 +349,7 @@ body::before {
 }
 
 /* ===============================================================
-   DARK RED: every warning, price rise and issue.
+   DANGER RED: every warning, price rise and issue.
    Always paired with words or an icon, never colour alone.
    =============================================================== */
 
@@ -418,12 +378,12 @@ body::before {
 
 /* A flagged row in All payments. */
 .payment-row.is-flagged {
-  background: linear-gradient(90deg, rgba(155, 28, 28, 0.09), rgba(155, 28, 28, 0.02) 60%);
+  background: linear-gradient(90deg, rgba(185, 28, 28, 0.09), rgba(185, 28, 28, 0.02) 60%);
   box-shadow: inset 4px 0 0 var(--ember);
 }
 
 .payment-row.is-flagged:hover {
-  background: linear-gradient(90deg, rgba(155, 28, 28, 0.14), rgba(155, 28, 28, 0.04) 60%);
+  background: linear-gradient(90deg, rgba(185, 28, 28, 0.14), rgba(185, 28, 28, 0.04) 60%);
   box-shadow: inset 4px 0 0 var(--ember-deep);
 }
 
@@ -435,7 +395,7 @@ body::before {
 .renewal-row.is-flagged {
   border-color: var(--ember-edge);
   background:
-    linear-gradient(90deg, rgba(155, 28, 28, 0.09), rgba(155, 28, 28, 0.02) 60%),
+    linear-gradient(90deg, rgba(185, 28, 28, 0.09), rgba(185, 28, 28, 0.02) 60%),
     var(--paper-lift);
   box-shadow: inset 4px 0 0 var(--ember), 0 12px 26px -20px var(--ember-glow);
 }
@@ -465,13 +425,13 @@ body::before {
 .issue-card {
   border: 1px solid var(--ember-edge);
   background:
-    linear-gradient(180deg, rgba(155, 28, 28, 0.07), rgba(255, 252, 247, 0) 46%),
+    linear-gradient(180deg, rgba(185, 28, 28, 0.07), rgba(255, 252, 247, 0) 46%),
     var(--paper-lift);
-  box-shadow: 0 1px 2px rgba(122, 18, 18, 0.06), 0 16px 34px -22px var(--ember-glow);
+  box-shadow: 0 1px 2px rgba(153, 27, 27, 0.06), 0 16px 34px -22px var(--ember-glow);
 }
 
 .issue-card:hover {
-  box-shadow: 0 2px 4px rgba(122, 18, 18, 0.08), 0 24px 44px -22px rgba(155, 28, 28, 0.42);
+  box-shadow: 0 2px 4px rgba(153, 27, 27, 0.08), 0 24px 44px -22px rgba(185, 28, 28, 0.42);
 }
 
 .issue-card h3 {
@@ -502,14 +462,14 @@ body::before {
 .issue-metric.accent,
 .annual-figure.accent {
   border-color: transparent;
-  background: linear-gradient(150deg, #a52323, var(--ember-deep) 60%, #5c0d0d);
-  box-shadow: 0 22px 40px -22px rgba(122, 18, 18, 0.85);
+  background: linear-gradient(150deg, #c62828, var(--ember-deep) 60%, #7f1d1d);
+  box-shadow: 0 22px 40px -22px rgba(153, 27, 27, 0.85);
 }
 
 .issue-metric.accent span,
 .annual-figure.accent span,
 .annual-figure.accent small {
-  color: #f6c9c4;
+  color: #fee2e2;
 }
 
 .issue-metric.accent strong,
@@ -539,14 +499,14 @@ body::before {
 }
 
 .path-card.issue .path-name {
-  background: rgba(155, 28, 28, 0.1);
+  background: rgba(185, 28, 28, 0.1);
 }
 
 .path-action button.danger-button {
   border-radius: 999px;
   background: var(--ember-deep);
   color: #fff;
-  box-shadow: 0 8px 18px -10px rgba(122, 18, 18, 0.9);
+  box-shadow: 0 8px 18px -10px rgba(153, 27, 27, 0.9);
 }
 
 .path-action button.danger-button:hover {
@@ -587,7 +547,7 @@ body::before {
 .fridge-day .note.note-review,
 .fridge-day .note.note-kind-silent {
   background: var(--ember-skin);
-  box-shadow: inset 3px 0 0 var(--ember), 0 1px 2px rgba(122, 18, 18, 0.2);
+  box-shadow: inset 3px 0 0 var(--ember), 0 1px 2px rgba(153, 27, 27, 0.2);
 }
 
 .fridge-day .note.note-unused span,
@@ -603,13 +563,9 @@ body::before {
   min-height: 44px;
 }
 
-/* --- motion safety: the aurora, the network and the tilt all stop --- */
+/* --- motion safety: the tilt stops --- */
 
 @media (prefers-reduced-motion: reduce) {
-  body::before {
-    animation: none;
-  }
-
   [data-tilt] {
     transform: none !important;
   }
@@ -624,6 +580,7 @@ body::before {
 @media (max-width: 900px) {
   .side-nav {
     position: static;
+    height: auto;
     margin: 0;
   }
 

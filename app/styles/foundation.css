@@ -15,9 +15,9 @@
    --------------------------------------------------------------- */
 
 :root {
-  --paper: #f6f4ff;
+  --paper: #f7f7fa;
   --paper-lift: #ffffff;
-  --paper-sink: #ece8fb;
+  --paper-sink: #eeeef4;
 
   --ink: #1e1b4b;
   --ink-soft: #4c4a72;
@@ -34,16 +34,16 @@
   --gold-deep: #92400e;
   --gold-skin: #fef3c7;
 
-  /* cyan: the cool side of the aurora */
+  /* cyan: a cool second accent */
   --cyan: #06b6d4;
   --cyan-deep: #0e7490;
 
-  /* dark red: problems only */
-  --ember: #9b1c1c;
-  --ember-deep: #7a1212;
-  --ember-skin: #fbeaea;
-  --ember-edge: rgba(122, 18, 18, 0.32);
-  --ember-glow: rgba(155, 28, 28, 0.28);
+  /* danger red: problems only */
+  --ember: #b91c1c;
+  --ember-deep: #991b1b;
+  --ember-skin: #fef2f2;
+  --ember-edge: rgba(185, 28, 28, 0.32);
+  --ember-glow: rgba(185, 28, 28, 0.26);
 
   --plum: #0e7490;
   --sage: #047857;
