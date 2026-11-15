@@ -1,0 +1,11 @@
+<network-security-config>
+
+    <!-- Everything must use https, such as the cloudflared tunnel. -->
+    <base-config cleartextTrafficPermitted="false" />
+
+    <!-- Only exception: the emulator's address for the laptop it runs on. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+
+</network-security-config>
