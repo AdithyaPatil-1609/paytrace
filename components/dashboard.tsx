@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import { GraphBackdrop } from "@/components/chrome/graph-backdrop";
+import { TiltSurfaces } from "@/components/chrome/tilt-surfaces";
 import { MobileNavigation } from "@/components/chrome/mobile-navigation";
 import { EvidenceStrip } from "@/components/chrome/evidence-strip";
 import { DetailPanel } from "@/components/detail/detail-panel";
@@ -75,6 +76,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
   return (
     <main className="paytrace-shell">
       <GraphBackdrop />
+      <TiltSurfaces />
       <div className="product-chrome">
         <header className="product-bar">
           <MobileNavigation screens={screens} current={screen} onSelect={setScreen} />

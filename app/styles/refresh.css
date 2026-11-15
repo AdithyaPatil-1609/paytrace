@@ -1,37 +1,53 @@
 /* ---------------------------------------------------------------
-   Warm ledger, with dark red for problems.
-   The visual layer over the screen styles: page light, the shell,
-   surfaces, and one consistent dark red (the --ember family, defined
-   in foundation.css) for every warning, price rise and issue. Red is
-   never decoration: the 3D background and the brand stay warm gold.
+   Light Aurora, with dark red for problems.
+   The visual layer over the screen styles: the aurora light, a 3D
+   network behind the page, white glass surfaces that tilt in 3D under
+   the pointer, and one consistent dark red for every warning. Red is
+   never decoration: the aurora and the network use violet, cyan and
+   gold only.
    --------------------------------------------------------------- */
 
-/* --- the page: ivory paper, ruled like a ledger, under warm light --- */
+/* --- the page: lavender-white under drifting aurora light --- */
 
 body {
   background-color: var(--paper);
-  background-image:
-    radial-gradient(1100px 620px at 88% -8%, rgba(232, 149, 42, 0.16), transparent 62%),
-    radial-gradient(900px 600px at -6% 34%, rgba(109, 58, 99, 0.08), transparent 60%),
-    radial-gradient(800px 520px at 60% 108%, rgba(232, 149, 42, 0.08), transparent 62%),
-    repeating-linear-gradient(to bottom, transparent 0 31px, rgba(42, 23, 48, 0.035) 31px 32px);
-  background-attachment: fixed;
   font-feature-settings: "tnum" 1;
 }
 
+/* The aurora: three soft lights that drift slowly behind everything. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20vmax;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(38vmax 30vmax at 18% 22%, rgba(139, 92, 246, 0.30), transparent 70%),
+    radial-gradient(34vmax 28vmax at 82% 12%, rgba(6, 182, 212, 0.22), transparent 70%),
+    radial-gradient(36vmax 30vmax at 70% 82%, rgba(245, 158, 11, 0.20), transparent 70%),
+    radial-gradient(30vmax 26vmax at 12% 86%, rgba(99, 102, 241, 0.20), transparent 70%);
+  filter: saturate(1.15);
+  animation: aurora-drift 22s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate3d(3vmax, -2vmax, 0) rotate(8deg) scale(1.06); }
+  100% { transform: translate3d(-3vmax, 2vmax, 0) rotate(-6deg) scale(1.02); }
+}
+
 ::selection {
-  background: rgba(232, 149, 42, 0.32);
+  background: rgba(139, 92, 246, 0.28);
   color: var(--ink);
 }
 
 :focus-visible {
-  outline: 3px solid var(--marigold);
+  outline: 3px solid var(--marigold-bright);
   outline-offset: 2px;
   border-radius: 6px;
 }
 
-/* The 3D network sits behind the shell: the shell has no background of its
-   own, so z-index -1 paints the canvas over the paper and under the content. */
+/* The 3D network sits behind the shell and in front of the aurora. */
 .graph-backdrop {
   position: fixed;
   inset: 0;
@@ -41,13 +57,12 @@ body {
   pointer-events: none;
 }
 
-/* --- header --- */
+/* --- header: solid white, so headings never show through when scrolled --- */
 
-/* Solid, so large headings never show through when the page scrolls under it. */
 .product-bar {
   min-height: 64px;
   background: var(--paper-lift);
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--glass-edge);
 }
 
 .wordmark {
@@ -55,15 +70,19 @@ body {
 }
 
 .wordmark span {
-  background: linear-gradient(140deg, var(--marigold-bright), var(--marigold) 55%, #c9731a);
-  color: var(--night);
-  box-shadow: 0 6px 14px -6px rgba(232, 149, 42, 0.7);
+  background: linear-gradient(135deg, var(--marigold-bright), var(--marigold) 50%, var(--cyan));
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(109, 40, 217, 0.8);
 }
 
 .product-bar > p {
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.22em;
+}
+
+.product-bar i {
+  color: var(--marigold-bright);
 }
 
 .simulate-button,
@@ -78,29 +97,31 @@ body {
 
 .simulate-button {
   border-color: transparent;
-  background: linear-gradient(140deg, var(--marigold-bright), var(--marigold));
-  color: var(--night);
-  box-shadow: 0 8px 18px -10px rgba(201, 115, 26, 0.85);
+  background: linear-gradient(135deg, var(--marigold-bright), var(--marigold));
+  color: #fff;
+  box-shadow: 0 10px 22px -10px rgba(109, 40, 217, 0.85);
 }
 
 .simulate-button:hover:not(:disabled) {
   border-color: transparent;
-  color: var(--night);
-  box-shadow: 0 12px 22px -10px rgba(201, 115, 26, 0.95);
+  color: #fff;
+  box-shadow: 0 14px 28px -10px rgba(109, 40, 217, 0.95);
   transform: translateY(-1px);
 }
 
 .export-csv {
-  background: rgba(255, 252, 247, 0.8);
+  border-color: var(--glass-edge);
+  background: var(--paper-lift);
+  color: var(--marigold-deep);
 }
 
 .export-csv:hover {
-  background: var(--paper-lift);
+  border-color: var(--marigold-bright);
 }
 
 .persona b {
-  background: linear-gradient(140deg, var(--night-raised), var(--night));
-  color: var(--marigold-bright);
+  background: linear-gradient(135deg, var(--marigold), var(--cyan-deep));
+  color: #fff;
 }
 
 .source-badge {
@@ -110,33 +131,38 @@ body {
 .evidence-strip,
 .evidence-strip.live {
   background: var(--paper);
-  border-bottom: 1px solid var(--rule);
-  box-shadow: 0 10px 20px -18px rgba(42, 23, 48, 0.35);
+  border-bottom: 1px solid var(--glass-edge);
+  box-shadow: 0 12px 24px -20px rgba(91, 33, 182, 0.45);
+}
+
+.evidence-mark {
+  color: var(--marigold-deep);
 }
 
 .evidence-counts div {
   padding: 3px 10px;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--glass-edge);
   border-radius: 999px;
-  background: rgba(255, 252, 247, 0.7);
+  background: var(--paper-lift);
 }
 
 .evidence-counts dd {
   font-family: var(--mono);
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--marigold-deep);
 }
 
-/* --- sidebar: a deep aubergine panel, the active screen lit in marigold --- */
+/* --- sidebar: a white glass panel, the active screen lit in violet --- */
 
 .side-nav {
   margin: 18px 0 18px 18px;
-  padding: 26px 12px 18px;
-  border: 0;
+  padding: 24px 12px 18px;
+  border: 1px solid var(--glass-edge);
   border-radius: var(--r-lg);
-  background:
-    radial-gradient(260px 220px at 20% 0%, rgba(232, 149, 42, 0.18), transparent 70%),
-    linear-gradient(180deg, var(--night-raised), var(--night));
-  box-shadow: 0 24px 48px -28px rgba(43, 22, 49, 0.75);
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--lift-shadow);
   align-self: start;
   position: sticky;
   top: 150px;
@@ -144,7 +170,7 @@ body {
 
 .side-nav > p {
   margin-left: 12px;
-  color: var(--night-muted);
+  color: var(--ink-faint);
   letter-spacing: 0.22em;
 }
 
@@ -152,60 +178,81 @@ body {
   margin: 2px 0;
   border-left: 0;
   border-radius: var(--r-md);
-  color: var(--night-text);
+  color: var(--ink-soft);
   transition: background-color 0.18s var(--ease-out), color 0.18s var(--ease-out);
 }
 
 .side-nav > button span {
-  color: var(--night-muted);
+  color: var(--ink-faint);
 }
 
 .side-nav > button:hover {
-  background: rgba(239, 227, 211, 0.08);
-  color: #fff8ef;
+  background: var(--marigold-skin);
+  color: var(--ink);
 }
 
 .side-nav > button.active {
   border-radius: var(--r-md);
-  background: linear-gradient(140deg, var(--marigold-bright), var(--marigold));
-  color: var(--night);
-  box-shadow: 0 10px 22px -12px rgba(232, 149, 42, 0.9);
+  background: linear-gradient(135deg, var(--marigold-bright), var(--marigold));
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 12px 24px -12px rgba(109, 40, 217, 0.9);
 }
 
 .side-nav > button.active span {
-  color: rgba(43, 22, 49, 0.72);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .side-note {
-  border-top-color: rgba(239, 227, 211, 0.14);
-  color: var(--night-muted);
+  border-top-color: var(--glass-edge);
+  color: var(--ink-faint);
 }
 
 .side-note strong {
-  color: var(--night-text);
+  color: var(--ink);
 }
 
-/* --- screen heading --- */
+/* Text that sits straight on the page keeps a soft halo of paper around it,
+   so it stays crisp over the 3D network behind. */
+.screen-header > div,
+.issue-category-header,
+.issue-category-description,
+.viz-heading,
+.exclusion-note,
+.renewal-month {
+  text-shadow: 0 0 10px var(--paper), 0 0 18px var(--paper);
+}
+
+/* --- screen heading: a violet-to-cyan headline --- */
 
 .screen-header > p {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 5px 12px;
-  border: 1px solid rgba(232, 149, 42, 0.35);
+  border: 1px solid var(--glass-edge);
   border-radius: 999px;
-  background: rgba(252, 239, 217, 0.7);
+  background: var(--glass);
   font-weight: 600;
+}
+
+.screen-header > p,
+.screen-header > p span {
+  color: var(--marigold-deep);
 }
 
 .screen-header h1 {
   font-size: clamp(38px, 4.6vw, 60px);
-  line-height: 1.02;
+  line-height: 1.04;
   letter-spacing: -0.035em;
   text-wrap: balance;
+  background: linear-gradient(110deg, var(--ink) 0%, #4c1d95 45%, var(--cyan-deep) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
-/* --- surfaces: every card is the same paper, lifted the same amount --- */
+/* --- surfaces: white glass, the same lift everywhere --- */
 
 .year-banner,
 .annual-figure,
@@ -218,8 +265,12 @@ body {
 .graph-finding,
 .graph-handoff,
 .fridge,
-.path-card {
-  border-color: var(--rule);
+.path-card,
+.renewal-row,
+.bucket-card,
+.month-chart,
+.donut-wrap {
+  border-color: var(--glass-edge);
   border-radius: var(--r-lg);
   box-shadow: var(--lift-shadow);
 }
@@ -234,37 +285,54 @@ body {
 .graph-focus,
 .graph-finding,
 .graph-handoff,
-.fridge {
-  background-color: var(--paper-lift);
+.fridge,
+.renewal-row {
+  background-color: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .path-card {
   overflow: hidden;
 }
 
+/* The year: the hero number, lit by its own aurora. */
 .year-banner {
   position: relative;
   overflow: hidden;
   padding: 30px 32px;
-  background-image: radial-gradient(520px 240px at 0% 0%, rgba(232, 149, 42, 0.14), transparent 70%);
+  background-image:
+    radial-gradient(420px 220px at 0% 0%, rgba(139, 92, 246, 0.18), transparent 70%),
+    radial-gradient(360px 200px at 100% 100%, rgba(6, 182, 212, 0.14), transparent 70%);
 }
 
 .year-banner strong {
   font-size: clamp(44px, 5vw, 60px);
   line-height: 1.05;
   letter-spacing: -0.035em;
+  color: var(--ink);
+}
+
+.year-note {
+  border-left-color: var(--gold) !important;
+  background: var(--gold-skin) !important;
 }
 
 .annual-figure.muted {
   border-style: dashed;
-  background: rgba(255, 252, 247, 0.9);
+  background: rgba(255, 255, 255, 0.9);
   box-shadow: none;
 }
 
+.kpi.lead strong {
+  color: var(--gold-deep);
+}
+
 .table-caption {
-  background: rgba(236, 228, 216, 0.6);
+  background: rgba(237, 233, 254, 0.7);
   font-size: 12px;
   font-weight: 600;
+  color: var(--marigold-deep);
 }
 
 .payment-row {
@@ -272,8 +340,8 @@ body {
 }
 
 .payment-row:hover {
-  background: rgba(252, 239, 217, 0.55);
-  box-shadow: inset 3px 0 0 var(--marigold);
+  background: rgba(237, 233, 254, 0.7);
+  box-shadow: inset 3px 0 0 var(--marigold-bright);
 }
 
 .raw-narration {
@@ -281,14 +349,43 @@ body {
   font-weight: 500;
 }
 
-.issue-card,
-.path-card {
-  transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+.renewal-date {
+  background: linear-gradient(160deg, var(--marigold), #4c1d95);
 }
 
-.issue-card:hover {
-  transform: translateY(-2px);
+/* --- 3D: cards tilt toward the pointer (components/chrome/tilt-surfaces.tsx) --- */
+
+[data-tilt] {
+  transform-style: preserve-3d;
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
+    translateZ(0);
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+  will-change: transform;
+}
+
+[data-tilt][data-tilting] {
+  transition: transform 0.08s linear, box-shadow 0.25s var(--ease-out);
   box-shadow: var(--lift-shadow-hover);
+}
+
+/* A soft light that follows the pointer across a tilting card. */
+[data-tilt]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(260px circle at var(--glow-x, 50%) var(--glow-y, 50%), rgba(255, 255, 255, 0.55), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.25s var(--ease-out);
+}
+
+[data-tilt][data-tilting]::after {
+  opacity: 1;
+}
+
+[data-tilt] {
+  position: relative;
 }
 
 /* ===============================================================
@@ -499,22 +596,30 @@ body {
   color: var(--ember-deep);
 }
 
+
 /* --- touch: every tappable row is at least 44px tall --- */
 
 .bucket-rows button {
   min-height: 44px;
 }
 
-/* --- motion safety --- */
+/* --- motion safety: the aurora, the network and the tilt all stop --- */
 
 @media (prefers-reduced-motion: reduce) {
-  .issue-card:hover,
+  body::before {
+    animation: none;
+  }
+
+  [data-tilt] {
+    transform: none !important;
+  }
+
   .simulate-button:hover:not(:disabled) {
     transform: none;
   }
 }
 
-/* --- small screens: the sidebar gives way to the menu --- */
+/* --- small screens: the sidebar gives way to the menu, cards stop tilting --- */
 
 @media (max-width: 900px) {
   .side-nav {
@@ -528,5 +633,11 @@ body {
 
   .warning-tag {
     margin: 4px 0 0;
+  }
+}
+
+@media (hover: none) {
+  [data-tilt] {
+    transform: none !important;
   }
 }

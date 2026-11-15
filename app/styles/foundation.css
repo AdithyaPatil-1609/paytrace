@@ -1,28 +1,42 @@
 /* ---------------------------------------------------------------
-   Paytrace. A warm ledger: ivory paper, aubergine ink, marigold.
-   The page sits on faint ruled lines under soft warm light.
+   Paytrace, light Aurora theme.
+   A lavender-white page under drifting violet, cyan and gold light;
+   white glass cards; deep indigo ink. Violet is the brand and every
+   action. Gold marks money worth noticing.
 
    One rule for colour: dark red means a problem, and only a problem.
-   Price rises, unused services, trials that became paid, warnings and
-   anything to act on carry it, always with a text label beside it so
-   colour is never the only signal. Marigold is the brand and the
-   actions; it never means danger. Every text colour here clears 4.5:1
-   on the surface it sits on.
+   Price rises, unused services, trials that became paid and warnings
+   carry it, always with an icon or words beside it. Nothing else on
+   the page is red or pink, so a warning is never mistaken for decor.
+   Every text colour here clears 4.5:1 on the surface it sits on.
+
+   The --marigold names are kept from the first theme because every
+   screen file uses them; they now hold the violet brand.
    --------------------------------------------------------------- */
 
 :root {
-  --paper: #f5efe6;
-  --paper-lift: #fffcf7;
-  --paper-sink: #ece4d8;
+  --paper: #f6f4ff;
+  --paper-lift: #ffffff;
+  --paper-sink: #ece8fb;
 
-  --ink: #2a1730;
-  --ink-soft: #5a4762;
-  --ink-faint: #6f6075;
+  --ink: #1e1b4b;
+  --ink-soft: #4c4a72;
+  --ink-faint: #625f88;
 
-  --marigold: #e8952a;
-  --marigold-bright: #f2a43a;
-  --marigold-deep: #9a5807;
-  --marigold-skin: #fcefd9;
+  /* violet: the brand and every action */
+  --marigold: #6d28d9;
+  --marigold-bright: #8b5cf6;
+  --marigold-deep: #5b21b6;
+  --marigold-skin: #ede9fe;
+
+  /* gold: money worth noticing */
+  --gold: #f59e0b;
+  --gold-deep: #92400e;
+  --gold-skin: #fef3c7;
+
+  /* cyan: the cool side of the aurora */
+  --cyan: #06b6d4;
+  --cyan-deep: #0e7490;
 
   /* dark red: problems only */
   --ember: #9b1c1c;
@@ -31,20 +45,17 @@
   --ember-edge: rgba(122, 18, 18, 0.32);
   --ember-glow: rgba(155, 28, 28, 0.28);
 
-  --plum: #6d3a63;
-  --sage: #3f6a52;
-  --sage-skin: #e3eee6;
+  --plum: #0e7490;
+  --sage: #047857;
+  --sage-skin: #d1fae5;
 
-  /* the aubergine of the sidebar */
-  --night: #2b1631;
-  --night-raised: #3a1e3f;
-  --night-text: #efe3d3;
-  --night-muted: #bfa9bd;
+  --glass: rgba(255, 255, 255, 0.88);
+  --glass-edge: rgba(109, 40, 217, 0.14);
 
-  --rule: rgba(42, 23, 48, 0.09);
-  --rule-firm: rgba(42, 23, 48, 0.15);
-  --lift-shadow: 0 1px 2px rgba(42, 23, 48, 0.05), 0 14px 34px -20px rgba(92, 46, 18, 0.32);
-  --lift-shadow-hover: 0 2px 4px rgba(42, 23, 48, 0.06), 0 22px 44px -22px rgba(92, 46, 18, 0.42);
+  --rule: rgba(30, 27, 75, 0.09);
+  --rule-firm: rgba(30, 27, 75, 0.15);
+  --lift-shadow: 0 1px 2px rgba(30, 27, 75, 0.05), 0 18px 40px -24px rgba(91, 33, 182, 0.35);
+  --lift-shadow-hover: 0 2px 6px rgba(30, 27, 75, 0.06), 0 28px 56px -26px rgba(91, 33, 182, 0.5);
 
   --sans: "IBM Plex Sans", system-ui, sans-serif;
   --serif: "Fraunces", Georgia, serif;
