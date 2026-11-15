@@ -2,7 +2,7 @@
    The ledger: a quiet page that puts the numbers first.
    The page is plain paper with a faint, still grid, like a ledger
    sheet; nothing behind the content moves. Surfaces are solid white,
-   violet marks the brand and the current screen, and one danger red
+   navy marks the brand and the current screen, and one danger red
    marks every warning. Red is never decoration.
    --------------------------------------------------------------- */
 
@@ -11,15 +11,15 @@
 body {
   background-color: var(--paper);
   background-image:
-    linear-gradient(rgba(30, 27, 75, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(30, 27, 75, 0.035) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 28px 28px;
   background-attachment: fixed;
   font-feature-settings: "tnum" 1;
 }
 
 ::selection {
-  background: rgba(139, 92, 246, 0.24);
+  background: var(--brand-tint-strong);
   color: var(--ink);
 }
 
@@ -42,9 +42,9 @@ body {
 }
 
 .wordmark span {
-  background: linear-gradient(135deg, var(--marigold-bright), var(--marigold) 50%, var(--cyan));
+  background: var(--marigold);
   color: #fff;
-  box-shadow: 0 8px 18px -8px rgba(109, 40, 217, 0.8);
+  box-shadow: none;
 }
 
 .product-bar > p {
@@ -69,15 +69,16 @@ body {
 
 .simulate-button {
   border-color: transparent;
-  background: linear-gradient(135deg, var(--marigold-bright), var(--marigold));
+  background: var(--marigold);
   color: #fff;
-  box-shadow: 0 10px 22px -10px rgba(109, 40, 217, 0.85);
+  box-shadow: 0 6px 16px -10px var(--brand-shadow);
 }
 
 .simulate-button:hover:not(:disabled) {
   border-color: transparent;
   color: #fff;
-  box-shadow: 0 14px 28px -10px rgba(109, 40, 217, 0.95);
+  background: var(--marigold-deep);
+  box-shadow: 0 10px 20px -10px var(--brand-shadow);
   transform: translateY(-1px);
 }
 
@@ -92,7 +93,7 @@ body {
 }
 
 .persona b {
-  background: linear-gradient(135deg, var(--marigold), var(--cyan-deep));
+  background: var(--marigold-deep);
   color: #fff;
 }
 
@@ -104,7 +105,7 @@ body {
 .evidence-strip.live {
   background: var(--paper);
   border-bottom: 1px solid var(--glass-edge);
-  box-shadow: 0 12px 24px -20px rgba(91, 33, 182, 0.45);
+  box-shadow: 0 12px 24px -22px var(--brand-shadow);
 }
 
 .evidence-mark {
@@ -124,7 +125,7 @@ body {
   color: var(--marigold-deep);
 }
 
-/* --- sidebar: one continuous panel down the left edge, the active screen lit in violet --- */
+/* --- sidebar: one continuous panel down the left edge, the active screen in navy --- */
 
 /* The layout always starts at the left edge, so the sidebar touches it at every width. */
 .app-layout {
@@ -138,7 +139,7 @@ body {
   border-right: 1px solid var(--glass-edge);
   border-radius: 0;
   background: var(--paper-lift);
-  box-shadow: 14px 0 34px -30px rgba(91, 33, 182, 0.45);
+  box-shadow: 14px 0 34px -32px var(--brand-shadow);
   align-self: start;
   position: sticky;
   top: var(--chrome-h, 142px);
@@ -171,10 +172,10 @@ body {
 
 .side-nav > button.active {
   border-radius: var(--r-md);
-  background: linear-gradient(135deg, var(--marigold-bright), var(--marigold));
+  background: var(--marigold);
   color: #fff;
   font-weight: 700;
-  box-shadow: 0 12px 24px -12px rgba(109, 40, 217, 0.9);
+  box-shadow: 0 8px 18px -12px var(--brand-shadow);
 }
 
 .side-nav > button.active span {
@@ -190,7 +191,7 @@ body {
   color: var(--ink);
 }
 
-/* --- screen heading: solid ink, the eyebrow in violet --- */
+/* --- screen heading: solid ink, the eyebrow in navy --- */
 
 .screen-header > p {
   display: inline-flex;
@@ -258,7 +259,7 @@ body {
   overflow: hidden;
 }
 
-/* The year: the hero number, with a violet rule down its left edge. */
+/* The year: the hero number, with a navy rule down its left edge. */
 .year-banner {
   position: relative;
   overflow: hidden;
@@ -289,7 +290,7 @@ body {
 }
 
 .table-caption {
-  background: rgba(237, 233, 254, 0.7);
+  background: var(--brand-tint);
   font-size: 12px;
   font-weight: 600;
   color: var(--marigold-deep);
@@ -300,7 +301,7 @@ body {
 }
 
 .payment-row:hover {
-  background: rgba(237, 233, 254, 0.7);
+  background: var(--brand-tint);
   box-shadow: inset 3px 0 0 var(--marigold-bright);
 }
 
@@ -310,7 +311,7 @@ body {
 }
 
 .renewal-date {
-  background: linear-gradient(160deg, var(--marigold), #4c1d95);
+  background: var(--marigold-deep);
 }
 
 /* --- 3D: cards tilt toward the pointer (components/chrome/tilt-surfaces.tsx) --- */
