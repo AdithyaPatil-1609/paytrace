@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------
    The ledger: a quiet page that puts the numbers first.
    The page is plain paper with a faint, still grid, like a ledger
-   sheet, and a few small dots drifting faintly behind the content. Surfaces are solid white,
+   sheet; nothing behind the content moves. Surfaces are solid white,
    navy marks the brand and the current screen, and one danger red
    marks every warning. Red is never decoration.
    --------------------------------------------------------------- */
@@ -27,17 +27,6 @@ body {
   outline: 3px solid var(--marigold-bright);
   outline-offset: 2px;
   border-radius: 6px;
-}
-
-/* The drifting dots (components/chrome/graph-backdrop.tsx) sit over the
-   paper and under every card. */
-.graph-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
 }
 
 /* --- header: solid white, so headings never show through when scrolled --- */

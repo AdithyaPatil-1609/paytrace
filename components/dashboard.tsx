@@ -7,7 +7,6 @@
 
 import { useState } from "react";
 import { ChromeHeight } from "@/components/chrome/chrome-height";
-import { GraphBackdrop } from "@/components/chrome/graph-backdrop";
 import { TiltSurfaces } from "@/components/chrome/tilt-surfaces";
 import { MobileNavigation } from "@/components/chrome/mobile-navigation";
 import { EvidenceStrip } from "@/components/chrome/evidence-strip";
@@ -76,7 +75,6 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
 
   return (
     <main className="paytrace-shell">
-      <GraphBackdrop />
       <TiltSurfaces />
       <ChromeHeight />
       <div className="product-chrome">
