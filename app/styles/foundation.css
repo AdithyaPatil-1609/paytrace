@@ -1,8 +1,10 @@
 /* ---------------------------------------------------------------
-   Paytrace, Navy Ledger theme.
-   Cool grey paper with a faint, still grid; solid white cards; deep
-   navy for the brand and every action; muted brass for money worth
-   noticing. The palette is kept quiet so the numbers lead.
+   Paytrace, Cream Ledger theme.
+   Warm cream paper, near-black ink and hairline rules, like a printed
+   statement; a tight grotesk for headlines and mono for every label.
+   Black is the brand and every action, lime marks what is live, and
+   brass marks money worth noticing. The page stays quiet so the
+   numbers lead.
 
    One rule for colour: danger red means a problem, and only a problem.
    Price rises, unused services, trials that became paid and warnings
@@ -11,60 +13,67 @@
    Every text colour here clears 4.5:1 on the surface it sits on.
 
    The --marigold names are kept from the first theme because every
-   screen file uses them; they now hold the navy brand.
+   screen file uses them; they now hold the black brand, and --serif
+   now holds the display grotesk.
    --------------------------------------------------------------- */
 
 :root {
-  --paper: #f5f6f8;
-  --paper-lift: #ffffff;
-  --paper-sink: #eceef2;
+  --paper: #efebe3;
+  --paper-lift: #f8f6f1;
+  --paper-sink: #e5e0d5;
 
-  --ink: #18212f;
-  --ink-soft: #465366;
-  --ink-faint: #5b6879;
+  --ink: #151513;
+  --ink-soft: #46433c;
+  --ink-faint: #5f5b52;
 
-  /* navy: the brand and every action */
-  --marigold: #2c4a6e;
-  --marigold-bright: #4a6a92;
-  --marigold-deep: #1f3653;
-  --marigold-skin: #e6ecf3;
+  /* black: the brand and every action */
+  --marigold: #151513;
+  --marigold-bright: #3a3833;
+  --marigold-deep: #000000;
+  --marigold-skin: #e5e0d4;
+
+  /* lime: what is live */
+  --lime: #c5f135;
+  --lime-deep: #4d6b00;
 
   /* brass: money worth noticing */
   --gold: #b7791f;
   --gold-deep: #7a4f12;
-  --gold-skin: #f6efe2;
+  --gold-skin: #f2e8d3;
 
-  /* teal: a cool second accent */
-  --cyan: #3d7a8a;
-  --cyan-deep: #2f5f6b;
+  /* olive: a quiet second accent */
+  --cyan: #6f7f3a;
+  --cyan-deep: #4f5d22;
 
   /* danger red: problems only */
   --ember: #b91c1c;
   --ember-deep: #991b1b;
-  --ember-skin: #fef2f2;
+  --ember-skin: #fbeeea;
   --ember-edge: rgba(185, 28, 28, 0.32);
-  --ember-glow: rgba(185, 28, 28, 0.26);
+  --ember-glow: rgba(185, 28, 28, 0.22);
+  /* the same red, lightened to read on the dark radar */
+  --ember-on-dark: #ff6b5e;
 
-  --plum: #2f5f6b;
+  --plum: #4f5d22;
   --sage: #047857;
   --sage-skin: #d1fae5;
 
-  --glass: rgba(255, 255, 255, 0.92);
-  --glass-edge: rgba(31, 54, 83, 0.14);
+  --glass: #f8f6f1;
+  --glass-edge: rgba(21, 21, 19, 0.12);
 
   /* brand washes and shadows, so a palette swap is only these tokens */
-  --brand-tint: rgba(230, 236, 243, 0.75);
-  --brand-tint-strong: rgba(31, 54, 83, 0.18);
-  --brand-shadow: rgba(31, 54, 83, 0.45);
-  --grid-line: rgba(31, 54, 83, 0.035);
+  --brand-tint: rgba(21, 21, 19, 0.04);
+  --brand-tint-strong: rgba(197, 241, 53, 0.45);
+  --brand-shadow: rgba(21, 21, 19, 0.35);
+  --grid-line: transparent;
 
-  --rule: rgba(31, 54, 83, 0.09);
-  --rule-firm: rgba(31, 54, 83, 0.15);
-  --lift-shadow: 0 1px 2px rgba(31, 54, 83, 0.05), 0 18px 40px -26px rgba(31, 54, 83, 0.3);
-  --lift-shadow-hover: 0 2px 6px rgba(31, 54, 83, 0.06), 0 28px 56px -26px rgba(31, 54, 83, 0.4);
+  --rule: rgba(21, 21, 19, 0.1);
+  --rule-firm: rgba(21, 21, 19, 0.2);
+  --lift-shadow: 0 1px 2px rgba(21, 21, 19, 0.04);
+  --lift-shadow-hover: 0 14px 34px -22px rgba(21, 21, 19, 0.35);
 
   --sans: "IBM Plex Sans", system-ui, sans-serif;
-  --serif: "Fraunces", Georgia, serif;
+  --serif: "Inter Tight", "IBM Plex Sans", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
 
   --r-sm: 8px;

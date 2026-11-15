@@ -10,7 +10,7 @@
 
 import { useEffect } from "react";
 
-const SELECTOR = ".year-banner, .annual-figure, .issue-card, .graph-finding, .bucket-card, .renewal-row";
+const SELECTOR = ".annual-figure, .issue-card, .graph-finding, .bucket-card, .renewal-row";
 const MAX_TILT = 7; // degrees
 
 export function TiltSurfaces() {

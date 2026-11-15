@@ -17,7 +17,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 const sliceColor: Record<SpendGroup, string> = {
   debt: "var(--ink-soft)",
-  subscriptions: "var(--marigold)",
+  subscriptions: "var(--gold)",
   utilities: "var(--plum)",
   insurance: "var(--sage)"
 };

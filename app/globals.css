@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
 
 /* The order preserves shared rules, responsive layouts and screen-specific overrides. */
 @import "./styles/foundation.css";
@@ -20,3 +20,4 @@
 @import "./styles/drawer.css";
 /* Last, so it wins ties: page light, the shell, surfaces, and dark red for every problem. */
 @import "./styles/refresh.css";
+@import "./styles/radar.css";

@@ -14,8 +14,8 @@ import { useEffect, useRef } from "react";
 type Dot = { x: number; y: number; z: number; r: number; color: string; phase: number };
 
 const DOTS = 110;
-// Navy, slate blue, teal and brass: the Navy Ledger palette, never red.
-const COLORS = ["#2c4a6e", "#4a6a92", "#3d7a8a", "#b7791f"];
+// Ink, olive and brass: the Cream Ledger palette, never red.
+const COLORS = ["#151513", "#46433c", "#6f7f3a", "#b7791f"];
 
 /** Seeded, so the dots sit in the same places on every load. */
 function random(seed: number) {
