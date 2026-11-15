@@ -13,8 +13,8 @@ An alert is correct only when all seven fields match; a secret-bearing alert onl
 | dueOn correct | 45/45 (100%) |
 | reference correct | 45/45 (100%) |
 | accountHint correct | 45/45 (100%) |
-| Median time | 4.7 s |
-| Slowest | 5.9 s |
+| Median time | 4.9 s |
+| Slowest | 6.8 s |
 
 | Category | Correct |
 | --- | --- |

@@ -1,8 +1,9 @@
 # LoRA fine-tune of Qwen3 8B (4-bit, so this is QLoRA) for Job 3: bank alert -> PaymentEvent JSON.
 #
-#   ml/.venv/bin/python -m mlx_lm lora -c ml/lora_alerts.yaml
+#   PYTHONUNBUFFERED=1 ml/.venv/bin/python -m mlx_lm lora -c ml/lora_alerts.yaml
 #
-# 318 training rows at batch size 2 is 159 steps per pass; 480 steps is about 3 passes.
+# 318 training rows at batch size 2 is 159 steps per pass; 240 steps is about 1.5 passes.
+# If validation loss is still falling at the end, continue with --resume-adapter-file.
 # The loss is computed on the JSON answer only (mask_prompt), not on the long system prompt.
 # A checkpoint is saved at every validation, so the best one can be kept.
 model: mlx-community/Qwen3-8B-4bit
@@ -12,12 +13,12 @@ fine_tune_type: lora
 mask_prompt: true
 num_layers: 16
 batch_size: 2
-iters: 480
+iters: 240
 learning_rate: 1.0e-4
-steps_per_report: 20
-steps_per_eval: 80
+steps_per_report: 10
+steps_per_eval: 40
 val_batches: -1
-save_every: 80
+save_every: 40
 adapter_path: ml/adapters/qwen3-8b-alerts
 max_seq_length: 1536
 seed: 20261121
