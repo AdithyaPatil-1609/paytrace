@@ -71,7 +71,7 @@ export function PaymentCalendar({
                 {onThisDay.map(({ item }) => (
                   <button
                     key={item.id}
-                    className={`note note-${item.bucket}`}
+                    className={`note note-${item.bucket} note-kind-${item.kind}`}
                     onClick={() => onOpen(item.id)}
                     title={`${item.merchant} — ${formatINR(item.amount)}`}
                   >

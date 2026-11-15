@@ -1,0 +1,532 @@
+/* ---------------------------------------------------------------
+   Warm ledger, with dark red for problems.
+   The visual layer over the screen styles: page light, the shell,
+   surfaces, and one consistent dark red (the --ember family, defined
+   in foundation.css) for every warning, price rise and issue. Red is
+   never decoration: the 3D background and the brand stay warm gold.
+   --------------------------------------------------------------- */
+
+/* --- the page: ivory paper, ruled like a ledger, under warm light --- */
+
+body {
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(1100px 620px at 88% -8%, rgba(232, 149, 42, 0.16), transparent 62%),
+    radial-gradient(900px 600px at -6% 34%, rgba(109, 58, 99, 0.08), transparent 60%),
+    radial-gradient(800px 520px at 60% 108%, rgba(232, 149, 42, 0.08), transparent 62%),
+    repeating-linear-gradient(to bottom, transparent 0 31px, rgba(42, 23, 48, 0.035) 31px 32px);
+  background-attachment: fixed;
+  font-feature-settings: "tnum" 1;
+}
+
+::selection {
+  background: rgba(232, 149, 42, 0.32);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--marigold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* The 3D network sits behind the shell: the shell has no background of its
+   own, so z-index -1 paints the canvas over the paper and under the content. */
+.graph-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* --- header --- */
+
+/* Solid, so large headings never show through when the page scrolls under it. */
+.product-bar {
+  min-height: 64px;
+  background: var(--paper-lift);
+  border-bottom: 1px solid var(--rule);
+}
+
+.wordmark {
+  letter-spacing: -0.02em;
+}
+
+.wordmark span {
+  background: linear-gradient(140deg, var(--marigold-bright), var(--marigold) 55%, #c9731a);
+  color: var(--night);
+  box-shadow: 0 6px 14px -6px rgba(232, 149, 42, 0.7);
+}
+
+.product-bar > p {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+}
+
+.simulate-button,
+.export-csv {
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 600;
+  transition: background-color 0.18s var(--ease-out), border-color 0.18s var(--ease-out),
+    box-shadow 0.18s var(--ease-out), transform 0.18s var(--ease-out);
+}
+
+.simulate-button {
+  border-color: transparent;
+  background: linear-gradient(140deg, var(--marigold-bright), var(--marigold));
+  color: var(--night);
+  box-shadow: 0 8px 18px -10px rgba(201, 115, 26, 0.85);
+}
+
+.simulate-button:hover:not(:disabled) {
+  border-color: transparent;
+  color: var(--night);
+  box-shadow: 0 12px 22px -10px rgba(201, 115, 26, 0.95);
+  transform: translateY(-1px);
+}
+
+.export-csv {
+  background: rgba(255, 252, 247, 0.8);
+}
+
+.export-csv:hover {
+  background: var(--paper-lift);
+}
+
+.persona b {
+  background: linear-gradient(140deg, var(--night-raised), var(--night));
+  color: var(--marigold-bright);
+}
+
+.source-badge {
+  border-radius: 999px;
+}
+
+.evidence-strip,
+.evidence-strip.live {
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  box-shadow: 0 10px 20px -18px rgba(42, 23, 48, 0.35);
+}
+
+.evidence-counts div {
+  padding: 3px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 252, 247, 0.7);
+}
+
+.evidence-counts dd {
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+/* --- sidebar: a deep aubergine panel, the active screen lit in marigold --- */
+
+.side-nav {
+  margin: 18px 0 18px 18px;
+  padding: 26px 12px 18px;
+  border: 0;
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(260px 220px at 20% 0%, rgba(232, 149, 42, 0.18), transparent 70%),
+    linear-gradient(180deg, var(--night-raised), var(--night));
+  box-shadow: 0 24px 48px -28px rgba(43, 22, 49, 0.75);
+  align-self: start;
+  position: sticky;
+  top: 150px;
+}
+
+.side-nav > p {
+  margin-left: 12px;
+  color: var(--night-muted);
+  letter-spacing: 0.22em;
+}
+
+.side-nav > button {
+  margin: 2px 0;
+  border-left: 0;
+  border-radius: var(--r-md);
+  color: var(--night-text);
+  transition: background-color 0.18s var(--ease-out), color 0.18s var(--ease-out);
+}
+
+.side-nav > button span {
+  color: var(--night-muted);
+}
+
+.side-nav > button:hover {
+  background: rgba(239, 227, 211, 0.08);
+  color: #fff8ef;
+}
+
+.side-nav > button.active {
+  border-radius: var(--r-md);
+  background: linear-gradient(140deg, var(--marigold-bright), var(--marigold));
+  color: var(--night);
+  box-shadow: 0 10px 22px -12px rgba(232, 149, 42, 0.9);
+}
+
+.side-nav > button.active span {
+  color: rgba(43, 22, 49, 0.72);
+}
+
+.side-note {
+  border-top-color: rgba(239, 227, 211, 0.14);
+  color: var(--night-muted);
+}
+
+.side-note strong {
+  color: var(--night-text);
+}
+
+/* --- screen heading --- */
+
+.screen-header > p {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1px solid rgba(232, 149, 42, 0.35);
+  border-radius: 999px;
+  background: rgba(252, 239, 217, 0.7);
+  font-weight: 600;
+}
+
+.screen-header h1 {
+  font-size: clamp(38px, 4.6vw, 60px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+/* --- surfaces: every card is the same paper, lifted the same amount --- */
+
+.year-banner,
+.annual-figure,
+.data-panel,
+.issues-table,
+.issue-card,
+.kpi-row,
+.graph-census > div,
+.graph-focus,
+.graph-finding,
+.graph-handoff,
+.fridge,
+.path-card {
+  border-color: var(--rule);
+  border-radius: var(--r-lg);
+  box-shadow: var(--lift-shadow);
+}
+
+.year-banner,
+.annual-figure,
+.data-panel,
+.issues-table,
+.issue-card,
+.kpi-row,
+.graph-census > div,
+.graph-focus,
+.graph-finding,
+.graph-handoff,
+.fridge {
+  background-color: var(--paper-lift);
+}
+
+.path-card {
+  overflow: hidden;
+}
+
+.year-banner {
+  position: relative;
+  overflow: hidden;
+  padding: 30px 32px;
+  background-image: radial-gradient(520px 240px at 0% 0%, rgba(232, 149, 42, 0.14), transparent 70%);
+}
+
+.year-banner strong {
+  font-size: clamp(44px, 5vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.annual-figure.muted {
+  border-style: dashed;
+  background: rgba(255, 252, 247, 0.9);
+  box-shadow: none;
+}
+
+.table-caption {
+  background: rgba(236, 228, 216, 0.6);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.payment-row {
+  transition: background-color 0.16s var(--ease-out), box-shadow 0.16s var(--ease-out);
+}
+
+.payment-row:hover {
+  background: rgba(252, 239, 217, 0.55);
+  box-shadow: inset 3px 0 0 var(--marigold);
+}
+
+.raw-narration {
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+.issue-card,
+.path-card {
+  transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+}
+
+.issue-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--lift-shadow-hover);
+}
+
+/* ===============================================================
+   DARK RED: every warning, price rise and issue.
+   Always paired with words or an icon, never colour alone.
+   =============================================================== */
+
+.warning-icon {
+  flex: none;
+}
+
+/* The tag beside a flagged payment's name. The row selector is there to win
+   over the screen's own ".payment-row span" colour. */
+.warning-tag,
+.payment-row .warning-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  padding: 2px 9px 2px 7px;
+  border-radius: 999px;
+  background: var(--ember-deep);
+  color: #fff;
+  font: 600 11px/1.6 var(--sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+  white-space: nowrap;
+}
+
+/* A flagged row in All payments. */
+.payment-row.is-flagged {
+  background: linear-gradient(90deg, rgba(155, 28, 28, 0.09), rgba(155, 28, 28, 0.02) 60%);
+  box-shadow: inset 4px 0 0 var(--ember);
+}
+
+.payment-row.is-flagged:hover {
+  background: linear-gradient(90deg, rgba(155, 28, 28, 0.14), rgba(155, 28, 28, 0.04) 60%);
+  box-shadow: inset 4px 0 0 var(--ember-deep);
+}
+
+.payment-row.is-flagged .pay-plain > strong {
+  color: var(--ember-deep);
+}
+
+/* A flagged payment in the next-month list. */
+.renewal-row.is-flagged {
+  border-color: var(--ember-edge);
+  background:
+    linear-gradient(90deg, rgba(155, 28, 28, 0.09), rgba(155, 28, 28, 0.02) 60%),
+    var(--paper-lift);
+  box-shadow: inset 4px 0 0 var(--ember), 0 12px 26px -20px var(--ember-glow);
+}
+
+.renewal-row.is-flagged .renewal-body > strong {
+  color: var(--ember-deep);
+}
+
+.renewal-row.is-flagged .renewal-date {
+  background: var(--ember-deep);
+}
+
+.renewal-row .warning-tag {
+  color: #fff;
+}
+
+/* Issues: every category heading, card and badge in the same dark red. */
+.issue-category-header h2,
+.issue-category-header > p {
+  color: var(--ember-deep);
+}
+
+.issue-category-header {
+  border-bottom-color: var(--ember) !important;
+}
+
+.issue-card {
+  border: 1px solid var(--ember-edge);
+  background:
+    linear-gradient(180deg, rgba(155, 28, 28, 0.07), rgba(255, 252, 247, 0) 46%),
+    var(--paper-lift);
+  box-shadow: 0 1px 2px rgba(122, 18, 18, 0.06), 0 16px 34px -22px var(--ember-glow);
+}
+
+.issue-card:hover {
+  box-shadow: 0 2px 4px rgba(122, 18, 18, 0.08), 0 24px 44px -22px rgba(155, 28, 28, 0.42);
+}
+
+.issue-card h3 {
+  color: var(--ember-deep);
+}
+
+.issue-card-badge,
+.issue-card-badge.badge-price,
+.issue-card-badge.badge-unused,
+.issue-card-badge.badge-trial,
+.issue-card-badge.badge-new,
+.issue-card-badge.badge-unknown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px 10px 4px 8px;
+  background: var(--ember-deep);
+  color: #fff;
+  letter-spacing: 0.06em;
+}
+
+.issue-card-link {
+  border-bottom-color: var(--ember) !important;
+}
+
+/* Issue metrics and the annual leak card: the red figure leads. */
+.issue-metric.accent,
+.annual-figure.accent {
+  border-color: transparent;
+  background: linear-gradient(150deg, #a52323, var(--ember-deep) 60%, #5c0d0d);
+  box-shadow: 0 22px 40px -22px rgba(122, 18, 18, 0.85);
+}
+
+.issue-metric.accent span,
+.annual-figure.accent span,
+.annual-figure.accent small {
+  color: #f6c9c4;
+}
+
+.issue-metric.accent strong,
+.annual-figure.accent strong {
+  color: #fff;
+}
+
+.kpi.alarm {
+  background: var(--ember-skin);
+}
+
+.kpi.alarm span,
+.kpi.alarm strong {
+  color: var(--ember-deep);
+}
+
+.bucket-card[data-bucket="unused"] header strong {
+  color: var(--ember-deep);
+}
+
+/* Cancel paths: a flagged card is dark red all the way across. */
+.path-card.issue {
+  border: 1px solid var(--ember-edge);
+  border-left: 4px solid var(--ember);
+  background: var(--ember-skin);
+  box-shadow: 0 16px 34px -22px var(--ember-glow);
+}
+
+.path-card.issue .path-name {
+  background: rgba(155, 28, 28, 0.1);
+}
+
+.path-action button.danger-button {
+  border-radius: 999px;
+  background: var(--ember-deep);
+  color: #fff;
+  box-shadow: 0 8px 18px -10px rgba(122, 18, 18, 0.9);
+}
+
+.path-action button.danger-button:hover {
+  background: var(--ember);
+}
+
+/* Cancellation guidance and the detail drawer's "what is wrong". */
+.cancellation-warning {
+  border-left: 4px solid var(--ember);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: var(--ember-skin);
+  color: var(--ink);
+}
+
+.detail-accordion.flagged {
+  border-color: var(--ember-edge);
+  background: var(--ember-skin);
+}
+
+.detail-accordion.flagged > summary {
+  color: var(--ember-deep);
+}
+
+/* The silent-hike finding in an evidence path. */
+.path-finding {
+  border: 1px solid var(--ember-edge) !important;
+  border-left: 4px solid var(--ember) !important;
+  background: var(--ember-skin) !important;
+}
+
+.path-finding strong,
+.path-finding code {
+  color: var(--ember-deep);
+}
+
+/* Calendar notes for payments with a problem. */
+.fridge-day .note.note-unused,
+.fridge-day .note.note-review,
+.fridge-day .note.note-kind-silent {
+  background: var(--ember-skin);
+  box-shadow: inset 3px 0 0 var(--ember), 0 1px 2px rgba(122, 18, 18, 0.2);
+}
+
+.fridge-day .note.note-unused span,
+.fridge-day .note.note-review span,
+.fridge-day .note.note-kind-silent span {
+  color: var(--ember-deep);
+}
+
+/* --- touch: every tappable row is at least 44px tall --- */
+
+.bucket-rows button {
+  min-height: 44px;
+}
+
+/* --- motion safety --- */
+
+@media (prefers-reduced-motion: reduce) {
+  .issue-card:hover,
+  .simulate-button:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* --- small screens: the sidebar gives way to the menu --- */
+
+@media (max-width: 900px) {
+  .side-nav {
+    position: static;
+    margin: 0;
+  }
+
+  .year-banner {
+    padding: 22px;
+  }
+
+  .warning-tag {
+    margin: 4px 0 0;
+  }
+}

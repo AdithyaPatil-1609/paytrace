@@ -6,6 +6,7 @@
 "use client";
 
 import { useState } from "react";
+import { GraphBackdrop } from "@/components/chrome/graph-backdrop";
 import { MobileNavigation } from "@/components/chrome/mobile-navigation";
 import { EvidenceStrip } from "@/components/chrome/evidence-strip";
 import { DetailPanel } from "@/components/detail/detail-panel";
@@ -73,6 +74,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
 
   return (
     <main className="paytrace-shell">
+      <GraphBackdrop />
       <div className="product-chrome">
         <header className="product-bar">
           <MobileNavigation screens={screens} current={screen} onSelect={setScreen} />
@@ -171,6 +173,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
               total={total}
               baseline={baseline}
               simulated={simulated}
+              kept={kept}
               onOpen={openPayment}
               asOf={dataset.asOf}
             />

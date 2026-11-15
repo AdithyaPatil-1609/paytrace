@@ -3,6 +3,8 @@
  * The full book of recurring commitments before any judgement.
  */
 import { ScreenHeader } from "@/components/chrome/screen-header";
+import { WarningTag } from "@/components/chrome/warning-tag";
+import { issueItems } from "@/lib/payments/analysis";
 import { RenewalCalendar } from "@/components/visualizations/renewal-calendar";
 import { monthlyCost } from "@/lib/presentation/commitment-ui";
 import { formatINR } from "@/lib/presentation/format";
@@ -13,6 +15,7 @@ export function AllPaymentsScreen({
   total,
   baseline,
   simulated,
+  kept = [],
   onOpen,
   asOf
 }: {
@@ -20,9 +23,13 @@ export function AllPaymentsScreen({
   total: number;
   baseline: number;
   simulated: boolean;
+  /** Payments the person chose to keep: their warning is settled everywhere. */
+  kept?: string[];
   onOpen: (id: string) => void;
   asOf: string;
 }) {
+  // The same test the Issues screen uses, so both screens always agree.
+  const flagged = new Set(issueItems(items, kept).map((item) => item.id));
   return (
     <>
       <ScreenHeader
@@ -66,7 +73,11 @@ export function AllPaymentsScreen({
         <div className="payment-rows">
           {items.map((item) => (
             <button
-              className={["payment-row", item.signals.includes("new") ? "is-new" : ""]
+              className={[
+                "payment-row",
+                item.signals.includes("new") ? "is-new" : "",
+                flagged.has(item.id) ? "is-flagged" : ""
+              ]
                 .join(" ")
                 .trim()}
               data-row={item.id}
@@ -78,6 +89,7 @@ export function AllPaymentsScreen({
                 <strong>
                   {item.merchant}
                   {!item.inDictionary && <i className="unknown-tag">unknown</i>}
+                  {flagged.has(item.id) && <WarningTag kind={item.kind} />}
                 </strong>
                 <em>{item.plainDescription}</em>
               </span>
@@ -96,7 +108,7 @@ export function AllPaymentsScreen({
       </p>
 
       <h2 className="viz-heading">Next month’s payments</h2>
-      <RenewalCalendar items={items} asOf={asOf} onOpen={onOpen} />
+      <RenewalCalendar items={items} asOf={asOf} flagged={flagged} onOpen={onOpen} />
     </>
   );
 }
