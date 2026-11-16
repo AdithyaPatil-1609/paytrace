@@ -55,6 +55,8 @@
   gap: 16px;
 }
 
+.account-link { color: var(--ink-soft); font-size: 13px; white-space: nowrap; text-decoration: underline; text-underline-offset: 4px; }
+
 .simulate-button,
 .export-csv {
   border: 1px solid var(--rule-firm);

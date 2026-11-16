@@ -22,7 +22,7 @@ async function ensureSchema() {
   return initialized;
 }
 
-export async function ingestLiveEvent(profile: string, event: PaymentEvent) {
+export async function ingestLiveEvent(profile: string, event: PaymentEvent, grant?: { sub: string; grantId: string; lease: string }) {
   await ensureSchema();
   const dictionary = readDictionary();
   const alias = matchDictionary(event.merchant, dictionary);
@@ -33,6 +33,11 @@ export async function ingestLiveEvent(profile: string, event: PaymentEvent) {
   const session = getNeo4jDriver().session({ database: neo4jDatabase });
   try {
     return await session.executeWrite(async tx => {
+      // A revoke or replacement must stop a previously started mailbox sync.
+      if (grant) {
+        const check = await tx.run(`MATCH (u:PaytraceUser {sub:$sub}) SET u.syncLock=coalesce(u.syncLock,0)+1 WITH u WHERE u.profile=$profile AND u.grantId=$grantId AND u.syncLease=$lease AND u.syncLeaseUntil > datetime() RETURN u.sub AS sub`, { ...grant, profile });
+        if (!check.records.length) throw new Error("Gmail connection changed");
+      }
       // The write lock serializes concurrent events for one profile (including SMS/Email races).
       await tx.run("MERGE (u:LiveProfile {id:$profile}) SET u.revision=coalesce(u.revision,0)+1", { profile });
       const prior = await tx.run("MATCH (:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent {id:$id}) RETURN e.status AS status, e.paymentId AS paymentId", { profile, id });

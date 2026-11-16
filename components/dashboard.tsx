@@ -87,6 +87,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
             {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV statements"}
           </span>
           <div className="bar-actions">
+            <a className="account-link" href="/account">Personal account</a>
             <button
               className="simulate-button"
               onClick={

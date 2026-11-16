@@ -7,6 +7,8 @@
 import { Dashboard } from "@/components/dashboard";
 import { hasNeo4jConfig, loadDatasetFromNeo4j, type LoadedDataset, type SourceInfo } from "@/db/neo4j/dataset";
 import { loadFixtures } from "@/data/fixtures";
+import { accountConfigured } from "@/lib/accounts/security";
+import { redirect } from "next/navigation";
 
 // Read per request, so a change in the graph or in data/raw shows on reload.
 export const dynamic = "force-dynamic";
@@ -59,7 +61,8 @@ async function load(): Promise<LoadedDataset> {
   };
 }
 
-export default async function Home() {
+export default async function Home({searchParams}:{searchParams:Promise<{demo?:string}>}) {
+  if (accountConfigured() && (await searchParams).demo!=="1") redirect("/account");
   const { dataset, source, commitments, graph } = await load();
   return <Dashboard dataset={dataset} source={source} commitments={commitments} graph={graph} />;
 }

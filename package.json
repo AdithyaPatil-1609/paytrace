@@ -14,9 +14,11 @@
     "test:all": "node --import tsx --test tests/*.test.ts tests/cypher/*.test.ts",
     "demo": "node --import tsx scripts/demo-live.ts",
     "gmail:authorize": "node --import tsx scripts/gmail.ts --authorize",
-    "gmail:sync": "node --import tsx scripts/gmail.ts"
+    "gmail:sync": "node --import tsx scripts/gmail.ts",
+    "gmail:accounts": "node --import tsx scripts/gmail-accounts.ts"
   },
   "dependencies": {
+    "google-auth-library": "^11.3.4",
     "neo4j-driver": "6.0.1",
     "next": "16.4.2",
     "react": "19.3.1",
