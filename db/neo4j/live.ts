@@ -84,7 +84,8 @@ export const LIVE_QUERIES = {
   review: `MATCH (:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent)-[:POSSIBLE_MATCH]->(p:LivePayment) WHERE e.status='review' RETURN e.id AS eventId,p.id AS candidatePaymentId`
 } as const;
 
-export async function readLiveSummary(profile: string) {
+/** Shared query; only the authenticated account endpoint receives the complete dataset. */
+export async function readLiveDashboard(profile: string) {
   const session = getNeo4jDriver().session({ database: neo4jDatabase });
   try {
     const { payments, events, revision } = await session.executeRead(async tx => {
@@ -107,6 +108,11 @@ export async function readLiveSummary(profile: string) {
     for (const e of lifecycle.values()) if (e.kind === "mandate_created") mandates.push({ mandateId:e.id, createdOn:e.date, mechanism: "none", narration:e.merchant, brand:matchDictionary(e.merchant,dictionary)?.brand ?? e.merchant, maxAmount:Number(e.amountPaise)/100, frequency:"unknown", mandateRef:e.reference ?? "", accountId:e.accountHint ?? "unidentified", status:"active" });
     const dataset: Dataset = { asOf, statement, notifications, mandates, dictionary, usage: [] };
     const commitments = detectCommitments(dataset);
-    return { revision, asOf, counts: { payments: statement.length, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, review:events.filter(e=>e.status==="review").length }, commitments, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
+    const summary = { revision, asOf, counts: { payments: statement.length, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, review:events.filter(e=>e.status==="review").length }, commitments, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
+    return { dataset, summary };
   } finally { await session.close(); }
+}
+
+export async function readLiveSummary(profile: string) {
+  return (await readLiveDashboard(profile)).summary;
 }

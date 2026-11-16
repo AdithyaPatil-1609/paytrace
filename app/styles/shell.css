@@ -57,6 +57,24 @@
 
 .account-link { color: var(--ink-soft); font-size: 13px; white-space: nowrap; text-decoration: underline; text-underline-offset: 4px; }
 
+/* The personal view shares the original product chrome, not a new dashboard. */
+.personal-menu { position: relative; }
+.personal-menu-trigger { cursor: pointer; padding: 7px 9px; min-height: 44px; border: 1px solid var(--rule-firm); border-radius: var(--r-sm); background: var(--paper-lift); list-style: none; }
+.personal-menu-trigger::-webkit-details-marker { display: none; }
+.personal-menu-trigger:focus-visible { outline: 2px solid var(--marigold); outline-offset: 2px; }
+.gmail-status { font-size: 11px; font-weight: 650; white-space: nowrap; color: var(--marigold-deep); }
+.gmail-status.linked { color: var(--sage); }
+.personal-menu-panel { position: absolute; right: 0; top: calc(100% + 10px); width: min(320px, calc(100vw - 32px)); z-index: 50; color: var(--ink); background: var(--paper-lift); }
+.personal-menu-panel .account-eyebrow { font-size: 11px; letter-spacing: 1.4px; color: var(--ink-faint); margin: 0 0 8px; }
+.personal-menu-panel .account-note, .personal-email { font-size: 13px; color: var(--ink-soft); line-height: 1.5; overflow-wrap: anywhere; }
+.personal-menu-panel hr { border: 0; border-top: 1px solid var(--rule); margin: 14px 0; }
+.personal-status { margin: 0; padding: 8px clamp(16px, 5vw, 76px); background: var(--marigold-skin); border-bottom: 1px solid var(--rule-firm); font-size: 13px; color: var(--ink-soft); }
+.personal-activity { margin-top: 26px; border: 1px solid var(--rule-firm); border-radius: var(--r-sm); padding: 18px; background: var(--paper-lift); }
+.personal-activity summary { cursor: pointer; font-weight: 600; }
+.personal-activity summary small { display: inline-block; margin-left: 12px; color: var(--ink-faint); font-weight: 400; }
+.personal-activity p, .personal-empty { padding: 12px; font-size: 14px; color: var(--ink-soft); }
+@media (max-width: 480px) { .personal-menu-trigger { gap: 5px; } .personal-menu-trigger b { display: none; } }
+
 .simulate-button,
 .export-csv {
   border: 1px solid var(--rule-firm);

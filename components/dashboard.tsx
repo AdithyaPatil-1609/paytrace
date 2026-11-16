@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { MobileNavigation } from "@/components/chrome/mobile-navigation";
 import { EvidenceStrip } from "@/components/chrome/evidence-strip";
 import { DetailPanel } from "@/components/detail/detail-panel";
@@ -28,6 +28,7 @@ type DashboardProps = {
   source: SourceInfo;
   commitments?: Commitment[];
   graph?: GraphFacts;
+  account?: { name: string; controls: ReactNode; notice?: ReactNode; activity?: ReactNode };
 };
 type Screen = "graph" | "annual" | "list" | "issues" | "paths";
 
@@ -39,7 +40,7 @@ const screens: { id: Screen; number: string; label: string }[] = [
   { id: "graph", number: "05", label: "Evidence graph" }
 ];
 
-export function Dashboard({ dataset, source, commitments, graph }: DashboardProps) {
+export function Dashboard({ dataset, source, commitments, graph, account }: DashboardProps) {
   const [screen, setScreen] = useState<Screen>("list");
   const [openId, setOpenId] = useState<string | null>(null);
   const [challengeOpen, setChallengeOpen] = useState(false);
@@ -68,11 +69,11 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
     confirmRevoke,
     keepIt,
     flagAgain
-  } = usePaymentReview(dataset, commitments);
+  } = usePaymentReview(dataset, commitments, !account);
   const openItem = active.find((item) => item.id === openId) ?? null;
 
   return (
-    <main className="paytrace-shell">
+    <main className={`paytrace-shell${account ? " personal-shell" : ""}`}>
       <div className="product-chrome">
         <header className="product-bar">
           <MobileNavigation screens={screens} current={screen} onSelect={setScreen} />
@@ -84,11 +85,11 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
           </p>
           <span className={source.kind === "neo4j" ? "source-badge live" : "source-badge"}>
             <i />
-            {source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV statements"}
+            {account ? "Private Neo4j" : source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV statements"}
           </span>
           <div className="bar-actions">
-            <a className="account-link" href="/account">Personal account</a>
-            <button
+            {!account && <a className="account-link" href="/account">Personal account</a>}
+            {!account && <button
               className="simulate-button"
               onClick={
                 simulated
@@ -111,17 +112,18 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
                 : simulated
                   ? "Reset simulation"
                   : "Simulate a new Autopay"}
-            </button>
+            </button>}
             <button className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
               ↓ Export CSV
             </button>
-            <div className="persona">
+            {account ? account.controls : <div className="persona">
               <b>PD</b>
               <span>Priya</span>
-            </div>
+            </div>}
           </div>
         </header>
         <EvidenceStrip source={source} />
+        {account?.notice}
         {simulated && (
           <p className="simulation-status" role="status">
             Synthetic demo: Headspace autopay added ·{" "}
@@ -161,20 +163,21 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
               source={source}
               items={active}
               dictionary={dataset.dictionary}
-              recordsLive={live && (!simulated || Boolean(liveSimulation))}
+              recordsLive={Boolean(account && source.kind === "neo4j") || (live && (!simulated || Boolean(liveSimulation)))}
               onOpen={openPayment}
               onContinue={() => setScreen("list")}
             />
           )}
           {screen === "list" && (
-            <AllPaymentsScreen
+            <><AllPaymentsScreen
               items={active}
               total={total}
               baseline={baseline}
               simulated={simulated}
               onOpen={openPayment}
               asOf={dataset.asOf}
-            />
+              personal={Boolean(account)}
+            />{account?.activity}</>
           )}
           {screen === "issues" && (
             <IssuesScreen
@@ -212,6 +215,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
               stoppedValue={stoppedValue}
               asOf={dataset.asOf}
               onOpen={openPayment}
+              personal={Boolean(account)}
             />
           )}
         </section>
@@ -224,7 +228,7 @@ export function Dashboard({ dataset, source, commitments, graph }: DashboardProp
           asOf={dataset.asOf}
           source={source}
           dataset={simulated ? withSimulatedAutopay(dataset) : dataset}
-          challengeLive={live && !simulated}
+          challengeLive={!account && live && !simulated}
           challengeInitiallyOpen={challengeOpen}
           onClose={() => setOpenId(null)}
         />

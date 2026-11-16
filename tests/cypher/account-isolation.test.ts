@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
 import { accountForSession, claimSync, createSession, endSession, removeGmailGrant, storeGmailGrant } from "../../db/neo4j/accounts";
-import { ingestLiveEvent, readLiveSummary } from "../../db/neo4j/live";
+import { ingestLiveEvent, readLiveDashboard, readLiveSummary } from "../../db/neo4j/live";
 import { profileFor } from "../../lib/accounts/security";
 import type { PaymentEvent } from "../../lib/ingestion/event";
 
@@ -25,6 +25,12 @@ test("separate Google accounts and disconnected grants cannot share or write pri
     assert.equal((await ingestLiveEvent(profileFor(a),event,grant)).status,"created");
     assert.equal((await readLiveSummary(profileFor(a))).counts.payments,1);
     assert.equal((await readLiveSummary(profileFor(b))).counts.payments,0);
+    const personalA=await readLiveDashboard(profileFor(a));
+    const personalB=await readLiveDashboard(profileFor(b));
+    assert.equal(personalA.dataset.statement.length,1);
+    assert.equal(personalA.dataset.notifications.length,1);
+    assert.equal(personalB.dataset.statement.length,0);
+    assert.equal(personalB.dataset.notifications.length,0);
     assert.equal(await removeGmailGrant(a),"test-token");
     await assert.rejects(ingestLiveEvent(profileFor(a),{...event,sourceId:"mail2"},grant));
     assert.equal((await accountForSession(sa))?.linked,false);

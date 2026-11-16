@@ -4,7 +4,7 @@ import { detectCommitments } from "@/lib/payments/engine";
 import { yearlyTotal } from "@/lib/payments/analysis";
 import type { Commitment, Dataset } from "@/lib/payments/types";
 
-export function usePaymentReview(dataset: Dataset, commitments?: Commitment[]) {
+export function usePaymentReview(dataset: Dataset, commitments?: Commitment[], allowDemoApi = true) {
   const live = Boolean(commitments?.length);
   const [simulated, setSimulated] = useState(false);
   // Live Simulate: the rows Cypher returned inside a rolled-back transaction.
@@ -37,7 +37,7 @@ export function usePaymentReview(dataset: Dataset, commitments?: Commitment[]) {
   const debt = yearlyTotal(active.filter((item) => item.bucket === "debt"));
 
   async function simulate() {
-    if (simulating || simulated) return;
+    if (!allowDemoApi || simulating || simulated) return;
     if (live) {
       setSimulating(true);
       try {

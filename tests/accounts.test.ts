@@ -6,6 +6,12 @@ import { authorizationUrl, createFlow } from "../lib/accounts/google";
 import { emailText } from "../lib/accounts/sync";
 import { GET as getSummary } from "../app/api/account/summary/route";
 import { POST as startAuth } from "../app/api/auth/google/start/route";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { AccountDashboard } from "../components/account-dashboard";
+import { Dashboard } from "../components/dashboard";
+import { detectCommitments } from "../lib/payments/engine";
+import type { Dataset } from "../lib/payments/types";
 
 Object.assign(process.env,{GOOGLE_WEB_CLIENT_ID:"test-client",GOOGLE_WEB_CLIENT_SECRET:"test-secret",PAYTRACE_AUTH_KEY:"ab".repeat(32),PAYTRACE_APP_URL:"http://localhost:3000"});
 
@@ -51,4 +57,26 @@ test("mail bodies are extracted as bounded text and never rendered",()=>{
   const text=emailText(part("text/html","<script>evil()</script><p>Amount: &#8377;199</p>"));
   assert.equal(text,"Amount: ₹199");
   assert.equal(emailText(part("text/plain","x".repeat(21000))).length,20000);
+});
+
+test("signed-in dashboard retains all original tabs without demo payments",()=>{
+  const html=renderToStaticMarkup(createElement(AccountDashboard,{name:"Example User",email:"user@example.com",linked:false,lastSync:null,asOf:"2026-11-16"}));
+  for(const tab of ["All payments","Issues","Cancel paths","Annual","Evidence graph"]) assert.ok(html.includes(tab),tab);
+  assert.ok(html.includes("Connect Gmail"));
+  assert.ok(html.includes("Sign out"));
+  assert.ok(html.includes("No recurring payments detected yet"));
+  assert.ok(!html.includes("Priya"));
+  assert.ok(!html.includes("Spotify"));
+  assert.ok(!html.includes("Simulate a new Autopay"));
+});
+
+test("original all-payments screen renders personal recurring data, not demo records",()=>{
+  const dataset:Dataset={asOf:"2026-11-16",statement:["2026-08-01","2026-09-01","2026-10-01","2026-11-01"].map((date,i)=>({txnId:`private-${i}`,persona:"private",date,accountId:"private-account",accountType:"unknown",narration:"PRIVATE STREAMING",debit:199,reference:`private-ref-${i}`,channel:"email",txnKind:"debit_purchase"})),notifications:[],mandates:[],usage:[],dictionary:[]};
+  const commitments=detectCommitments(dataset);
+  assert.equal(commitments.length,1);
+  const html=renderToStaticMarkup(createElement(Dashboard,{dataset,commitments,source:{kind:"neo4j",personal:true,counts:{payments:4,messages:0,mandates:0,patterns:0,commitments:1}},account:{name:"Example",controls:createElement("span",null,"Example")}}));
+  assert.ok(html.includes("PRIVATE STREAMING"));
+  assert.ok(!html.includes("Priya"));
+  assert.ok(!html.includes("Swiggy"));
+  assert.ok(!html.includes("Simulate a new Autopay"));
 });

@@ -10,10 +10,10 @@ export function EvidenceStrip({ source }: { source: SourceInfo }) {
       <section className="evidence-strip live" aria-label="Neo4j evidence graph">
         <p className="evidence-mark">Neo4j</p>
         <p className="evidence-copy">
-          Live evidence graph · <code>{host}</code>
+          {source.personal ? "Personal evidence · Neo4j records · app-side recurring detection · imported history only" : <>Live evidence graph · <code>{host}</code>
           {source.analyzed
             ? " · Cypher decided the issues, the year, and each cancel path"
-            : " · graph connected; analysis fell back inside the app"}
+            : " · graph connected; analysis fell back inside the app"}</>}
         </p>
         <dl className="evidence-counts">
           <div>
