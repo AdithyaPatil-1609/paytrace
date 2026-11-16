@@ -26,13 +26,17 @@ object EventSender {
         }
         json.put("date", payment.date)
         json.put("reference", payment.reference)
+        payment.accountHint?.let { json.put("accountHint", it) }
         return json.toString()
     }
 
     // The emulator reaches the laptop at http://10.0.2.2:3000.
     // A real phone must use the https:// tunnel address.
-    fun isAllowedAddress(base: String): Boolean =
-        base.startsWith("https://") || base.startsWith("http://10.0.2.2")
+    fun isAllowedAddress(base: String): Boolean = try {
+        val url = URL(base)
+        url.userInfo == null && url.query == null && url.ref == null &&
+            (url.protocol == "https" || (url.protocol == "http" && url.host == "10.0.2.2"))
+    } catch (e: Exception) { false }
 
     // Returns null on success, or a short reason on failure.
     // Must run on a background thread.

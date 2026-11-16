@@ -115,7 +115,7 @@ class SmsReceiver : BroadcastReceiver() {
 
         // Rule 3: keep only messages that read as a payment alert.
         val text = body.removePrefix(TEST_PREFIX)
-        val payment = SmsParser.parse(text) ?: return
+        val payment = SmsParser.parse(text, messages.first().originatingAddress) ?: return
 
         // Rule 4: the same alert twice is handled once.
         val isNew = DuplicateDetector.markIfNew(context, payment)

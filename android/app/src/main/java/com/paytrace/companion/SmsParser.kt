@@ -8,7 +8,8 @@ data class PaymentDetails(
     val amountPaise: Long,
     val date: String,
     val reference: String,
-    val kind: String = "debit_posted"
+    val kind: String = "debit_posted",
+    val accountHint: String? = null
 )
 
 object SmsParser {
@@ -81,7 +82,7 @@ object SmsParser {
     fun isSensitive(message: String): Boolean =
         sensitive.containsMatchIn(message)
 
-    fun parse(message: String): PaymentDetails? {
+    fun parse(message: String, sender: String? = null): PaymentDetails? {
 
         if (message.length > 500) return null
 
@@ -169,7 +170,30 @@ object SmsParser {
             )
         }
 
-        // Unknown or unsupported SMS
-        return null
+        return parseBankDebit(text, sender)
+    }
+
+    // Strict, opt-in debit formats; no arbitrary sender, credit, or OTP parsing.
+    private fun parseBankDebit(text: String, sender: String?): PaymentDetails? {
+        val bank = sender?.uppercase()?.split('-')?.firstOrNull { it in setOf("HDFCBK", "ICICIB", "SBIINB", "SBIPSG", "AXISBK", "KOTAKB") } ?: return null
+        if (Regex("""\b(credited|refunded|failed|declined|scheduled|reversed)\b""", RegexOption.IGNORE_CASE).containsMatchIn(text)) return null
+        if (!Regex("""\b(debited|spent|paid)\b""", RegexOption.IGNORE_CASE).containsMatchIn(text)) return null
+        val options = RegexOption.IGNORE_CASE
+        val amount = Regex("""(?:INR|Rs\.?|₹)\s*([\d,]+(?:\.\d{1,2})?)""", options).find(text)?.groupValues?.get(1)?.replace(",", "") ?: return null
+        val masked = Regex("""(?:A/c|account|card)\s*(?:ending\s*(?:with|in)?\s*)?[Xx*]+\s*(\d{4})\b""", options).find(text)?.groupValues?.get(1) ?: return null
+        val merchant = Regex("""(?:\bfor\b|\bat\b|\bto\b|\bVPA\b)\s+([A-Za-z0-9][A-Za-z0-9 .&*_'@/-]{0,79}?)(?=\s+(?:on\s+\d|Ref\b|UPI\s+Ref\b|UTR\b|RRN\b|Txn\b)|[;\n]|$)""", options).find(text)?.groupValues?.get(1)?.trim()?.trimEnd('.') ?: return null
+        val reference = Regex("""\b(?:UPI\s+Ref(?:\s+No)?|Ref(?:erence)?(?:\s+No)?|UTR|RRN|Txn\s+ID)\s*[:#.-]?\s*([A-Za-z0-9-]{3,80})\b""", options).find(text)?.groupValues?.get(1) ?: return null
+        val numericDate = Regex("""\b(\d{2})[-/](\d{2})[-/](\d{4}|\d{2})\b""").find(text)
+        val date = if (numericDate != null) {
+            val (day, month, year) = numericDate.destructured
+            parseDate("$day-$month-${if (year.length == 2) "20$year" else year}")
+        } else {
+            val named = Regex("""\b(\d{2})-([A-Za-z]{3})-(\d{4}|\d{2})\b""").find(text) ?: return null
+            val (day, month, year) = named.destructured
+            val monthNumber = listOf("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC").indexOf(month.uppercase()) + 1
+            if (monthNumber == 0) return null
+            parseDate("$day-${monthNumber.toString().padStart(2, '0')}-${if (year.length == 2) "20$year" else year}")
+        } ?: return null
+        return PaymentDetails(merchant, parseAmount(amount) ?: return null, date, reference, "debit_posted", "$bank-$masked")
     }
 }

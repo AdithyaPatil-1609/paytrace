@@ -16,7 +16,8 @@ object DuplicateDetector {
             payment.merchant.trim().uppercase(),
             payment.amountPaise.toString(),
             payment.date,
-            payment.reference.trim().uppercase()
+            payment.reference.trim().uppercase(),
+            payment.accountHint.orEmpty()
         ).joinToString("|")
 
 

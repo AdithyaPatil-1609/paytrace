@@ -38,9 +38,9 @@ test("ingest/sms refuses text that is not JSON", async () => {
   assert.equal((await send("not json", CODE)).status, 400);
 });
 
-test("ingest/sms accepts a made-up event from the paired phone", async () => {
+test("ingest/sms validates the event but refuses disabled storage", async () => {
   process.env.PAYTRACE_DEVICE_CODE = CODE;
+  delete process.env.PAYTRACE_LIVE_ENABLED;
   const response = await send(event, CODE);
-  assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { ok: true });
+  assert.equal(response.status, 503);
 });
