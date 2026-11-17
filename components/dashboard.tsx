@@ -22,6 +22,7 @@ import type { GraphFacts } from "@/db/neo4j/graph";
 import { usePaymentReview } from "./hooks/use-payment-review";
 import { downloadCommitmentsCsv } from "@/lib/presentation/commitment-ui";
 import type { Commitment, Dataset } from "@/lib/payments/types";
+import { AssistantWidget } from "@/components/assistant/assistant-widget";
 
 type DashboardProps = {
   dataset: Dataset;
@@ -221,6 +222,8 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
           )}
         </section>
       </div>
+
+      <AssistantWidget scope={account ? "account" : "demo"} onOpen={openPayment} />
 
       {openItem && (
         <DetailPanel
