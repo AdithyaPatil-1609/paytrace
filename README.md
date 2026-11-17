@@ -17,6 +17,8 @@ npm run dev
 
 For Aura, set the connection values in `.env.local` to those of your demo instance before seeding. The header shows the active data source. Use `npm run build` and `npm start` for a production build.
 
+For individually signed-in Google accounts, optional Gmail consent and background sync, see [Personal account setup](docs/ACCOUNT-GMAIL.md). The original synthetic demo remains available at `/?demo=1`.
+
 ## Follow a finding through the code
 
 Start with Spotify in **Issues**. The recorded price changes from ₹119 to ₹139. PayTrace checks for a relevant notice and makes the supporting charges available in the payment drawer and on the **Evidence graph** page.

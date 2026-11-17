@@ -17,6 +17,8 @@ import type {
 /** Where the rows on screen came from, so the UI can say so. */
 export type SourceInfo = {
   kind: "neo4j" | "fixture";
+  /** Account-scoped live records, with app-side detection (not synthetic Cypher analysis). */
+  personal?: boolean;
   /** Host only. The password never leaves the server. */
   host?: string;
   database?: string;

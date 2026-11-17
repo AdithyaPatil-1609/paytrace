@@ -95,9 +95,10 @@ export function DetailPanel({
           item={item}
           dataset={dataset}
           live={challengeLive}
+          personal={source.personal}
           initiallyOpen={challengeInitiallyOpen}
         />
-        {source.kind === "neo4j" && (
+        {source.kind === "neo4j" && !source.personal && (
           <details className="detail-accordion">
             <summary>Linked evidence</summary>
             <EvidencePath item={item} />

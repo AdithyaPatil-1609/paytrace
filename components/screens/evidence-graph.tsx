@@ -36,6 +36,7 @@ export function EvidenceGraphScreen({
         items={items}
         dictionary={dictionary}
         live={recordsLive ?? source.kind === "neo4j"}
+        personal={source.personal}
         onOpen={onOpen}
       />
       {source.kind === "neo4j" && graph ? (
@@ -112,9 +113,9 @@ export function EvidenceGraphScreen({
         <details className="evidence-live-details">
           <summary>About this evidence source</summary>
           <p>{source.note ?? "Neo4j is not configured."}</p>
-          <p>
+          <p>{source.personal ? "The diagram uses your imported payment, message and merchant evidence from Neo4j. Recurring commitments are calculated from these records; the diagram is not a database-wide graph census." : <>
             The diagram above is built from the CSV fixture and its detected payments. Live graph
-            queries and database relationship counts are available only when Neo4j is connected.
+            queries and database relationship counts are available only when Neo4j is connected.</>}
           </p>
         </details>
       )}
