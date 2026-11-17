@@ -206,12 +206,7 @@
    they win over the base rules.
    --------------------------------------------------------------- */
 
-:root {
-  --ember: #8c1c0c;
-  --ember-deep: #671208;
-  --ember-skin: #e7ab9c;
-  --ember-edge: rgba(140, 28, 12, 0.55);
-}
+/* The warning colours (--ember family) are defined once, in foundation.css. */
 
 .annual-figure.accent {
   border-color: var(--ember-deep);

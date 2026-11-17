@@ -174,6 +174,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
               total={total}
               baseline={baseline}
               simulated={simulated}
+              kept={kept}
               onOpen={openPayment}
               asOf={dataset.asOf}
               personal={Boolean(account)}

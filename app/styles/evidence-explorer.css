@@ -133,9 +133,10 @@
   fill: var(--marigold-skin);
   stroke: var(--marigold-deep);
 }
+/* Brass, not red: a merchant pattern is evidence, not a problem. */
 .evidence-node-pattern circle {
-  fill: #e9ad9c;
-  stroke: var(--ember);
+  fill: var(--gold-skin);
+  stroke: var(--gold-deep);
 }
 .payment-evidence-node:focus {
   outline: none;
@@ -209,8 +210,8 @@
   background: var(--marigold-skin);
 }
 .payment-evidence-legend .legend-pattern {
-  border-color: var(--ember);
-  background: #e9ad9c;
+  border-color: var(--gold-deep);
+  background: var(--gold-skin);
 }
 .evidence-sample-note {
   color: var(--ink-soft);

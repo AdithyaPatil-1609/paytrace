@@ -1,4 +1,5 @@
 import { ScreenHeader } from "@/components/chrome/screen-header";
+import { WarningIcon } from "@/components/chrome/warning-tag";
 import { formatINR } from "@/lib/presentation/format";
 import {
   annualPriceIncrease,
@@ -80,7 +81,10 @@ export function IssuesScreen({
                           <h3>{item.product || item.merchant}</h3>
                           <p className="issue-card-descriptor">{item.rawNarration}</p>
                         </div>
-                        <span className={`issue-card-badge badge-${group.id}`}>{group.badge}</span>
+                        <span className={`issue-card-badge badge-${group.id}`}>
+                          <WarningIcon />
+                          {group.badge}
+                        </span>
                       </header>
                       <p className="issue-card-explanation">{issueDescription(item, group.id)}</p>
                       <div className="issue-card-actions">

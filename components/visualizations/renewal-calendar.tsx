@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { nextMonthSchedule } from "@/lib/payments/calendar";
+import { WarningTag } from "@/components/chrome/warning-tag";
 import { formatINR } from "@/lib/presentation/format";
 import type { Commitment } from "@/lib/payments/types";
 
@@ -47,10 +48,13 @@ function matches(item: Commitment, filter: Filter) {
 export function RenewalCalendar({
   items,
   asOf,
+  flagged = new Set(),
   onOpen
 }: {
   items: Commitment[];
   asOf: string;
+  /** Ids of payments with a live problem, marked in dark red. */
+  flagged?: Set<string>;
   onOpen: (id: string) => void;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
@@ -81,7 +85,7 @@ export function RenewalCalendar({
           </h3>
           {slot.rows.map(({ item, day }) => (
             <button
-              className="renewal-row"
+              className={flagged.has(item.id) ? "renewal-row is-flagged" : "renewal-row"}
               key={`${item.id}-${slot.month}-${day}`}
               onClick={() => onOpen(item.id)}
             >
@@ -90,7 +94,10 @@ export function RenewalCalendar({
                 <strong>{String(day).padStart(2, "0")}</strong>
               </div>
               <div className="renewal-body">
-                <strong>{item.merchant}</strong>
+                <strong>
+                  {item.merchant}
+                  {flagged.has(item.id) && <WarningTag kind={item.kind} />}
+                </strong>
                 <span>
                   {item.cadence === "annual"
                     ? "Once a year"
