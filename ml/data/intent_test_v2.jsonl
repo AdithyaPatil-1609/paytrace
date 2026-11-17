@@ -1,0 +1,40 @@
+{"tag": "borderline", "q": "what goes out before the weekend", "intent": "upcoming_total", "merchant": null, "amount": null, "period": ["before the weekend"]}
+{"tag": "borderline", "q": "anything getting debited before the 15th?", "intent": "upcoming_total", "merchant": null, "amount": null, "period": ["before the 15th"]}
+{"tag": "borderline", "q": "how much is due before payday", "intent": "upcoming_total", "merchant": null, "amount": null, "period": ["before payday"]}
+{"tag": "borderline", "q": "kal tak kya kya katega", "intent": "upcoming_total", "merchant": null, "amount": null, "period": ["by tomorrow", "until tomorrow", "till tomorrow", "tomorrow"]}
+{"tag": "borderline", "q": "how much should i save for autopays before the 15th", "intent": "set_aside", "merchant": null, "amount": null, "period": ["before the 15th"]}
+{"tag": "borderline", "q": "what amount do i need to keep for next week's debits", "intent": "set_aside", "merchant": null, "amount": null, "period": ["next week", "for next week"]}
+{"tag": "borderline", "q": "kitna paisa rakhna padega month end tak", "intent": "set_aside", "merchant": null, "amount": null, "period": ["until month end", "till month end", "by month end", "until the end of the month", "till the end of the month", "by the end of the month", "until end of month", "month end", "end of the month", "end of month"]}
+{"tag": "borderline", "q": "how much buffer should i leave before payday", "intent": "set_aside", "merchant": null, "amount": null, "period": ["before payday"]}
+{"tag": "plain", "q": "how much leaves my account this week", "intent": "upcoming_total", "merchant": null, "amount": null, "period": ["this week"]}
+{"tag": "plain", "q": "how much should i keep in my account for this month's autopays", "intent": "set_aside", "merchant": null, "amount": null, "period": ["this month", "for this month"]}
+{"tag": "plain", "q": "what was that 89 rupee deduction", "intent": "why_debit", "merchant": null, "amount": 89, "period": null}
+{"tag": "amounts", "q": "why did 2,499.50 go yesterday", "intent": "why_debit", "merchant": null, "amount": 2499.5, "period": ["yesterday"]}
+{"tag": "hinglish", "q": "kya tha ye 30 rupay wala debit", "intent": "why_debit", "merchant": null, "amount": 30, "period": null}
+{"tag": "plain", "q": "why did amazon charge me last night", "intent": "why_debit", "merchant": ["amazon"], "amount": null, "period": ["last night"]}
+{"tag": "plain", "q": "why was i charged twice by netflix", "intent": "why_debit", "merchant": ["netflix"], "amount": null, "period": null}
+{"tag": "plain", "q": "is the netflix mandate still running", "intent": "mandate_status", "merchant": ["netflix"], "amount": null, "period": null}
+{"tag": "vague", "q": "did my insurance autopay get cancelled", "intent": "mandate_status", "merchant": ["insurance"], "amount": null, "period": null}
+{"tag": "hinglish", "q": "jio ka autopay chalu hai kya", "intent": "mandate_status", "merchant": ["jio"], "amount": null, "period": null}
+{"tag": "vague", "q": "is that meditation app still active", "intent": "mandate_status", "merchant": ["meditation app", "that meditation app"], "amount": null, "period": null}
+{"tag": "plain", "q": "status of my youtube autopay", "intent": "mandate_status", "merchant": ["youtube"], "amount": null, "period": null}
+{"tag": "plain", "q": "i paused zee5 but money still went", "intent": "charged_after_cancel", "merchant": ["zee5"], "amount": null, "period": null}
+{"tag": "plain", "q": "they debited 1499 even though i cancelled last week", "intent": "charged_after_cancel", "merchant": null, "amount": 1499, "period": ["last week"]}
+{"tag": "hinglish", "q": "band karne ke baad bhi gaana ka paisa kata", "intent": "charged_after_cancel", "merchant": ["gaana"], "amount": null, "period": null}
+{"tag": "plain", "q": "what am i paying apple", "intent": "list_by_merchant", "merchant": ["apple"], "amount": null, "period": null}
+{"tag": "plain", "q": "what subscriptions do i have with microsoft", "intent": "list_by_merchant", "merchant": ["microsoft"], "amount": null, "period": null}
+{"tag": "vague", "q": "what do i pay to the broadband guys", "intent": "list_by_merchant", "merchant": ["broadband guys", "the broadband guys", "broadband"], "amount": null, "period": null}
+{"tag": "plain", "q": "how much did i spend on autopays last month", "intent": "spend_total", "merchant": null, "amount": null, "period": ["last month"]}
+{"tag": "plain", "q": "total subscription spend since january", "intent": "spend_total", "merchant": null, "amount": null, "period": ["since january"]}
+{"tag": "hinglish", "q": "is saal ab tak kitna kharch hua subscriptions pe", "intent": "spend_total", "merchant": null, "amount": null, "period": ["this year so far", "so far this year", "this year", "this year till now", "this year until now"]}
+{"tag": "plain", "q": "how much went to subscriptions in the last 6 months", "intent": "spend_total", "merchant": null, "amount": null, "period": ["in the last 6 months", "last 6 months", "the last 6 months", "last six months"]}
+{"tag": "plain", "q": "how can i stop the jio autopay", "intent": "how_to_cancel", "merchant": ["jio"], "amount": null, "period": null}
+{"tag": "plain", "q": "steps to cancel my gym membership payment", "intent": "how_to_cancel", "merchant": ["gym", "gym membership"], "amount": null, "period": null}
+{"tag": "hinglish", "q": "spotify band kaise kare", "intent": "how_to_cancel", "merchant": ["spotify"], "amount": null, "period": null}
+{"tag": "unknown", "q": "what's the best credit card to get", "intent": "unknown", "merchant": null, "amount": null, "period": null}
+{"tag": "unknown", "q": "book me a cab to the airport", "intent": "unknown", "merchant": null, "amount": null, "period": null}
+{"tag": "unknown", "q": "how old is the earth", "intent": "unknown", "merchant": null, "amount": null, "period": null}
+{"tag": "typo", "q": "upcmng payments this wek", "intent": "upcoming_total", "merchant": null, "amount": null, "period": ["this week", "this wek"]}
+{"tag": "typo", "q": "netflx autopay cancled?", "intent": "mandate_status", "merchant": ["netflx", "netflix"], "amount": null, "period": null}
+{"tag": "amounts", "q": "why did rs 12,000 get debited on 1st nov", "intent": "why_debit", "merchant": null, "amount": 12000, "period": ["on 1st nov", "1st nov", "on 1st november", "1st november", "on november 1st", "november 1st"]}
+{"tag": "vague", "q": "what do i pay the phone company", "intent": "list_by_merchant", "merchant": ["phone company", "the phone company"], "amount": null, "period": null}
