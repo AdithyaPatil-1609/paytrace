@@ -17,7 +17,8 @@ export function AllPaymentsScreen({
   simulated,
   kept = [],
   onOpen,
-  asOf
+  asOf,
+  personal = false
 }: {
   items: Commitment[];
   total: number;
@@ -27,6 +28,7 @@ export function AllPaymentsScreen({
   kept?: string[];
   onOpen: (id: string) => void;
   asOf: string;
+  personal?: boolean;
 }) {
   // The same test the Issues screen uses, so both screens always agree.
   const flagged = new Set(issueItems(items, kept).map((item) => item.id));
@@ -57,7 +59,7 @@ export function AllPaymentsScreen({
           <p>
             {simulated
               ? "Headspace was detected from one statement line and one live mandate. It is not an issue."
-              : "The current Spotify price is shown here. Price history belongs on the issues screen."}
+              : personal ? "Estimates reflect your imported payment history. Review price changes on the issues screen." : "The current Spotify price is shown here. Price history belongs on the issues screen."}
           </p>
         </div>
       </section>
@@ -71,6 +73,7 @@ export function AllPaymentsScreen({
           <span>SOURCE</span>
         </div>
         <div className="payment-rows">
+          {personal && items.length === 0 && <p className="personal-empty">No recurring payments detected yet. Connect Gmail and import more payment history to discover recurring charges.</p>}
           {items.map((item) => (
             <button
               className={[
@@ -101,10 +104,10 @@ export function AllPaymentsScreen({
         </div>
       </section>
       <p className="exclusion-note">
-        <strong>Not added to this list:</strong> one Swiggy order, a transfer to Rahul, salary
+        {personal ? <><strong>About this list:</strong> only detected recurring payments appear here. One-off payments and ambiguous duplicates are excluded from the recurring estimate. Missing messages or payment permissions may limit detection.</> : <><strong>Not added to this list:</strong> one Swiggy order, a transfer to Rahul, salary
         credits, the credit-card repayment, and YouTube&apos;s ₹1 authorisation. One-off debits have
         no second debit or active mandate; credits, card repayments, and authorisation holds are
-        excluded separately. Open any row above to see the rule that kept it.
+        excluded separately. Open any row above to see the rule that kept it.</>}
       </p>
 
       <h2 className="viz-heading">Next month’s payments</h2>

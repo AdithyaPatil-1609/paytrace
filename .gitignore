@@ -11,3 +11,4 @@ coverage/
 # Generated TypeScript cache and local review exports
 *.tsbuildinfo
 work/
+.paytrace-gmail-token.json

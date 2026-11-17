@@ -17,7 +17,8 @@ export function AnnualScreen({
   debt,
   stoppedValue,
   asOf,
-  onOpen
+  onOpen,
+  personal = false
 }: {
   items: Commitment[];
   total: number;
@@ -26,6 +27,7 @@ export function AnnualScreen({
   stoppedValue: number;
   asOf: string;
   onOpen: (id: string) => void;
+  personal?: boolean;
 }) {
   const split = splitByBucket(items);
   const largest = Math.max(...split.map((group) => group.total), 1);
@@ -43,7 +45,7 @@ export function AnnualScreen({
         <article className="annual-figure">
           <span>COMMITTED TO LEAVE</span>
           <strong>{formatINR(total)}</strong>
-          <small>Over the next twelve months, across the savings account and the card.</small>
+          <small>{personal ? "Over the next twelve months, based on the imported records." : "Over the next twelve months, across the savings account and the card."}</small>
         </article>
         <article className="annual-figure accent">
           <span>STILL DEBITING, NOT USED</span>
@@ -51,7 +53,7 @@ export function AnnualScreen({
           <small>The part of the year that a decision can remove.</small>
         </article>
         <article className="annual-figure muted">
-          <span>HOME-LOAN EMI</span>
+          <span>{personal ? "LOAN REPAYMENTS" : "HOME-LOAN EMI"}</span>
           <strong>{formatINR(debt)}</strong>
           <small>Loan repayments must be managed with the lender.</small>
         </article>

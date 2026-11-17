@@ -9,11 +9,13 @@ export function PaymentDiagram({
   item,
   dictionary,
   live,
+  personal,
   onOpen
 }: {
   item: Commitment;
   dictionary: DictionaryEntry[];
   live: boolean;
+  personal?: boolean;
   onOpen: () => void;
 }) {
   const [picked, setPicked] = useState<EvidenceNode | null>(null);
@@ -26,7 +28,7 @@ export function PaymentDiagram({
   return (
     <section className="payment-diagram-panel" aria-label={`Evidence for ${item.merchant}`}>
       <p className="evidence-source-note">
-        {live
+        {personal ? "Your imported Neo4j records · derived evidence diagram" : live
           ? "Records from Neo4j analysis"
           : "CSV fixture · evidence diagram, not a live Neo4j query"}
       </p>

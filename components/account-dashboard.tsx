@@ -1,0 +1,80 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { Dashboard } from "@/components/dashboard";
+import type { readLiveDashboard } from "@/db/neo4j/live";
+import type { SourceInfo } from "@/db/neo4j/dataset";
+import type { Dataset } from "@/lib/payments/types";
+import { formatINR } from "@/lib/presentation/format";
+
+type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
+  linked: boolean; lastSync: string | null; syncStatus: string | null;
+};
+
+export function AccountDashboard({name,email,linked,lastSync,asOf,notice}: {
+  name: string; email: string; linked: boolean; lastSync: string | null; asOf: string; notice?: string;
+}) {
+  const [snapshot,setSnapshot]=useState<Snapshot|null>(null);
+  const [error,setError]=useState("");
+  const [loadError,setLoadError]=useState("");
+  const [syncing,setSyncing]=useState(false);
+  const started=useRef(false);
+  const refresh=useCallback(async()=>{
+    try {
+      const response=await fetch("/api/account/summary",{cache:"no-store"});
+      if(response.status===401){window.location.replace("/account?notice=session-expired");return;}
+      if(!response.ok)throw Error();
+      setSnapshot(await response.json());setLoadError("");
+    } catch {setLoadError("Your records could not be loaded. Check the Neo4j connection.");}
+  },[]);
+  const sync=useCallback(async()=>{
+    setSyncing(true);setError("");
+    try {
+      const response=await fetch("/api/account/gmail/sync",{method:"POST"});
+      if(response.status===401){window.location.replace("/account?notice=session-expired");return;}
+      if(!response.ok)throw Error();
+    } catch {setError("Sync could not finish. Check Gmail connection and retry.");}
+    finally {setSyncing(false);await refresh();}
+  },[refresh]);
+  useEffect(()=>{const initial=setTimeout(()=>void refresh(),0);const timer=setInterval(()=>void refresh(),10000);return()=>{clearTimeout(initial);clearInterval(timer);};},[refresh]);
+  useEffect(()=>{const initial=setTimeout(()=>{if(linked&&!lastSync&&!started.current){started.current=true;void sync();}},0);return()=>clearTimeout(initial);},[linked,lastSync,sync]);
+
+  const connected=snapshot?.linked??linked;
+  const needsReconnect=snapshot?.syncStatus==="reauthorize";
+  const syncingNow=syncing||snapshot?.syncStatus==="syncing";
+  const data=snapshot?.summary;
+  const dataset: Dataset=snapshot?.dataset??{asOf,statement:[],notifications:[],mandates:[],usage:[],dictionary:[]};
+  const source: SourceInfo={kind:"neo4j",personal:true,note:data?.note??"Loading your personal payment history from Neo4j.",counts:{payments:data?.counts.payments??0,messages:(data?.counts.email??0)+(data?.counts.sms??0),mandates:dataset.mandates.length,patterns:dataset.dictionary.length,commitments:data?.commitments.length??0}};
+
+  const controls=<details className="personal-menu">
+    <summary className="persona personal-menu-trigger">
+      <b>{name[0]?.toUpperCase()??"U"}</b><span>{name.split(" ")[0]}</span>
+      <small className={connected&&!needsReconnect?"gmail-status linked":"gmail-status"}>{needsReconnect?"Reconnect Gmail":connected?"Gmail linked":"Connect Gmail"}</small>
+    </summary>
+    <div className="personal-menu-panel account-card">
+      <p className="account-eyebrow">YOUR ACCOUNT</p>
+      <strong>{name}</strong><p className="personal-email">{email}</p>
+      <hr/>
+      <p className="account-eyebrow">DATA CONNECTION · GMAIL</p>
+      <p className="account-note">{needsReconnect?"Permission expired. Reconnect to resume sync.":connected?"Connected · read-only":"Optional: read financial messages from the Gmail account you signed in with. Google will ask for permission; Paytrace never sends or deletes emails."}</p>
+      {!connected||needsReconnect?<form action="/api/auth/google/start" method="post"><input type="hidden" name="mode" value="link"/><button className="account-button primary" type="submit">{needsReconnect?"Reconnect Gmail":"Connect Gmail securely"}</button></form>:<>
+        <p className="account-note">Last successful sync: {snapshot?.lastSync?new Date(snapshot.lastSync).toLocaleString():lastSync?new Date(lastSync).toLocaleString():"Waiting for first sync"}</p>
+        <button className="account-button primary" disabled={syncingNow} onClick={()=>void sync()}>{syncingNow?"Synchronizing…":"Sync now"}</button>
+      </>}
+      {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
+      <hr/>
+      <form action="/api/auth/logout" method="post"><button className="account-button" type="submit">Sign out</button></form>
+      <Link className="account-demo-link" href="/?demo=1">Explore synthetic demo</Link>
+    </div>
+  </details>;
+  const message=loadError||error||(needsReconnect?"Reconnect Gmail from your account menu to resume imports.":syncingNow?"Synchronizing financial emails…":!connected?"Connect Gmail from your account menu to import payments. Gmail access is optional.":!snapshot?"Loading your personal payment history…":notice?.includes("first sync")&&snapshot.lastSync?"Gmail connected. Your payment history is up to date.":notice);
+  const banner=message&&<p className="personal-status" role={error||loadError?"alert":"status"}>{message}</p>;
+  const activity=<details className="personal-activity" open>
+    <summary>Recent imported payment evidence <small>{data?.counts.review??0} need duplicate review</small></summary>
+    <p>Includes one-off events and notices that may not be recurring payments.</p>
+    {data?.recentEvents.length?<div className="account-table">{data.recentEvents.map(event=><div key={event.noticeId}><span><strong>{event.brand}</strong><small>{event.channel.toUpperCase()} · {event.eventType.replaceAll("_"," ")} · {event.sentOn}</small></span><strong>{event.amount===undefined?"—":formatINR(event.amount)}</strong></div>)}</div>:<p>No imported financial messages yet.</p>}
+  </details>;
+
+  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity}}/>;
+}

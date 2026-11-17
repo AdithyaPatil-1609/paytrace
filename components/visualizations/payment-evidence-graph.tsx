@@ -9,11 +9,13 @@ export function PaymentEvidenceExplorer({
   items,
   dictionary,
   live,
+  personal,
   onOpen
 }: {
   items: Commitment[];
   dictionary: DictionaryEntry[];
   live: boolean;
+  personal?: boolean;
   onOpen: (id: string) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -71,6 +73,7 @@ export function PaymentEvidenceExplorer({
         item={selected}
         dictionary={dictionary}
         live={live}
+        personal={personal}
         onOpen={() => onOpen(selected.id)}
       />
     </div>

@@ -14,11 +14,13 @@ export function FindingChallenge({
   item,
   dataset,
   live,
+  personal = false,
   initiallyOpen = false
 }: {
   item: Commitment;
   dataset: Dataset;
   live: boolean;
+  personal?: boolean;
   initiallyOpen?: boolean;
 }) {
   const [result, setResult] = useState<ChallengeResult | null>(null);
@@ -157,7 +159,7 @@ export function FindingChallenge({
             <p>
               {result.engine === "neo4j"
                 ? "Calculated in Neo4j. The transaction rolled back; the stored graph is unchanged."
-                : "Calculated by the offline detector against a temporary copy of the synthetic records."}
+                : personal ? "Calculated from a temporary copy of your imported records. No stored records changed." : "Calculated by the offline detector against a temporary copy of the synthetic records."}
             </p>
           </details>
           <button
