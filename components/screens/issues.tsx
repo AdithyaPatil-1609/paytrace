@@ -26,6 +26,10 @@ export function IssuesScreen({
   const findings = groups.reduce((sum, group) => sum + group.rows.length, 0);
   const paymentCount = new Set(groups.flatMap((group) => group.rows.map((item) => item.id))).size;
   const emptyGroups = groups.filter((group) => group.rows.length === 0);
+  const atStake = [...new Map(groups.flatMap((group) => group.rows).map((item) => [item.id, item])).values()].reduce(
+    (sum, item) => sum + item.annualCost,
+    0
+  );
   return (
     <>
       <ScreenHeader
@@ -35,6 +39,21 @@ export function IssuesScreen({
         copy={`${findings} ${findings === 1 ? "finding" : "findings"} across ${paymentCount} ${paymentCount === 1 ? "payment" : "payments"} worth reviewing.`}
         help="One payment may appear in more than one section. These findings use the supplied payment history, messages and usage records; review the evidence before deciding what to change. Categories with no findings are collapsed below."
       />
+      {findings > 0 && (
+        <div className="issue-alert" role="alert">
+          <span className="issue-alert-icon" aria-hidden="true">
+            <WarningIcon />
+          </span>
+          <div>
+            <strong>
+              {paymentCount} {paymentCount === 1 ? "payment needs" : "payments need"} your attention
+            </strong>
+            <p>
+              {formatINR(atStake)} a year goes to them. Check each warning below, then stop or keep the payment.
+            </p>
+          </div>
+        </div>
+      )}
       {findings === 0 && (
         <p className="issue-empty" role="status">
           Nothing needs review in the available records. Payments you chose to keep are not flagged

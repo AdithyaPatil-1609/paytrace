@@ -18,5 +18,8 @@
 @import "./styles/evidence-explorer.css";
 @import "./styles/scenarios.css";
 @import "./styles/drawer.css";
+@import "./styles/assistant.css";
 /* Last, so it wins ties: page light, the shell, surfaces, and dark red for every problem. */
 @import "./styles/refresh.css";
+/* Last of all: the cream-and-navy ledger look of the redesign. */
+@import "./styles/ledger.css";

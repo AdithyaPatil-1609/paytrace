@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Chevron } from "@/components/chrome/profile-menu";
 import { Dashboard } from "@/components/dashboard";
 import type { readLiveDashboard } from "@/db/neo4j/live";
 import type { SourceInfo } from "@/db/neo4j/dataset";
@@ -50,7 +51,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice}: {
   const controls=<details className="personal-menu">
     <summary className="persona personal-menu-trigger">
       <b>{name[0]?.toUpperCase()??"U"}</b><span>{name.split(" ")[0]}</span>
-      <small className={connected&&!needsReconnect?"gmail-status linked":"gmail-status"}>{needsReconnect?"Reconnect Gmail":connected?"Gmail linked":"Connect Gmail"}</small>
+      <Chevron/>
     </summary>
     <div className="personal-menu-panel account-card">
       <p className="account-eyebrow">YOUR ACCOUNT</p>

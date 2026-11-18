@@ -330,6 +330,7 @@ summary:focus-visible {
   }
   .bar-actions {
     flex: 0 0 100%;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 8px;
   }

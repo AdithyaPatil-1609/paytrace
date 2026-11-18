@@ -1,0 +1,240 @@
+/* ---------------------------------------------------------------
+   The assistant: a button in the bottom-right corner and a small
+   chat panel above it. Navy for the brand, white surfaces, and the
+   danger red only for a message that was blocked for holding a code.
+   It sits under the payment drawer, so "Open …" shows the drawer on top.
+   --------------------------------------------------------------- */
+
+.assistant {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 38;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  font-family: var(--sans);
+}
+
+.assistant-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  min-width: 48px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--marigold);
+  box-shadow: 0 10px 28px -10px var(--brand-shadow);
+  font: 600 14px/1 var(--sans);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s var(--ease-out);
+}
+
+.assistant-toggle:hover { background: var(--marigold-deep); transform: translateY(-1px); }
+.assistant.is-open .assistant-toggle { padding: 0; width: 48px; justify-content: center; font-size: 22px; }
+
+.assistant-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100vw - 32px));
+  height: min(560px, calc(100vh - 120px));
+  border: 1px solid var(--rule-firm);
+  border-radius: var(--r-lg);
+  background: var(--paper-lift);
+  box-shadow: var(--lift-shadow-hover);
+  overflow: hidden;
+  animation: assistant-in 0.18s var(--ease-out);
+}
+
+@keyframes assistant-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+.assistant-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.assistant-head h2 { margin: 0; font: 600 18px/1.2 var(--serif); color: var(--ink); }
+
+.assistant-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  color: var(--ink-faint);
+  font: 400 11.5px/1.3 var(--mono);
+}
+
+.assistant-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-faint); }
+.assistant-status i.on { background: var(--sage); }
+.assistant-status i.off { background: var(--ember); }
+
+.assistant-close {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--rule-firm);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.assistant-close:hover { background: var(--paper-sink); }
+
+.assistant-log {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  overflow-y: auto;
+  background: var(--paper);
+}
+
+.assistant-intro p { margin: 0 0 12px; color: var(--ink-soft); font-size: 13.5px; line-height: 1.5; }
+
+.assistant-suggestions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.assistant-suggestions button,
+.assistant-links button {
+  padding: 7px 11px;
+  border: 1px solid var(--rule-firm);
+  border-radius: 999px;
+  background: var(--paper-lift);
+  color: var(--marigold-deep);
+  font: 500 12.5px/1.2 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.assistant-suggestions button:hover,
+.assistant-links button:hover { border-color: var(--marigold-bright); background: var(--marigold-skin); }
+
+.assistant-msg {
+  max-width: 88%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.assistant-msg p { margin: 0; white-space: pre-wrap; }
+
+.assistant-msg small {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink-faint);
+  font: 400 10.5px/1.3 var(--mono);
+}
+
+.assistant-msg.from-you {
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+  color: #fff;
+  background: var(--marigold);
+}
+
+.assistant-msg.from-assistant {
+  align-self: flex-start;
+  border: 1px solid var(--rule);
+  border-bottom-left-radius: 4px;
+  color: var(--ink);
+  background: var(--paper-lift);
+}
+
+.assistant-msg.is-blocked { border-color: var(--ember-edge); background: var(--ember-skin); color: var(--ember-deep); }
+.assistant-msg.is-failed { border-style: dashed; color: var(--ink-soft); }
+
+.assistant-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+.assistant-typing { display: flex; gap: 4px; padding: 13px 14px; }
+
+.assistant-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  animation: assistant-dot 1s infinite ease-in-out;
+}
+
+.assistant-typing span:nth-child(2) { animation-delay: 0.15s; }
+.assistant-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes assistant-dot {
+  0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+
+.assistant-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px 6px;
+  border-top: 1px solid var(--rule);
+}
+
+.assistant-form textarea {
+  flex: 1;
+  min-height: 40px;
+  max-height: 120px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule-firm);
+  border-radius: var(--r-md);
+  background: var(--paper-lift);
+  color: var(--ink);
+  font: 400 14px/1.4 var(--sans);
+  resize: none;
+  field-sizing: content;
+}
+
+.assistant-form textarea:focus { outline: none; border-color: var(--marigold-bright); box-shadow: 0 0 0 3px var(--brand-tint-strong); }
+
+.assistant-form button {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--marigold);
+  font: 600 18px/1 var(--sans);
+  cursor: pointer;
+}
+
+.assistant-form button:disabled { background: var(--rule-firm); cursor: default; }
+
+.assistant-note { margin: 0; padding: 0 14px 10px; color: var(--ink-faint); font-size: 11px; line-height: 1.4; }
+
+.assistant .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-panel, .assistant-typing span { animation: none; }
+}
+
+/* Phones: the panel becomes a sheet across the bottom of the screen. */
+@media (max-width: 560px) {
+  .assistant { right: 16px; bottom: 16px; }
+  .assistant.is-open { left: 16px; }
+  .assistant-panel { width: 100%; height: min(520px, calc(100dvh - 96px)); }
+  .assistant-toggle span { display: none; }
+  .assistant-toggle { padding: 0; width: 48px; justify-content: center; }
+}
