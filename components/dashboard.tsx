@@ -7,7 +7,8 @@
 
 import { useState, type ReactNode } from "react";
 import { MobileNavigation } from "@/components/chrome/mobile-navigation";
-import { EvidenceStrip } from "@/components/chrome/evidence-strip";
+import { ChromeHeight } from "@/components/chrome/chrome-height";
+import { ProfileMenu } from "@/components/chrome/profile-menu";
 import { DetailPanel } from "@/components/detail/detail-panel";
 import {
   AllPaymentsScreen,
@@ -22,6 +23,7 @@ import type { GraphFacts } from "@/db/neo4j/graph";
 import { usePaymentReview } from "./hooks/use-payment-review";
 import { downloadCommitmentsCsv } from "@/lib/presentation/commitment-ui";
 import type { Commitment, Dataset } from "@/lib/payments/types";
+import { AssistantWidget } from "@/components/assistant/assistant-widget";
 
 type DashboardProps = {
   dataset: Dataset;
@@ -53,7 +55,6 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
   const {
     live,
     simulated,
-    simulating,
     liveSimulation,
     revoked,
     kept,
@@ -64,8 +65,6 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
     stoppedValue,
     leakage,
     debt,
-    simulate,
-    resetSimulation,
     confirmRevoke,
     keepIt,
     flagAgain
@@ -74,69 +73,36 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
 
   return (
     <main className={`paytrace-shell${account ? " personal-shell" : ""}`}>
+      <ChromeHeight />
       <div className="product-chrome">
         <header className="product-bar">
           <MobileNavigation screens={screens} current={screen} onSelect={setScreen} />
           <div className="wordmark">
             <span>p</span>paytrace
           </div>
-          <p>
-            PAYMENTS <i>·</i> INSIGHTS <i>·</i> CONTROL
-          </p>
-          <span className={source.kind === "neo4j" ? "source-badge live" : "source-badge"}>
+          <span
+            className={source.kind === "neo4j" ? "source-badge live" : "source-badge"}
+            title={source.note}
+          >
             <i />
             {account ? "Private Neo4j" : source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV statements"}
           </span>
           <div className="bar-actions">
-            {!account && <a className="account-link" href="/account">Personal account</a>}
-            {!account && <button
-              className="simulate-button"
-              onClick={
-                simulated
-                  ? resetSimulation
-                  : () => {
-                      setScreen("list");
-                      void simulate();
-                    }
-              }
-              disabled={simulating}
-              aria-busy={simulating}
-              title={
-                simulated
-                  ? "Remove the simulated autopay"
-                  : "Add a synthetic autopay and rerun detection"
-              }
-            >
-              {simulating
-                ? "Simulating…"
-                : simulated
-                  ? "Reset simulation"
-                  : "Simulate a new Autopay"}
-            </button>}
             <button className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
-              ↓ Export CSV
+              <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+                <path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M2.5 11.5v2h11v-2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Export CSV
             </button>
-            {account ? account.controls : <div className="persona">
-              <b>PD</b>
-              <span>Priya</span>
-            </div>}
+            {account ? account.controls : <ProfileMenu />}
           </div>
         </header>
-        <EvidenceStrip source={source} />
         {account?.notice}
-        {simulated && (
-          <p className="simulation-status" role="status">
-            Synthetic demo: Headspace autopay added ·{" "}
-            {live && liveSimulation
-              ? "Neo4j simulation; stored records unchanged."
-              : "Offline simulation using a temporary copy of the records."}
-          </p>
-        )}
       </div>
 
       <div className="app-layout">
         <aside className="side-nav">
-          <p>YOUR PAYMENTS</p>
+          <p>Your payments</p>
           {screens.map((item) => (
             <button
               key={item.id}
@@ -156,7 +122,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
           </div>
         </aside>
 
-        <section className="main-stage">
+        <section className={screen === "list" ? "main-stage is-ledger" : "main-stage"}>
           {screen === "graph" && (
             <EvidenceGraphScreen
               graph={graph}
@@ -176,6 +142,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
               simulated={simulated}
               kept={kept}
               onOpen={openPayment}
+              live={source.kind === "neo4j"}
               asOf={dataset.asOf}
               personal={Boolean(account)}
             />{account?.activity}</>
@@ -221,6 +188,8 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
           )}
         </section>
       </div>
+
+      <AssistantWidget scope={account ? "account" : "demo"} onOpen={openPayment} />
 
       {openItem && (
         <DetailPanel

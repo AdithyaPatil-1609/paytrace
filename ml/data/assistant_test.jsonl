@@ -1,0 +1,30 @@
+{"tag": "upcoming", "q": "How much will go out next month?", "intent": "upcoming_total", "must": ["₹14,895"]}
+{"tag": "upcoming", "q": "what autopays hit in the next 2 weeks", "intent": "upcoming_total", "must": []}
+{"tag": "upcoming", "q": "anything getting debited this week?", "intent": "upcoming_total", "fixed": true, "must": ["Caller tune"]}
+{"tag": "upcoming", "q": "agle mahine kitna katega", "intent": "upcoming_total", "must": ["₹14,895"]}
+{"tag": "upcoming", "q": "when is the prime renewal and how much", "intent": "upcoming_total", "fixed": true, "must": ["₹1,499"]}
+{"tag": "set_aside", "q": "how much should I keep aside for november", "intent": "set_aside", "must": ["₹14,895"]}
+{"tag": "set_aside", "q": "how much money do I need to leave in the account before the 10th of november", "intent": "set_aside", "must": []}
+{"tag": "why", "q": "why did spotify charge me", "intent": "why_debit", "must": ["₹139"]}
+{"tag": "why", "q": "what is this 1500 debit every month", "intent": "why_debit", "must": ["₹1,500"]}
+{"tag": "why", "q": "why was I charged for youtube", "intent": "why_debit", "must": ["₹149"]}
+{"tag": "why", "q": "why does netfilx keep taking money", "intent": "why_debit", "must": ["₹649"]}
+{"tag": "why", "q": "what is the 30 rupees charge from my operator", "intent": "why_debit", "must": ["₹30"]}
+{"tag": "status", "q": "is my canva autopay still active?", "intent": "mandate_status", "must": []}
+{"tag": "status", "q": "did the gym mandate get paused", "intent": "mandate_status", "must": []}
+{"tag": "status", "q": "is the hdfc life ecs on", "intent": "mandate_status", "must": []}
+{"tag": "after_cancel", "q": "I cancelled fitapp but they still charged me", "intent": "charged_after_cancel", "must": []}
+{"tag": "after_cancel", "q": "stopped google one last month, why is it still debiting", "intent": "charged_after_cancel", "must": []}
+{"tag": "merchant", "q": "what all do I pay google", "intent": "list_by_merchant", "must": []}
+{"tag": "merchant", "q": "how much do I pay hotstar", "intent": "list_by_merchant", "must": ["₹899"]}
+{"tag": "merchant", "q": "what am I paying for the home loan", "intent": "list_by_merchant", "must": ["₹8,500"]}
+{"tag": "spend", "q": "how much did I spend on subscriptions last month", "intent": "spend_total", "must": []}
+{"tag": "spend", "q": "total autopay spend this year", "intent": "spend_total", "must": []}
+{"tag": "spend", "q": "pichle mahine kitna gaya", "intent": "spend_total", "must": []}
+{"tag": "cancel", "q": "how do I cancel canva", "intent": "how_to_cancel", "must": ["Canva"], "fixed": true}
+{"tag": "cancel", "q": "stop the hdfc life payment", "intent": "how_to_cancel", "must": ["insur"], "fixed": true}
+{"tag": "cancel", "q": "how to get rid of the caller tune charge", "intent": "how_to_cancel", "must": ["operator"], "fixed": true}
+{"tag": "unknown", "q": "what's the weather in bangalore", "intent": "unknown", "must": [], "fixed": true}
+{"tag": "unknown", "q": "should I buy tata motors shares", "intent": "unknown", "must": [], "fixed": true}
+{"tag": "not_found", "q": "why did swiggy one charge me", "intent": "why_debit", "must": [], "found": false}
+{"tag": "not_found", "q": "is my disney autopay active", "intent": "mandate_status", "must": [], "found": false}

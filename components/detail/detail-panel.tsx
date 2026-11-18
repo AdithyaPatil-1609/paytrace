@@ -9,6 +9,7 @@ import { formatDate, formatINR } from "@/lib/presentation/format";
 import type { Commitment } from "@/lib/payments/types";
 import type { Dataset } from "@/lib/payments/types";
 import { FindingChallenge } from "./finding-challenge";
+import { PriceHistory, ProofChain } from "./price-and-proof";
 
 export function DetailPanel({
   item,
@@ -66,6 +67,7 @@ export function DetailPanel({
     };
   }, [onClose]);
   const priceNotices = item.notices.filter((notice) => notice.eventType === "price_change");
+  const flagged = ["unused", "silent", "trial"].includes(item.kind);
   return (
     <div
       className="detail-backdrop"
@@ -80,16 +82,24 @@ export function DetailPanel({
         className="detail-panel"
         onClick={(event) => event.stopPropagation()}
       >
-        <header>
-          <div>
-            <code>{item.rawNarration}</code>
-            <h2 id="transaction-title">{item.merchant}</h2>
-            <p>{item.plainDescription}</p>
-          </div>
-          <button onClick={onClose} aria-label="Close">
+        <div className="drawer-bar">
+          <button className="drawer-back" onClick={onClose} aria-label="Back to the list">
+            ‹ <span>Payment details</span>
+          </button>
+          <button className="drawer-close" onClick={onClose} aria-label="Close">
             ✕
           </button>
+        </div>
+        <header>
+          <div>
+            <h2 id="transaction-title">{item.merchant}</h2>
+            <code>{item.rawNarration}</code>
+            <p>{item.plainDescription}</p>
+          </div>
         </header>
+
+        <PriceHistory item={item} flagged={flagged} />
+        <ProofChain item={item} flagged={flagged} live={source.kind === "neo4j"} />
 
         <FindingChallenge
           item={item}

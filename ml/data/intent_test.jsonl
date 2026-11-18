@@ -1,0 +1,40 @@
+{"tag": "plain", "q": "why was 1500 deducted from my account today", "intent": "why_debit", "merchant": null, "amount": 1500, "period": ["today"]}
+{"tag": "plain", "q": "what is this 299 charge", "intent": "why_debit", "merchant": null, "amount": 299, "period": null}
+{"tag": "hinglish", "q": "kal 649 kat gaye, kis cheez ke liye?", "intent": "why_debit", "merchant": null, "amount": 649, "period": ["yesterday"]}
+{"tag": "plain", "q": "why did netflix take money from me on monday", "intent": "why_debit", "merchant": ["netflix"], "amount": null, "period": ["on monday", "monday"]}
+{"tag": "plain", "q": "how much will go out this month", "intent": "upcoming_total", "merchant": null, "amount": null, "period": ["this month"]}
+{"tag": "plain", "q": "total autopay due next week?", "intent": "upcoming_total", "merchant": null, "amount": null, "period": ["next week"]}
+{"tag": "hinglish", "q": "agle mahine kitna katega", "intent": "upcoming_total", "merchant": null, "amount": null, "period": ["next month"]}
+{"tag": "plain", "q": "what's leaving my account before friday", "intent": "upcoming_total", "merchant": null, "amount": null, "period": ["before friday", "by friday"]}
+{"tag": "plain", "q": "is my spotify autopay still active", "intent": "mandate_status", "merchant": ["spotify"], "amount": null, "period": null}
+{"tag": "vague", "q": "did the music app mandate get paused", "intent": "mandate_status", "merchant": ["music app"], "amount": null, "period": null}
+{"tag": "hinglish", "q": "gym wala band hua kya", "intent": "mandate_status", "merchant": ["gym", "gym wala"], "amount": null, "period": null}
+{"tag": "plain", "q": "is hotstar still on autopay", "intent": "mandate_status", "merchant": ["hotstar"], "amount": null, "period": null}
+{"tag": "vague", "q": "did i pause that design thing", "intent": "mandate_status", "merchant": ["design thing", "that design thing"], "amount": null, "period": null}
+{"tag": "typo", "q": "spotfy still activ?", "intent": "mandate_status", "merchant": ["spotfy", "spotify"], "amount": null, "period": null}
+{"tag": "plain", "q": "i cancelled youtube premium but they still charged me", "intent": "charged_after_cancel", "merchant": ["youtube premium", "youtube"], "amount": null, "period": null}
+{"tag": "plain", "q": "why did they take 499 after i stopped it", "intent": "charged_after_cancel", "merchant": null, "amount": 499, "period": null}
+{"tag": "hinglish", "q": "cancel kiya tha phir bhi fitapp ke paise kate", "intent": "charged_after_cancel", "merchant": ["fitapp"], "amount": null, "period": null}
+{"tag": "plain", "q": "stopped the gym in march, still got billed in april", "intent": "charged_after_cancel", "merchant": ["gym"], "amount": null, "period": ["in april", "april", "march to april", "in march", "march"]}
+{"tag": "plain", "q": "how much should i keep aside before salary", "intent": "set_aside", "merchant": null, "amount": null, "period": ["before salary"]}
+{"tag": "hinglish", "q": "salary se pehle kitna bacha ke rakhu", "intent": "set_aside", "merchant": null, "amount": null, "period": ["before salary"]}
+{"tag": "plain", "q": "how much do i need in my account until the 1st", "intent": "set_aside", "merchant": null, "amount": null, "period": ["until the 1st", "till the 1st", "until 1st", "by the 1st"]}
+{"tag": "plain", "q": "what should i leave in savings for autopays this week", "intent": "set_aside", "merchant": null, "amount": null, "period": ["this week"]}
+{"tag": "plain", "q": "what all do i pay google for", "intent": "list_by_merchant", "merchant": ["google"], "amount": null, "period": null}
+{"tag": "plain", "q": "show my amazon payments", "intent": "list_by_merchant", "merchant": ["amazon"], "amount": null, "period": null}
+{"tag": "plain", "q": "what do i pay airtel", "intent": "list_by_merchant", "merchant": ["airtel"], "amount": null, "period": null}
+{"tag": "vague", "q": "what am i paying the electricity people", "intent": "list_by_merchant", "merchant": ["electricity people", "the electricity people", "electricity"], "amount": null, "period": null}
+{"tag": "plain", "q": "how much did i spend on subscriptions this year", "intent": "spend_total", "merchant": null, "amount": null, "period": ["this year"]}
+{"tag": "plain", "q": "total spent on autopays in october", "intent": "spend_total", "merchant": null, "amount": null, "period": ["in october", "october"]}
+{"tag": "hinglish", "q": "pichle saal subscriptions pe kitna gaya", "intent": "spend_total", "merchant": null, "amount": null, "period": ["last year"]}
+{"tag": "plain", "q": "how much went on recurring payments over the last 3 months", "intent": "spend_total", "merchant": null, "amount": null, "period": ["over the last 3 months", "last 3 months", "the last 3 months", "last three months"]}
+{"tag": "plain", "q": "how do i stop the hdfc life premium autopay", "intent": "how_to_cancel", "merchant": ["hdfc life", "hdfc life premium"], "amount": null, "period": null}
+{"tag": "plain", "q": "how to cancel netflix", "intent": "how_to_cancel", "merchant": ["netflix"], "amount": null, "period": null}
+{"tag": "hinglish", "q": "isko band kaise karu", "intent": "how_to_cancel", "merchant": null, "amount": null, "period": null}
+{"tag": "typo", "q": "how do i cancle the canva thing", "intent": "how_to_cancel", "merchant": ["canva", "canva thing", "the canva thing"], "amount": null, "period": null}
+{"tag": "unknown", "q": "what's the weather tomorrow", "intent": "unknown", "merchant": null, "amount": null, "period": null}
+{"tag": "unknown", "q": "is it a good time to invest in mutual funds", "intent": "unknown", "merchant": null, "amount": null, "period": null}
+{"tag": "unknown", "q": "tell me a joke", "intent": "unknown", "merchant": null, "amount": null, "period": null}
+{"tag": "typo", "q": "wy did 1,200 get debted yestrday", "intent": "why_debit", "merchant": null, "amount": 1200, "period": ["yesterday"]}
+{"tag": "amounts", "q": "why was rs. 8,500 taken on the 5th", "intent": "why_debit", "merchant": null, "amount": 8500, "period": ["on the 5th", "the 5th", "5th"]}
+{"tag": "amounts", "q": "what was the ₹149.00 debit", "intent": "why_debit", "merchant": null, "amount": 149, "period": null}
