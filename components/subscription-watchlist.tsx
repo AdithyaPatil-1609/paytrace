@@ -11,11 +11,12 @@ export function renewalNotice(renewalDate: string | undefined, asOf: string) {
   return `Reported renewal · ${formatDate(renewalDate)} · charge not confirmed`;
 }
 
-export function SubscriptionWatchlist({registrations,asOf}: {registrations:NotificationRow[];asOf:string}) {
-  if (!registrations.length) return null;
+export function SubscriptionWatchlist({registrations,asOf,showEmpty=false}: {registrations:NotificationRow[];asOf:string;showEmpty?:boolean}) {
+  if (!registrations.length && !showEmpty) return null;
   return <details className="personal-activity" open>
     <summary>Subscription watchlist <small>{registrations.length} zero-cost registrations</small></summary>
     <p>Detected from subscription confirmations. These are not completed debits or guaranteed future charges. Review renewal terms with the provider.</p>
+    {!registrations.length&&<p>No zero-cost subscriptions have been recognized yet. Use Rescan last 90 days in your account menu to check older confirmations.</p>}
     <div className="account-table">
       {registrations.map(item=><div key={item.noticeId}>
         <span><strong>{item.brand}</strong><small>EMAIL · Zero-cost subscription · {formatDate(item.sentOn)}</small>

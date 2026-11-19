@@ -10,6 +10,9 @@ function paidAmounts(text: string) {
 export function hasZeroReportedTotal(text: string) {
   return paidAmounts(text).includes(0);
 }
+export function hasNonzeroReportedTotal(text:string) {
+  return paidAmounts(text).some(amount=>amount>0);
+}
 
 function receiptDate(value?: string): string | undefined {
   if (!value) return;
@@ -33,7 +36,7 @@ export function parseZeroCostSubscription(text: string, input: {id:string;date:s
   const totals = paidAmounts(text);
   // A conflicting nonzero paid amount prevents classifying this as zero-cost.
   if (!totals.length || totals.some(total => total !== 0)) return null;
-  const planRow = text.match(new RegExp(`^\\s*([A-Za-z0-9][A-Za-z0-9 .&*_'@/-]{0,66}\\bsubscription)\\s+${inr}\\s*$`, "im"));
+  const planRow = text.match(new RegExp(`^\\s*([A-Za-z0-9][A-Za-z0-9 .&*_'@/-]{0,66}\\bsubscription)\\s+${inr}\\s*(?:INR)?\\s*$`, "im"));
   const labeledPlan = text.match(/^\s*(?:Subscription|Plan|Service|Merchant(?: name)?)\s*:\s*([A-Za-z0-9][A-Za-z0-9 .&*_'@/-]{0,79})\s*$/im)?.[1]?.trim();
   const merchant = planRow?.[1]?.replace(/\s+subscription$/i, "").trim() || labeledPlan;
   if (!merchant) return null;

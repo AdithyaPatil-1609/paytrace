@@ -2,7 +2,7 @@
 const domainPattern = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 const suffixPattern = /^\.[a-z]{2,63}$/i;
 
-export const defaultPaymentQuery = '{payment payments receipt receipts transaction transactions mandate autopay subscription invoice debit debited charged paid renewal "order placed" "amount paid"}';
+export const defaultPaymentQuery = '{payment payments receipt receipts transaction transactions mandate autopay subscription invoice debit debited charged paid renewal "order placed" "order number" "amount paid" "your new plan" "free trial"}';
 
 export function parseAllowedDomains(value: string | undefined): string[] {
   const rules = [...new Set((value ?? "").split(",").map(x => x.trim().toLowerCase()).filter(Boolean))];

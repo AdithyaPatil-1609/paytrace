@@ -22,6 +22,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
   const [error,setError]=useState("");
   const [loadError,setLoadError]=useState("");
   const [syncing,setSyncing]=useState(false);
+  const [syncResult,setSyncResult]=useState("");
   const started=useRef(false);
   const refresh=useCallback(async()=>{
     try {
@@ -31,14 +32,18 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       setSnapshot(await response.json());setLoadError("");
     } catch {setLoadError("Your records could not be loaded. Check the Neo4j connection.");}
   },[]);
-  const sync=useCallback(async()=>{
-    setSyncing(true);setError("");
+  const sync=useCallback(async(history=false)=>{
+    setSyncing(true);setError("");setSyncResult("");
     try {
-      const response=await fetch("/api/account/gmail/sync",{method:"POST"});
+      const response=await fetch(`/api/account/gmail/sync${history?"?history=1":""}`,{method:"POST"});
       if(response.status===401){window.location.replace("/account?notice=session-expired");return;}
       if(!response.ok){
         const result=await response.json().catch(()=>({}));
         setError(accountErrorMessage(result.code)??"Sync could not finish. Check Gmail connection and retry.");
+      } else {
+        const result=await response.json();
+        if(result.status==="ready")setSyncResult(`Scanned ${result.scanned??0} emails · ${result.accepted} new · ${result.duplicates??0} already recorded · ${result.skipped} skipped (${result.senderSkipped??0} sender-filtered, ${result.subscriptionSkipped??0} unrecognized subscription notices) · ${result.registrations??0} zero-cost subscriptions recognized.`);
+        else setSyncResult("A sync is already running or Gmail was disconnected. Wait for it to finish, then retry.");
       }
     } catch {setError("Sync could not finish. Check Gmail connection and retry.");}
     finally {setSyncing(false);await refresh();}
@@ -67,6 +72,8 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       {!connected||needsReconnect?<form action="/api/auth/google/start" method="post"><input type="hidden" name="mode" value="link"/><button className="account-button primary" type="submit">{needsReconnect?"Reconnect Gmail":"Connect Gmail securely"}</button></form>:<>
         <p className="account-note">Last successful sync: {snapshot?.lastSync?new Date(snapshot.lastSync).toLocaleString():lastSync?new Date(lastSync).toLocaleString():"Waiting for first sync"}</p>
         <button className="account-button primary" disabled={syncingNow} onClick={()=>void sync()}>{syncingNow?"Synchronizing…":"Sync now"}</button>
+        <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true)}>Rescan last 90 days</button>
+        {syncResult&&<p className="account-note" role="status">{syncResult}</p>}
       </>}
       {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
       <hr/>
@@ -77,12 +84,12 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
   const persistedError=accountErrorMessage(snapshot?.syncError);
   const message=loadError||error||(syncingNow?"Synchronizing financial emails…":persistedError|| (needsReconnect?"Reconnect Gmail from your account menu to resume imports.":!connected?noticeIsError&&notice?notice:"Connect Gmail from your account menu to import payments. Gmail access is optional.":!snapshot?"Loading your personal payment history…":notice?.includes("first sync")&&snapshot.lastSync?"Gmail connected. Your payment history is up to date.":noticeIsError&&notice?notice:"Gmail connected · read-only. Use your account menu to sync."));
   const banner=<p className="personal-status" role={error||loadError||persistedError||noticeIsError?"alert":"status"}>{message}</p>;
-  const watchlist=<SubscriptionWatchlist registrations={data?.subscriptionRegistrations??[]} asOf={dataset.asOf}/>;
+  const watchlist=<SubscriptionWatchlist registrations={data?.subscriptionRegistrations??[]} asOf={dataset.asOf} showEmpty={Boolean(snapshot)}/>;
   const activity=<>{watchlist}<details className="personal-activity" open>
     <summary>Recent imported payment evidence <small>{data?.counts.review??0} need duplicate review</small></summary>
     <p>Includes one-off events and notices that may not be recurring payments.</p>
     {data?.recentEvents.length?<div className="account-table">{data.recentEvents.map(event=><div key={event.noticeId}><span><strong>{event.brand}</strong><small>{event.channel.toUpperCase()} · {event.eventType.replaceAll("_"," ")} · {event.sentOn}</small></span><strong>{event.amount===undefined?"—":formatINR(event.amount)}</strong></div>)}</div>:<p>No imported financial messages yet.</p>}
   </details></>;
 
-  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity,subscriptionAlerts:watchlist}}/>;
+  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity,subscriptionAlerts:<SubscriptionWatchlist registrations={data?.subscriptionRegistrations??[]} asOf={dataset.asOf}/>}}/>;
 }

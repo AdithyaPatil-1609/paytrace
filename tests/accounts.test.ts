@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
 import { accountConfig, GMAIL_SCOPE, open, profileFor, readFlow, seal, sameOrigin, hash } from "../lib/accounts/security";
 import { authorizationUrl, createFlow, GoogleTokenError, googleAuthorizationCode } from "../lib/accounts/google";
-import { emailText, syncFailureCode } from "../lib/accounts/sync";
+import { emailText, parseGmailReceipt, syncFailureCode } from "../lib/accounts/sync";
 import { AccountError, accountErrorMessage } from "../lib/accounts/errors";
 import { GET as completeAuth } from "../app/api/auth/google/callback/route";
 import { POST as syncGmail } from "../app/api/account/gmail/sync/route";
@@ -108,6 +108,29 @@ test("HTML subscription table is imported without a subject, preserving the real
   assert.equal(event?.kind,"subscription_registered");
   assert.equal(event?.planPricePaise,169407);
   assert.equal(event?.amountPaise,0);
+});
+
+test("Gmail uses the detailed HTML alternative when the plain receipt is incomplete",()=>{
+  const part=(mimeType:string,body:string)=>({mimeType,body:{data:Buffer.from(body).toString("base64url")}});
+  const html="<p><b>Order number:</b> sub_test789</p><p>Order date: Oct 22, 2026</p><table><tr><th>Plan</th><th>Amount</th></tr><tr><td><div>ChatGPT Plus Subscription</div></td><td><div>&#x20b9;&thinsp;1694.07</div></td></tr><tr><td>Discount:</td><td>-&#8377;1694.07</td></tr><tr><td><b>Total:</b></td><td><span>&#8377;0.00</span></td></tr></table>";
+  const input={id:"mail789",from:"noreply@tm.openai.com",subject:"ChatGPT - Your new plan",date:"2026-10-22",payload:{mimeType:"multipart/alternative",parts:[part("text/plain","Manage your subscription"),part("text/html",html)]}};
+  const result=parseGmailReceipt(input,[".com",".in"]);
+  assert.equal(result.event?.kind,"subscription_registered");
+  assert.equal(result.event?.merchant,"CHATGPT PLUS");
+  assert.equal(result.event?.planPricePaise,169407);
+  assert.equal(result.event?.amountPaise,0);
+  assert.equal(parseGmailReceipt(input,["gmail.com"]).reason,"sender");
+  assert.equal(parseGmailReceipt({...input,payload:{parts:[part("text/plain","Your OTP is 123456"),part("text/html",html)]}},[".com"]).reason,"sensitive");
+  assert.equal(parseGmailReceipt({...input,payload:{parts:[part("text/plain","Total: INR 199"),part("text/html",html)]}},[".com"]).event,null);
+  assert.equal(parseGmailReceipt({...input,payload:{parts:[part("text/plain","Manage your subscription")]}},[".com"]).reason,"subscription");
+  assert.equal(parseGmailReceipt({...input,payload:{parts:[part("text/plain","Manage your subscription"),{...part("text/html",html),filename:"attached.html"}]}},[".com"]).event,null);
+});
+
+test("receipt text accepts markdown formatting and narrow spaces",()=>{
+  const body="**Order number:** sub_demo789\n**Order date:** Oct 22, 2026\n| Plan | Amount |\n| ChatGPT Plus Subscription | ₹\u202f1694.07 |\n**Total:** ₹\u00a00.00";
+  const event=parseFinancialEmail({id:"md123",from:"noreply@example.com",subject:"Your new plan",date:"2026-10-22",body},[".com"]);
+  assert.equal(event?.kind,"subscription_registered");
+  assert.equal(event?.planPricePaise,169407);
 });
 
 test("subscription watchlist shows actual zero cost and never invents a renewal date",()=>{

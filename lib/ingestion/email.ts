@@ -2,10 +2,18 @@ import { isSensitive, validateEvent, type PaymentEvent, type EventKind } from ".
 import { isAllowedSender } from "./gmail-filter";
 import { hasZeroReportedTotal, parseZeroCostSubscription } from "./subscription-email";
 
+/** Normalize common email text formatting without inventing receipt fields. */
+export function normalizeReceiptText(text:string) {
+  return text.replace(/\r\n?/g,"\n").replace(/[\u200b-\u200f\u202a-\u202e\u2060\ufeff]/g,"")
+    .replace(/[\u00a0\u2000-\u200a\u202f]/g," ")
+    .replace(/\*\*([^*\n]+)\*\*/g,"$1")
+    .replace(/^\s*\|([^\n]+)\|\s*$/gm,(_,row:string)=>row.split("|").map(cell=>cell.trim()).join(" "));
+}
+
 /** Deliberately narrow receipt/notice patterns; unrelated messages are skipped. */
 export function parseFinancialEmail(input: { id: string; from: string; subject: string; body: string; date: string }, allowedDomains: string[]): PaymentEvent | null {
   if (!isAllowedSender(input.from, allowedDomains)) return null;
-  const text = `${input.subject}\n${input.body}`;
+  const text = normalizeReceiptText(`${input.subject}\n${input.body}`);
   if (isSensitive(text) || /\b(?:refund|credited|credit received|payment declined|invoice due)\b/i.test(text)) return null;
   const registration = parseZeroCostSubscription(text,input);
   if (registration) return registration;
