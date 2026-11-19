@@ -1,6 +1,7 @@
 import { claimSync, finishSync } from "@/db/neo4j/accounts";
 import { ingestLiveEvent } from "@/db/neo4j/live";
 import { parseFinancialEmail } from "@/lib/ingestion/email";
+import { gmailPaymentQuery, parseAllowedDomains } from "@/lib/ingestion/gmail-filter";
 import { exchangeToken, GoogleTokenError } from "./google";
 
 type Part = { mimeType?:string; headers?:{name:string;value:string}[]; body?:{data?:string}; parts?:Part[] };
@@ -13,8 +14,7 @@ export function emailText(part: Part): string {
 }
 
 export async function syncAccount(sub: string) {
-  const domains=(process.env.GMAIL_ALLOWED_DOMAINS??"").split(",").map(x=>x.trim().toLowerCase()).filter(x=>/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(x));
-  if (!domains.length) throw new Error("Configure GMAIL_ALLOWED_DOMAINS");
+  const domains=parseAllowedDomains(process.env.GMAIL_ALLOWED_DOMAINS);
   const grant=await claimSync(sub);
   if (!grant) return {status:"busy-or-disconnected",accepted:0,skipped:0};
   let state:"ready"|"error"|"reauthorize"="error";
@@ -22,7 +22,7 @@ export async function syncAccount(sub: string) {
     const access=(await exchangeToken({grant_type:"refresh_token",refresh_token:grant.refreshToken})).access_token;
     if (!access) throw new Error("Missing access token");
     const after=grant.lastSync?`after:${Math.floor((Date.parse(grant.lastSync)-2*86400000)/1000)}`:"newer_than:90d";
-    const query=`${after} {${domains.map(d=>`from:${d}`).join(" ")}} ${process.env.GMAIL_ACCOUNT_QUERY||"{subject:payment subject:receipt subject:transaction subject:mandate subject:subscription subject:debit}"}`;
+    const query=gmailPaymentQuery(after,domains,process.env.GMAIL_ACCOUNT_QUERY);
     async function get(path:string) {
       const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/${path}`,{headers:{Authorization:`Bearer ${access}`},signal:AbortSignal.timeout(15000)});
       if (!r.ok) throw new GoogleTokenError(r.status,r.status===401?"invalid_grant":"gmail_error");

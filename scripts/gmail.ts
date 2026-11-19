@@ -6,6 +6,7 @@ import { readFile, writeFile, chmod } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 import { liveProfile } from "../lib/ingestion/auth";
 import { parseFinancialEmail } from "../lib/ingestion/email";
+import { gmailPaymentQuery, parseAllowedDomains } from "../lib/ingestion/gmail-filter";
 
 const TOKEN_FILE = ".paytrace-gmail-token.json";
 const redirect = "http://127.0.0.1:53682";
@@ -55,9 +56,9 @@ function plain(part:Part):string {
 async function sync() {
   const profile = liveProfile();
   if (!profile) throw new Error("Enable live storage and configure PAYTRACE_LIVE_PROFILE first");
-  const domains = (process.env.GMAIL_ALLOWED_DOMAINS ?? "").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
-  if (!domains.length) throw new Error("Set GMAIL_ALLOWED_DOMAINS to approved sender domains");
-  const query = process.env.GMAIL_QUERY || "newer_than:7d {subject:payment subject:receipt subject:mandate subject:subscription}";
+  const domains = parseAllowedDomains(process.env.GMAIL_ALLOWED_DOMAINS);
+  // Preserve the desktop script's full-query override (including its date range).
+  const query = process.env.GMAIL_QUERY?.trim() || gmailPaymentQuery("newer_than:7d",domains);
   const saved = JSON.parse(await readFile(TOKEN_FILE,"utf8")) as {refresh_token:string};
   const access = (await token({grant_type:"refresh_token",refresh_token:saved.refresh_token})).access_token;
   const { ingestLiveEvent } = await import("../db/neo4j/live");

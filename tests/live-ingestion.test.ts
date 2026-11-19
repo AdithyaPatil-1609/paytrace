@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { eventKey, matchPayment, validateEvent } from "../lib/ingestion/event";
 import { parseFinancialEmail } from "../lib/ingestion/email";
+import { gmailPaymentQuery, isAllowedSender, parseAllowedDomains } from "../lib/ingestion/gmail-filter";
 import { GET } from "../app/api/live/summary/route";
 
 const sms = validateEvent({source:"sms",kind:"debit_posted",merchant:"Netflix",amountPaise:19900,date:"2026-11-15",reference:"ABC123"});
@@ -28,6 +29,34 @@ test("email parser accepts approved explicit receipt and rejects sensitive or un
   assert.deepEqual(parseFinancialEmail(mail,["example.com"]),{...sms,source:"email",sourceId:"msg123"});
   assert.equal(parseFinancialEmail(mail,["other.com"]),null);
   assert.equal(parseFinancialEmail({...mail,body:mail.body+"\nYour OTP is 123456"},["example.com"]),null);
+});
+test("Gmail domain suffixes include subdomains and preserve exact allowlists",()=>{
+  const rules=parseAllowedDomains(" .COM, .in, example.org, .com ");
+  assert.deepEqual(rules,[".com",".in","example.org"]);
+  for (const sender of ["Receipts <noreply@tm.openai.com>","bank@alerts.bank.co.in","billing@EXAMPLE.IN","receipt@example.org"]) assert.equal(isAllowedSender(sender,rules),true,sender);
+  for (const sender of ["receipt@com","receipt@fake.com.evil.org","receipt@domain.in.net","receipt@sub.example.org","receipt@bad..com","receipt@evil.org"]) assert.equal(isAllowedSender(sender,rules),false,sender);
+  assert.equal(isAllowedSender("receipt@sub.example.com",["example.com"]),false);
+  assert.throws(()=>parseAllowedDomains("com,in"));
+  assert.throws(()=>parseAllowedDomains(".com,*"));
+  assert.throws(()=>parseAllowedDomains(""));
+});
+test("Gmail searches message contents for suffix rules, not unsupported From wildcards",()=>{
+  const query=gmailPaymentQuery("newer_than:90d",[".com",".in"]);
+  assert.match(query,/^newer_than:90d /);
+  assert.match(query,/\breceipt\b/);
+  assert.match(query,/\bsubscription\b/);
+  assert.doesNotMatch(query,/from:|subject:/);
+  assert.equal(gmailPaymentQuery("after:123",["bank.in","example.com"],"receipt"),"after:123 {from:bank.in from:example.com} receipt");
+});
+test("subjectless .com and .in receipts import, but orders and OTPs do not",()=>{
+  const mail={id:"msg456",from:"Billing <receipt@tm.example.com>",subject:"",body:"Your payment was successful\nBilled by: Example Service\nTotal paid ₹199.00",date:"2026-11-15"};
+  const rules=[".com",".in"];
+  assert.equal(parseFinancialEmail(mail,rules)?.amountPaise,19900);
+  assert.equal(parseFinancialEmail({...mail,from:"receipt@alerts.bank.co.in"},rules)?.merchant,"EXAMPLE SERVICE");
+  assert.equal(parseFinancialEmail({...mail,body:mail.body.replace("Your payment was successful","Order placed")},rules),null);
+  assert.equal(parseFinancialEmail({...mail,body:mail.body+"\nYour OTP is 123456"},rules),null);
+  assert.equal(parseFinancialEmail({...mail,from:"receipt@tm.example.com.evil.org"},rules),null);
+  assert.equal(parseFinancialEmail({...mail,body:mail.body.replace("₹199.00","USD 199.00")},rules),null);
 });
 test("live summary is never public",async()=>{
   process.env.PAYTRACE_READ_CODE="secret-test-code";
