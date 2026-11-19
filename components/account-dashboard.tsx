@@ -8,6 +8,7 @@ import type { readLiveDashboard } from "@/db/neo4j/live";
 import type { SourceInfo } from "@/db/neo4j/dataset";
 import type { Dataset } from "@/lib/payments/types";
 import { formatINR } from "@/lib/presentation/format";
+import { SubscriptionWatchlist } from "@/components/subscription-watchlist";
 
 type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
   linked: boolean; lastSync: string | null; syncStatus: string | null;
@@ -71,11 +72,12 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice}: {
   </details>;
   const message=loadError||error||(needsReconnect?"Reconnect Gmail from your account menu to resume imports.":syncingNow?"Synchronizing financial emails…":!connected?"Connect Gmail from your account menu to import payments. Gmail access is optional.":!snapshot?"Loading your personal payment history…":notice?.includes("first sync")&&snapshot.lastSync?"Gmail connected. Your payment history is up to date.":notice);
   const banner=message&&<p className="personal-status" role={error||loadError?"alert":"status"}>{message}</p>;
-  const activity=<details className="personal-activity" open>
+  const watchlist=<SubscriptionWatchlist registrations={data?.subscriptionRegistrations??[]} asOf={dataset.asOf}/>;
+  const activity=<>{watchlist}<details className="personal-activity" open>
     <summary>Recent imported payment evidence <small>{data?.counts.review??0} need duplicate review</small></summary>
     <p>Includes one-off events and notices that may not be recurring payments.</p>
     {data?.recentEvents.length?<div className="account-table">{data.recentEvents.map(event=><div key={event.noticeId}><span><strong>{event.brand}</strong><small>{event.channel.toUpperCase()} · {event.eventType.replaceAll("_"," ")} · {event.sentOn}</small></span><strong>{event.amount===undefined?"—":formatINR(event.amount)}</strong></div>)}</div>:<p>No imported financial messages yet.</p>}
-  </details>;
+  </details></>;
 
-  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity}}/>;
+  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity,subscriptionAlerts:watchlist}}/>;
 }

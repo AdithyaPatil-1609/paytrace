@@ -30,7 +30,7 @@ type DashboardProps = {
   source: SourceInfo;
   commitments?: Commitment[];
   graph?: GraphFacts;
-  account?: { name: string; controls: ReactNode; notice?: ReactNode; activity?: ReactNode };
+  account?: { name: string; controls: ReactNode; notice?: ReactNode; activity?: ReactNode; subscriptionAlerts?: ReactNode };
 };
 type Screen = "graph" | "annual" | "list" | "issues" | "paths";
 
@@ -148,7 +148,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
             />{account?.activity}</>
           )}
           {screen === "issues" && (
-            <IssuesScreen
+            <><IssuesScreen
               allItems={active}
               kept={kept}
               onOpen={openPayment}
@@ -160,7 +160,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
                 setCancelTarget(id);
                 setScreen("paths");
               }}
-            />
+            />{account?.subscriptionAlerts}</>
           )}
           {screen === "paths" && (
             <CancelPathsScreen

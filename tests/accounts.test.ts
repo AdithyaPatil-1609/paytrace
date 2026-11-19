@@ -11,6 +11,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { AccountDashboard } from "../components/account-dashboard";
 import { Dashboard } from "../components/dashboard";
 import { AccountLogin } from "../components/account-login";
+import { SubscriptionWatchlist, renewalNotice } from "../components/subscription-watchlist";
+import { parseFinancialEmail } from "../lib/ingestion/email";
 import { loadDemo } from "../lib/data/load-demo";
 import { detectCommitments } from "../lib/payments/engine";
 import type { Dataset } from "../lib/payments/types";
@@ -59,6 +61,26 @@ test("mail bodies are extracted as bounded text and never rendered",()=>{
   const text=emailText(part("text/html","<script>evil()</script><p>Amount: &#8377;199</p>"));
   assert.equal(text,"Amount: ₹199");
   assert.equal(emailText(part("text/plain","x".repeat(21000))).length,20000);
+});
+
+test("HTML subscription table is imported without a subject, preserving the real total",()=>{
+  const html="<p>Order number: sub_test456</p><p>Order date: Oct 22, 2026</p><table><tr><th>Plan</th><th>Amount</th></tr><tr><td>ChatGPT Plus Subscription</td><td>&#8377;1694.07</td></tr><tr><td>Discount:</td><td>-&#8377;1694.07</td></tr><tr><td>Total:</td><td>&#8377;0.00</td></tr></table>";
+  const body=emailText({mimeType:"text/html",body:{data:Buffer.from(html).toString("base64url")}});
+  const event=parseFinancialEmail({id:"html123",from:"noreply@tm.example.com",subject:"",date:"2026-10-22",body},[".com"]);
+  assert.equal(event?.kind,"subscription_registered");
+  assert.equal(event?.planPricePaise,169407);
+  assert.equal(event?.amountPaise,0);
+});
+
+test("subscription watchlist shows actual zero cost and never invents a renewal date",()=>{
+  const html=renderToStaticMarkup(createElement(SubscriptionWatchlist,{asOf:"2026-11-19",registrations:[{noticeId:"test",sentOn:"2026-10-22",channel:"email",sender:"email",eventType:"subscription_registered",brand:"CHATGPT PLUS",amount:0,planPrice:1694.07,text:"Registration"}]}));
+  assert.ok(html.includes("Subscription watchlist"));
+  assert.ok(html.includes("₹1,694.07"));
+  assert.ok(html.includes("₹0.00 paid"));
+  assert.ok(html.includes("Next renewal not confirmed"));
+  assert.match(renewalNotice("2026-11-22","2026-11-19"),/Upcoming renewal.*in 3 days/);
+  assert.match(renewalNotice("2026-10-22","2026-11-19"),/has passed/);
+  assert.doesNotMatch(renewalNotice("2027-01-22","2026-11-19"),/Upcoming/);
 });
 
 test("signed-in dashboard retains all original tabs without demo payments",()=>{

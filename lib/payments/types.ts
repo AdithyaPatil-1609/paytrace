@@ -98,6 +98,8 @@ export type NotificationRow = {
   brand: string;
   relatedTxnId?: string;
   amount?: number;
+  planPrice?: number;
+  renewalDate?: string;
   text: string;
 };
 

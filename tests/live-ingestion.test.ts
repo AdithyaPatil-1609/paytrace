@@ -58,6 +58,26 @@ test("subjectless .com and .in receipts import, but orders and OTPs do not",()=>
   assert.equal(parseFinancialEmail({...mail,from:"receipt@tm.example.com.evil.org"},rules),null);
   assert.equal(parseFinancialEmail({...mail,body:mail.body.replace("₹199.00","USD 199.00")},rules),null);
 });
+test("fully discounted subscription orders are zero-cost registrations, not debits",()=>{
+  const mail={id:"submail1",from:"Billing <noreply@tm.example.com>",subject:"",body:"Manage your subscription\nOrder number: sub_example123\nOrder date: Oct 22, 2026\nPlan Amount\nChatGPT Plus Subscription ₹1694.07\nTax: ₹0.00\nDiscount: -₹1694.07\nTotal: ₹0.00",date:"2026-10-22"};
+  const result=parseFinancialEmail(mail,[".com",".in"]);
+  assert.equal(result?.kind,"subscription_registered");
+  assert.equal(result?.merchant,"CHATGPT PLUS");
+  assert.equal(result?.amountPaise,0);
+  assert.equal(result?.planPricePaise,169407);
+  assert.equal(result?.renewalDate,undefined);
+  assert.match(result?.reference??"",/^[A-F0-9]{64}$/);
+  assert.equal(parseFinancialEmail({...mail,body:mail.body+"\nNext billing date: Nov 22, 2026"},[".com"])?.renewalDate,"2026-11-22");
+  assert.equal(parseFinancialEmail({...mail,body:mail.body+"\nAmount paid: ₹99"},[".com"]),null);
+  assert.equal(parseFinancialEmail({...mail,body:mail.body.replace("Total: ₹0.00","Total: ₹99.00")},[".com"]),null);
+  assert.equal(parseFinancialEmail({...mail,body:"Subscribe now!\nPlan: Example\nSubscription price: INR 100\nTotal: INR 0"},[".com"]),null);
+  assert.equal(parseFinancialEmail({...mail,subject:"Payment receipt",body:"Merchant: Example\nAmount: INR 100\nTotal: INR 0"},[".com"]),null);
+  assert.equal(parseFinancialEmail({...mail,body:mail.body+"\nSubscription cancelled"},[".com"]),null);
+  assert.throws(()=>validateEvent({...sms,amountPaise:0}));
+  assert.throws(()=>validateEvent({...result,amountPaise:169407}));
+  assert.throws(()=>validateEvent({...result,source:"sms"}));
+  assert.throws(()=>validateEvent({...sms,planPricePaise:100}));
+});
 test("live summary is never public",async()=>{
   process.env.PAYTRACE_READ_CODE="secret-test-code";
   assert.equal((await GET(new Request("http://localhost/api/live/summary"))).status,401);
