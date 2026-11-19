@@ -68,7 +68,7 @@
 .personal-menu-panel .account-eyebrow { font-size: 11px; letter-spacing: 1.4px; color: var(--ink-faint); margin: 0 0 8px; }
 .personal-menu-panel .account-note, .personal-email { font-size: 13px; color: var(--ink-soft); line-height: 1.5; overflow-wrap: anywhere; }
 .personal-menu-panel hr { border: 0; border-top: 1px solid var(--rule); margin: 14px 0; }
-.personal-status { margin: 0; padding: 8px clamp(16px, 5vw, 76px); background: var(--marigold-skin); border-bottom: 1px solid var(--rule-firm); font-size: 13px; color: var(--ink-soft); }
+.personal-status { margin: 0; min-height: 38px; padding: 8px clamp(16px, 5vw, 76px); background: var(--marigold-skin); border-bottom: 1px solid var(--rule-firm); font-size: 13px; color: var(--ink-soft); }
 .personal-activity { margin-top: 26px; border: 1px solid var(--rule-firm); border-radius: var(--r-sm); padding: 18px; background: var(--paper-lift); }
 .personal-activity summary { cursor: pointer; font-weight: 600; }
 .personal-activity summary small { display: inline-block; margin-left: 12px; color: var(--ink-faint); font-weight: 400; }

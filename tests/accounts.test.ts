@@ -2,8 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
 import { accountConfig, GMAIL_SCOPE, open, profileFor, readFlow, seal, sameOrigin, hash } from "../lib/accounts/security";
-import { authorizationUrl, createFlow } from "../lib/accounts/google";
-import { emailText } from "../lib/accounts/sync";
+import { authorizationUrl, createFlow, GoogleTokenError, googleAuthorizationCode } from "../lib/accounts/google";
+import { emailText, syncFailureCode } from "../lib/accounts/sync";
+import { AccountError, accountErrorMessage } from "../lib/accounts/errors";
+import { GET as completeAuth } from "../app/api/auth/google/callback/route";
+import { POST as syncGmail } from "../app/api/account/gmail/sync/route";
 import { GET as getSummary } from "../app/api/account/summary/route";
 import { POST as startAuth } from "../app/api/auth/google/start/route";
 import { createElement } from "react";
@@ -53,6 +56,41 @@ test("account endpoints reject anonymous reads and cross-origin authorization",a
   assert.equal(sameOrigin(new Request("http://localhost:3000",{headers:{origin:"https://other.example"}})),false);
   const response=await startAuth(new NextRequest("http://localhost:3000/api/auth/google/start",{method:"POST",headers:{origin:"https://other.example","content-type":"application/x-www-form-urlencoded"},body:"mode=login"}));
   assert.equal(response.status,403);
+});
+
+test("OAuth callback reports interrupted and denied consent without exposing provider details",async()=>{
+  const expired=await completeAuth(new NextRequest("http://localhost:3000/api/auth/google/callback?state=invalid"));
+  assert.match(expired.headers.get("location")??"",/notice=oauth-expired$/);
+  const flow=createFlow("login");
+  const cookie=seal(JSON.stringify(flow),"oauth-flow");
+  const denied=await completeAuth(new NextRequest(`http://localhost:3000/api/auth/google/callback?state=${flow.state}&error=access_denied`,{headers:{cookie:`paytrace_oauth_flow=${cookie}`}}));
+  assert.match(denied.headers.get("location")??"",/notice=declined$/);
+  assert.equal(googleAuthorizationCode(new GoogleTokenError(400,"invalid_grant")),"oauth-expired");
+  assert.equal(googleAuthorizationCode(new GoogleTokenError(401,"invalid_client")),"oauth-config");
+  assert.equal(googleAuthorizationCode(new AccountError("permission-required")),"permission-required");
+});
+
+test("Gmail sync diagnostics distinguish permissions, API, quota, query and storage errors",async()=>{
+  assert.equal(syncFailureCode(new GoogleTokenError(400,"invalid_grant"),"google"),"gmail-reconnect");
+  assert.equal(syncFailureCode(new GoogleTokenError(403,"insufficientPermissions"),"google"),"gmail-reconnect");
+  assert.equal(syncFailureCode(new GoogleTokenError(403,"SERVICE_DISABLED"),"google"),"gmail-api-disabled");
+  assert.equal(syncFailureCode(new GoogleTokenError(403,"userRateLimitExceeded"),"google"),"gmail-rate-limit");
+  assert.equal(syncFailureCode(new GoogleTokenError(400,"badRequest"),"google"),"gmail-query");
+  assert.equal(syncFailureCode(new Error("private database error"),"neo4j"),"neo4j-unavailable");
+  assert.equal(syncFailureCode(new Error("private network error"),"google"),"gmail-unavailable");
+  assert.equal(accountErrorMessage("untrusted provider message"),undefined);
+  assert.equal(accountErrorMessage("constructor"),undefined);
+  const response=await syncGmail(new NextRequest("http://localhost:3000/api/account/gmail/sync",{method:"POST",headers:{origin:"http://127.0.0.1:3000"}}));
+  assert.equal(response.status,403);
+  assert.equal((await response.json()).code,"origin-mismatch");
+});
+
+test("signed-in dashboard retains a specific Gmail authorization error and stable status strip",()=>{
+  const html=renderToStaticMarkup(createElement(AccountDashboard,{name:"User",email:"user@example.com",linked:false,lastSync:null,asOf:"2026-11-19",notice:accountErrorMessage("permission-required"),noticeIsError:true}));
+  assert.ok(html.includes("Google did not grant Gmail read access"));
+  assert.ok(html.includes('role="alert"'));
+  const connected=renderToStaticMarkup(createElement(AccountDashboard,{name:"User",email:"user@example.com",linked:true,lastSync:"2026-11-19",asOf:"2026-11-19"}));
+  assert.ok(connected.includes('class="personal-status"'));
 });
 
 test("mail bodies are extracted as bounded text and never rendered",()=>{

@@ -1,8 +1,9 @@
-import { claimSync, finishSync } from "@/db/neo4j/accounts";
+import { claimSync, finishSync, renewSyncLease } from "@/db/neo4j/accounts";
 import { ingestLiveEvent } from "@/db/neo4j/live";
 import { parseFinancialEmail } from "@/lib/ingestion/email";
 import { gmailPaymentQuery, parseAllowedDomains } from "@/lib/ingestion/gmail-filter";
 import { exchangeToken, GoogleTokenError } from "./google";
+import { AccountError, type AccountErrorCode } from "./errors";
 
 type Part = { mimeType?:string; headers?:{name:string;value:string}[]; body?:{data?:string}; parts?:Part[] };
 export function emailText(part: Part): string {
@@ -13,30 +14,67 @@ export function emailText(part: Part): string {
   return find(part,"text/html").join("\n").replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi,"").replace(/<\/?(?:br|p|div|tr|li)\b[^>]*>/gi,"\n").replace(/<\/?td\b[^>]*>/gi," ").replace(/<[^>]*>/g,"").replace(/&(?:nbsp|#160);/gi," ").replace(/&(?:#8377|#x20b9);/gi,"₹").replace(/&amp;/gi,"&").trim().slice(0,20000);
 }
 
+export function syncFailureCode(error: unknown, stage: "google"|"neo4j"): AccountErrorCode {
+  if (error instanceof AccountError) return error.code;
+  if (error instanceof GoogleTokenError) {
+    if (["invalid_client","unauthorized_client","redirect_uri_mismatch"].includes(error.reason)) return "oauth-config";
+    if (["invalid_grant","insufficientPermissions","insufficient_scope","ACCESS_TOKEN_SCOPE_INSUFFICIENT"].includes(error.reason) || error.status===401) return "gmail-reconnect";
+    if (["rateLimitExceeded","userRateLimitExceeded","quotaExceeded","RESOURCE_EXHAUSTED"].includes(error.reason) || error.status===429) return "gmail-rate-limit";
+    if (error.status===403) return "gmail-api-disabled";
+    if (error.status===400) return "gmail-query";
+    return "gmail-unavailable";
+  }
+  return stage==="neo4j"?"neo4j-unavailable":"gmail-unavailable";
+}
+
+async function gmailGet(access:string,path:string) {
+  for (let attempt=0;;attempt++) {
+    const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/${path}`,{headers:{Authorization:`Bearer ${access}`},signal:AbortSignal.timeout(15000)});
+    if (r.ok) return await r.json();
+    const body=await r.json().catch(()=>({}));
+    const reason=body?.error?.details?.find?.((d:{reason?:unknown})=>typeof d.reason==="string")?.reason ?? body?.error?.errors?.[0]?.reason ?? body?.error?.status ?? "gmail_error";
+    const error=new GoogleTokenError(r.status,typeof reason==="string"?reason:"gmail_error");
+    if (attempt<2 && (syncFailureCode(error,"google")==="gmail-rate-limit" || r.status>=500)) {
+      await new Promise(resolve=>setTimeout(resolve,500*2**attempt));
+      continue;
+    }
+    throw error;
+  }
+}
+
 export async function syncAccount(sub: string) {
-  const domains=parseAllowedDomains(process.env.GMAIL_ALLOWED_DOMAINS);
-  const grant=await claimSync(sub);
+  let domains:string[];
+  try { domains=parseAllowedDomains(process.env.GMAIL_ALLOWED_DOMAINS); }
+  catch { throw new AccountError("domain-config"); }
+  let grant;
+  try { grant=await claimSync(sub); }
+  catch(error) { throw new AccountError(syncFailureCode(error,"neo4j")); }
   if (!grant) return {status:"busy-or-disconnected",accepted:0,skipped:0};
   let state:"ready"|"error"|"reauthorize"="error";
+  let stage:"google"|"neo4j"="google";
+  let errorCode:AccountErrorCode|undefined;
   try {
     const access=(await exchangeToken({grant_type:"refresh_token",refresh_token:grant.refreshToken})).access_token;
     if (!access) throw new Error("Missing access token");
     const after=grant.lastSync?`after:${Math.floor((Date.parse(grant.lastSync)-2*86400000)/1000)}`:"newer_than:90d";
     const query=gmailPaymentQuery(after,domains,process.env.GMAIL_ACCOUNT_QUERY);
-    async function get(path:string) {
-      const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/${path}`,{headers:{Authorization:`Bearer ${access}`},signal:AbortSignal.timeout(15000)});
-      if (!r.ok) throw new GoogleTokenError(r.status,r.status===401?"invalid_grant":"gmail_error");
-      return await r.json();
-    }
     let accepted=0,skipped=0,page:string|undefined;
     do {
+      stage="neo4j"; await renewSyncLease(grant.sub,grant.lease); stage="google";
       const params=new URLSearchParams({q:query,maxResults:"100",...(page?{pageToken:page}:{})});
-      const list=await get(`messages?${params}`) as {messages?:{id:string}[];nextPageToken?:string};
+      const list=await gmailGet(access,`messages?${params}`) as {messages?:{id:string}[];nextPageToken?:string};
       for (const {id} of list.messages??[]) {
-        const mail=await get(`messages/${encodeURIComponent(id)}?format=full`) as {payload:Part;internalDate:string};
-        const header=(name:string)=>mail.payload.headers?.find(h=>h.name.toLowerCase()===name)?.value??"";
-        const event=parseFinancialEmail({id,from:header("from"),subject:header("subject"),body:emailText(mail.payload),date:new Date(Number(mail.internalDate)).toISOString().slice(0,10)},domains);
+        stage="google";
+        let mail:{payload?:Part;internalDate?:string};
+        try { mail=await gmailGet(access,`messages/${encodeURIComponent(id)}?format=full`); }
+        catch(error) { if(error instanceof GoogleTokenError && error.status===404){skipped++;continue;} throw error; }
+        const timestamp=new Date(Number(mail.internalDate));
+        if(!mail.payload || !mail.internalDate || !Number.isFinite(timestamp.valueOf())){skipped++;continue;}
+        const payload=mail.payload;
+        const header=(name:string)=>payload.headers?.find(h=>h.name.toLowerCase()===name)?.value??"";
+        const event=parseFinancialEmail({id,from:header("from"),subject:header("subject"),body:emailText(payload),date:timestamp.toISOString().slice(0,10)},domains);
         if (!event) { skipped++; continue; }
+        stage="neo4j";
         const result=await ingestLiveEvent(grant.profile,event,{sub:grant.sub,grantId:grant.grantId,lease:grant.lease});
         if (result.status!=="duplicate") accepted++;
       }
@@ -45,7 +83,11 @@ export async function syncAccount(sub: string) {
     state="ready";
     return {status:"ready",accepted,skipped};
   } catch (error) {
-    if (error instanceof GoogleTokenError && error.reason==="invalid_grant") state="reauthorize";
-    throw new Error(state==="reauthorize"?"Reconnect Gmail to continue":"Sync failed; retry later");
-  } finally { await finishSync(sub,grant.lease,state); }
+    errorCode=syncFailureCode(error,stage);
+    if (errorCode==="gmail-reconnect") state="reauthorize";
+    throw new AccountError(errorCode);
+  } finally {
+    try { await finishSync(sub,grant.lease,state,errorCode); }
+    catch { if (!errorCode) throw new AccountError("neo4j-unavailable"); }
+  }
 }

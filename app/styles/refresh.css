@@ -143,6 +143,11 @@ body {
   max-width: none;
 }
 
+/* Until the layout effect measures the header, sticky panels stay in their
+   natural grid position, rather than jumping down to an oversized fallback. */
+.paytrace-shell { --chrome-fallback: 64px; }
+.paytrace-shell.personal-shell { --chrome-fallback: 102px; }
+
 .side-nav {
   margin: 0;
   padding: 28px 14px 22px;
@@ -153,8 +158,8 @@ body {
   box-shadow: 14px 0 34px -32px var(--brand-shadow);
   align-self: start;
   position: sticky;
-  top: var(--chrome-h, 142px);
-  height: calc(100vh - var(--chrome-h, 142px));
+  top: var(--chrome-h, 0px);
+  height: calc(100vh - var(--chrome-h, var(--chrome-fallback)));
   overflow-y: auto;
 }
 

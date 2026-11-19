@@ -548,10 +548,10 @@ body {
 @media (min-width: 1200px) {
   .ledger-panel {
     position: sticky;
-    top: var(--chrome-h, 66px);
+    top: var(--chrome-h, 0px);
     display: flex;
     flex-direction: column;
-    height: calc(100vh - var(--chrome-h, 66px));
+    height: calc(100vh - var(--chrome-h, var(--chrome-fallback)));
     border-left: 1px solid var(--rule-firm);
     background: var(--paper-lift);
   }

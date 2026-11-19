@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { accountForSession, createSession, endSession, storeGmailGrant } from "@/db/neo4j/accounts";
-import { identify } from "@/lib/accounts/google";
+import { identify, googleAuthorizationCode } from "@/lib/accounts/google";
 import { accountConfig, cookieOptions, FLOW, hash, readFlow, SESSION, SESSION_SECONDS } from "@/lib/accounts/security";
 
 export async function GET(request: NextRequest) {
@@ -12,15 +12,20 @@ export async function GET(request: NextRequest) {
     if (session) response.cookies.set(SESSION,session,cookieOptions(SESSION_SECONDS));
     response.headers.set("Cache-Control","no-store"); return response;
   }
+  let flow;
+  try { flow=readFlow(request.cookies.get(FLOW)?.value??"",request.nextUrl.searchParams.get("state")??""); }
+  catch { return finish("oauth-expired"); }
   try {
-    const flow=readFlow(request.cookies.get(FLOW)?.value??"",request.nextUrl.searchParams.get("state")??"");
     const raw=request.cookies.get(SESSION)?.value;
     if (flow.mode==="link") {
       if (!raw || hash(raw)!==flow.sessionHash || (await accountForSession(raw))?.sub!==flow.sub) return finish("wrong-account");
     }
     const code=request.nextUrl.searchParams.get("code");
-    if (request.nextUrl.searchParams.has("error") || !code) return finish("declined");
-    const user=await identify(flow,code);
+    const providerError=request.nextUrl.searchParams.get("error");
+    if (providerError) return finish(providerError==="access_denied"?"declined":providerError==="redirect_uri_mismatch"?"oauth-config":"google-denied");
+    if (!code) return finish("oauth-expired");
+    let user;
+    try { user=await identify(flow,code); } catch(error) { return finish(googleAuthorizationCode(error)); }
     if (flow.mode==="login") {
       const session=await createSession({sub:user.sub,email:user.email,name:user.name});
       if (raw) await endSession(raw);
@@ -31,5 +36,5 @@ export async function GET(request: NextRequest) {
     if ((await accountForSession(raw))?.sub!==user.sub) return finish("wrong-account");
     await storeGmailGrant(user.sub,user.refreshToken);
     return finish("linked");
-  } catch { return finish("authorization-error"); }
+  } catch { return finish("neo4j-unavailable"); }
 }

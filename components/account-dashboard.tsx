@@ -9,13 +9,14 @@ import type { SourceInfo } from "@/db/neo4j/dataset";
 import type { Dataset } from "@/lib/payments/types";
 import { formatINR } from "@/lib/presentation/format";
 import { SubscriptionWatchlist } from "@/components/subscription-watchlist";
+import { accountErrorMessage } from "@/lib/accounts/errors";
 
 type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
-  linked: boolean; lastSync: string | null; syncStatus: string | null;
+  linked: boolean; lastSync: string | null; syncStatus: string | null; syncError?:string|null;
 };
 
-export function AccountDashboard({name,email,linked,lastSync,asOf,notice}: {
-  name: string; email: string; linked: boolean; lastSync: string | null; asOf: string; notice?: string;
+export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeIsError}: {
+  name: string; email: string; linked: boolean; lastSync: string | null; asOf: string; notice?: string; noticeIsError?:boolean;
 }) {
   const [snapshot,setSnapshot]=useState<Snapshot|null>(null);
   const [error,setError]=useState("");
@@ -35,7 +36,10 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice}: {
     try {
       const response=await fetch("/api/account/gmail/sync",{method:"POST"});
       if(response.status===401){window.location.replace("/account?notice=session-expired");return;}
-      if(!response.ok)throw Error();
+      if(!response.ok){
+        const result=await response.json().catch(()=>({}));
+        setError(accountErrorMessage(result.code)??"Sync could not finish. Check Gmail connection and retry.");
+      }
     } catch {setError("Sync could not finish. Check Gmail connection and retry.");}
     finally {setSyncing(false);await refresh();}
   },[refresh]);
@@ -70,8 +74,9 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice}: {
       <Link className="account-demo-link" href="/?demo=1">Explore synthetic demo</Link>
     </div>
   </details>;
-  const message=loadError||error||(needsReconnect?"Reconnect Gmail from your account menu to resume imports.":syncingNow?"Synchronizing financial emails…":!connected?"Connect Gmail from your account menu to import payments. Gmail access is optional.":!snapshot?"Loading your personal payment history…":notice?.includes("first sync")&&snapshot.lastSync?"Gmail connected. Your payment history is up to date.":notice);
-  const banner=message&&<p className="personal-status" role={error||loadError?"alert":"status"}>{message}</p>;
+  const persistedError=accountErrorMessage(snapshot?.syncError);
+  const message=loadError||error||(syncingNow?"Synchronizing financial emails…":persistedError|| (needsReconnect?"Reconnect Gmail from your account menu to resume imports.":!connected?noticeIsError&&notice?notice:"Connect Gmail from your account menu to import payments. Gmail access is optional.":!snapshot?"Loading your personal payment history…":notice?.includes("first sync")&&snapshot.lastSync?"Gmail connected. Your payment history is up to date.":noticeIsError&&notice?notice:"Gmail connected · read-only. Use your account menu to sync."));
+  const banner=<p className="personal-status" role={error||loadError||persistedError||noticeIsError?"alert":"status"}>{message}</p>;
   const watchlist=<SubscriptionWatchlist registrations={data?.subscriptionRegistrations??[]} asOf={dataset.asOf}/>;
   const activity=<>{watchlist}<details className="personal-activity" open>
     <summary>Recent imported payment evidence <small>{data?.counts.review??0} need duplicate review</small></summary>

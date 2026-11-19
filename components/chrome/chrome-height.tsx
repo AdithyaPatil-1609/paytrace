@@ -5,18 +5,19 @@
  */
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 
 export function ChromeHeight() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const chrome = document.querySelector<HTMLElement>(".product-chrome");
-    if (!chrome) return;
+    const shell = chrome?.closest<HTMLElement>(".paytrace-shell");
+    if (!chrome || !shell) return;
     const publish = () =>
-      document.documentElement.style.setProperty("--chrome-h", `${Math.round(chrome.getBoundingClientRect().height)}px`);
+      shell.style.setProperty("--chrome-h", `${chrome.getBoundingClientRect().height}px`);
     publish();
     const observer = new ResizeObserver(publish);
     observer.observe(chrome);
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); shell.style.removeProperty("--chrome-h"); };
   }, []);
 
   return null;
