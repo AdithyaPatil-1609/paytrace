@@ -189,7 +189,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
         </section>
       </div>
 
-      <AssistantWidget scope={account ? "account" : "demo"} onOpen={openPayment} />
+      <AssistantWidget scope={account ? "account" : source.kind === "fixture" ? "demo-static" : "demo"} onOpen={openPayment} />
 
       {openItem && (
         <DetailPanel

@@ -71,7 +71,7 @@ export function AllPaymentsScreen({
   // Start on the first price rise, so the panel opens on something worth seeing.
   const firstPick = items.find((item) => priceRise(item) !== undefined) ?? items[0];
   const [selectedId, setSelectedId] = useState<string | null>(firstPick?.id ?? null);
-  const selected = items.find((item) => item.id === selectedId) ?? null;
+  const selected = items.find((item) => item.id === selectedId) ?? firstPick ?? null;
 
   function pick(id: string) {
     if (window.matchMedia(DOCKED).matches) setSelectedId(id);
@@ -119,8 +119,8 @@ export function AllPaymentsScreen({
             return (
               <button
                 type="button"
-                className={["ledger-row", item.id === selectedId ? "is-selected" : ""].join(" ").trim()}
-                aria-pressed={item.id === selectedId}
+                className={["ledger-row", item.id === selected?.id ? "is-selected" : ""].join(" ").trim()}
+                aria-pressed={item.id === selected?.id}
                 data-row={item.id}
                 key={item.id}
                 onClick={() => pick(item.id)}

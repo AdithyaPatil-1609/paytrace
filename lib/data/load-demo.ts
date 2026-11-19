@@ -21,8 +21,8 @@ function fixtureFallback(note: string): SourceInfo {
   return { ...fixtureSource, note };
 }
 
-export async function loadDemo(): Promise<LoadedDataset> {
-  if (hasNeo4jConfig()) {
+export async function loadDemo(staticOnly = false): Promise<LoadedDataset> {
+  if (!staticOnly && hasNeo4jConfig()) {
     try {
       const live = await loadDatasetFromNeo4j();
       if (live.dataset.statement.length > 0) return live;
@@ -50,14 +50,14 @@ export async function loadDemo(): Promise<LoadedDataset> {
     source: {
       ...fixtureSource,
       counts: { ...fixtureSource.counts, payments: dataset.statement.length },
-      note: "Payments and insights from saved CSV statements."
+      note: staticOnly ? "Priya Desai’s synthetic sample data. No account or email access." : "Payments and insights from saved CSV statements."
     }
   };
 }
 
 
 /** The commitments the demo dashboard shows, and the day they are as of. */
-export async function demoCommitments() {
-  const { dataset, commitments } = await loadDemo();
+export async function demoCommitments(staticOnly = false) {
+  const { dataset, commitments } = await loadDemo(staticOnly);
   return { items: commitments ?? detectCommitments(dataset), asOf: dataset.asOf };
 }

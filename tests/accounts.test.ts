@@ -10,6 +10,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AccountDashboard } from "../components/account-dashboard";
 import { Dashboard } from "../components/dashboard";
+import { AccountLogin } from "../components/account-login";
+import { loadDemo } from "../lib/data/load-demo";
 import { detectCommitments } from "../lib/payments/engine";
 import type { Dataset } from "../lib/payments/types";
 
@@ -68,6 +70,19 @@ test("signed-in dashboard retains all original tabs without demo payments",()=>{
   assert.ok(!html.includes("Priya"));
   assert.ok(!html.includes("Spotify"));
   assert.ok(!html.includes("Simulate a new Autopay"));
+});
+
+test("login offers a no-account static demo even when Google sign-in is unavailable",async()=>{
+  const html=renderToStaticMarkup(createElement(AccountLogin,{configured:true}));
+  assert.ok(html.includes("Continue with Google"));
+  assert.ok(html.includes("View static demo (Priya)"));
+  assert.ok(html.includes('href="/?demo=1"'));
+  const offline=renderToStaticMarkup(createElement(AccountLogin,{configured:false}));
+  assert.ok(offline.includes("View static demo (Priya)"));
+  const {dataset,source}=await loadDemo(true);
+  assert.equal(source.kind,"fixture");
+  assert.ok(dataset.statement.length>0);
+  assert.ok(dataset.statement.every(row=>row.persona==="priya"));
 });
 
 test("original all-payments screen renders personal recurring data, not demo records",()=>{

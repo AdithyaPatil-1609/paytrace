@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       const { summary } = await readLiveDashboard(user.profile);
       data = { items: summary.commitments, asOf: summary.asOf };
     } else {
-      data = await demoCommitments();
+      data = await demoCommitments(body.scope === "demo-static");
     }
   } catch {
     return Response.json({ error: "Payment data is unavailable right now." }, { status: 503, headers });

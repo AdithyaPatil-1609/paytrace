@@ -1,0 +1,21 @@
+.login-ledger .account-header { min-height: 72px; background: var(--paper-lift); }
+.login-ledger .account-header .wordmark { color: var(--marigold); }
+.login-ledger .account-welcome { max-width: 1160px; padding: clamp(38px,6vw,82px) 28px; gap: clamp(28px,5vw,76px); align-items: start; }
+.login-ledger .login-intro { padding-top: 26px; }
+.login-ledger .login-intro h1 { font-size: clamp(40px,5vw,66px); line-height: 1.04; color: var(--ink); margin: 18px 0; }
+.login-ledger .login-intro > p:not(.account-eyebrow) { font-size: 17px; line-height: 1.6; max-width: 440px; }
+.login-proof { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 18px 14px; margin-top: 36px; align-items: start; }
+.login-proof > span { font-family: var(--mono); font-size: 12px; padding: 5px 0; color: var(--marigold); border-bottom: 1px solid var(--rule-firm); }
+.login-proof strong { color: var(--ink); font-size: 15px; }
+.login-proof p { font-size: 13px; line-height: 1.5; }
+.login-options > h2 { font-size: 32px; margin: 8px 0 18px; }
+.login-ledger .login-choice { border-radius: 12px; margin-bottom: 12px; box-shadow: none; padding: 23px; }
+.login-choice h3 { font: 600 23px/1.2 var(--serif); color: var(--ink); margin: 10px 0 8px; }
+.login-choice > p:not(.account-eyebrow) { font-size: 14px; line-height: 1.5; }
+.login-ledger .login-choice .account-button { font-size: 14px; min-height: 46px; margin-top: 18px; }
+.login-ledger .google-button span { color: var(--paper-lift); }
+.login-ledger .demo-choice { border-color: var(--rule-firm); background: var(--paper-lift); }
+.login-ledger .demo-button { display: flex; justify-content: space-between; align-items: center; text-decoration: none; border-color: var(--marigold); color: var(--marigold); background: transparent; }
+.login-ledger .demo-button:hover { background: var(--marigold-skin); }
+.login-ledger .login-footnote { font-size: 12px; text-align: center; margin-top: 16px; }
+@media (max-width:850px) { .login-ledger .account-welcome { padding: 30px 20px; gap: 30px; } .login-ledger .login-intro { padding-top: 0; } .login-proof { margin-top: 24px; } }
