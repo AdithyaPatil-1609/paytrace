@@ -32,10 +32,10 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       setSnapshot(await response.json());setLoadError("");
     } catch {setLoadError("Your records could not be loaded. Check the Neo4j connection.");}
   },[]);
-  const sync=useCallback(async(history=false)=>{
+  const sync=useCallback(async(history=false,days:90|365=365)=>{
     setSyncing(true);setError("");setSyncResult("");
     try {
-      const response=await fetch(`/api/account/gmail/sync${history?"?history=1":""}`,{method:"POST"});
+      const response=await fetch(`/api/account/gmail/sync${history?`?history=1&days=${days}`:""}`,{method:"POST"});
       if(response.status===401){window.location.replace("/account?notice=session-expired");return;}
       if(!response.ok){
         const result=await response.json().catch(()=>({}));
@@ -72,7 +72,8 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       {!connected||needsReconnect?<form action="/api/auth/google/start" method="post"><input type="hidden" name="mode" value="link"/><button className="account-button primary" type="submit">{needsReconnect?"Reconnect Gmail":"Connect Gmail securely"}</button></form>:<>
         <p className="account-note">Last successful sync: {snapshot?.lastSync?new Date(snapshot.lastSync).toLocaleString():lastSync?new Date(lastSync).toLocaleString():"Waiting for first sync"}</p>
         <button className="account-button primary" disabled={syncingNow} onClick={()=>void sync()}>{syncingNow?"Synchronizing…":"Sync now"}</button>
-        <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true)}>Rescan last 12 months</button>
+        <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,90)}>Rescan last 90 days</button>
+        <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,365)}>Rescan last 12 months</button>
         {syncResult&&<p className="account-note" role="status">{syncResult}</p>}
       </>}
       {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}

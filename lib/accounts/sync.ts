@@ -62,14 +62,28 @@ export function parseGmailReceipt(input:{id:string;from:string;subject:string;da
 export function syncFailureCode(error: unknown, stage: "google"|"neo4j"): AccountErrorCode {
   if (error instanceof AccountError) return error.code;
   if (error instanceof GoogleTokenError) {
-    if (["invalid_client","unauthorized_client","redirect_uri_mismatch"].includes(error.reason)) return "oauth-config";
-    if (["invalid_grant","insufficientPermissions","insufficient_scope","ACCESS_TOKEN_SCOPE_INSUFFICIENT"].includes(error.reason) || error.status===401) return "gmail-reconnect";
-    if (["rateLimitExceeded","userRateLimitExceeded","quotaExceeded","RESOURCE_EXHAUSTED"].includes(error.reason) || error.status===429) return "gmail-rate-limit";
-    if (error.status===403) return "gmail-api-disabled";
+    const reason=error.reason.replace(/[^a-z0-9]/gi,"").toLowerCase();
+    if (["invalidclient","unauthorizedclient","redirecturimismatch"].includes(reason)) return "oauth-config";
+    if (["invalidgrant","insufficientpermissions","insufficientscope","accesstokenscopeinsufficient","autherror"].includes(reason) || error.status===401) return "gmail-reconnect";
+    if (["dailylimitexceeded","dailyquotaexceeded"].includes(reason))return "gmail-daily-quota";
+    if (["domainpolicy","orgpolicyviolation"].includes(reason))return "gmail-domain-policy";
+    if (["ratelimitexceeded","userratelimitexceeded","quotaexceeded","resourceexhausted","concurrentlimitexceeded"].includes(reason) || error.status===429) return "gmail-rate-limit";
+    if (["servicedisabled","accessnotconfigured","apidisabled","servicenotactivated"].includes(reason))return "gmail-api-disabled";
+    if (error.status===403) return "gmail-forbidden";
     if (error.status===400) return "gmail-query";
     return "gmail-unavailable";
   }
   return stage==="neo4j"?"neo4j-unavailable":"gmail-unavailable";
+}
+
+/** Prefer specific provider reasons over broad RPC status codes. No error bodies enter logs. */
+export function gmailResponseError(status:number,body:unknown) {
+  const error=(body as {error?:{details?:{reason?:unknown}[];errors?:{reason?:unknown}[];status?:unknown}}|null)?.error;
+  const reasons=[...(Array.isArray(error?.details)?error.details:[]),...(Array.isArray(error?.errors)?error.errors:[])].map(item=>item?.reason).filter((reason):reason is string=>typeof reason==="string");
+  // A quota's specific legacy reason (for example dailyLimitExceeded) is more useful than a generic quota detail.
+  const prioritized=["gmail-daily-quota","gmail-domain-policy","gmail-reconnect","gmail-api-disabled","gmail-rate-limit","oauth-config"];
+  for(const code of prioritized){const reason=reasons.find(value=>syncFailureCode(new GoogleTokenError(status,value),"google")===code);if(reason)return new GoogleTokenError(status,reason);}
+  return new GoogleTokenError(status,reasons[0]??(typeof error?.status==="string"?error.status:"gmail_error"));
 }
 
 async function gmailGet(access:string,path:string) {
@@ -77,17 +91,19 @@ async function gmailGet(access:string,path:string) {
     const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/${path}`,{headers:{Authorization:`Bearer ${access}`},signal:AbortSignal.timeout(15000)});
     if (r.ok) return await r.json();
     const body=await r.json().catch(()=>({}));
-    const reason=body?.error?.details?.find?.((d:{reason?:unknown})=>typeof d.reason==="string")?.reason ?? body?.error?.errors?.[0]?.reason ?? body?.error?.status ?? "gmail_error";
-    const error=new GoogleTokenError(r.status,typeof reason==="string"?reason:"gmail_error");
+    const error=gmailResponseError(r.status,body);
     if (attempt<2 && (syncFailureCode(error,"google")==="gmail-rate-limit" || r.status>=500)) {
-      await new Promise(resolve=>setTimeout(resolve,500*2**attempt));
+      const retryAfter=r.headers.get("retry-after");
+      const retryMs=retryAfter===null?0:/^\d+$/.test(retryAfter)?Number(retryAfter)*1000:Date.parse(retryAfter)-Date.now();
+      if(retryMs>30_000)throw error;
+      await new Promise(resolve=>setTimeout(resolve,Math.max(1000*2**attempt,Number.isFinite(retryMs)?retryMs:0)));
       continue;
     }
     throw error;
   }
 }
 
-export async function syncAccount(sub: string, history=false) {
+export async function syncAccount(sub: string, history=false,historyDays:90|365=365) {
   let domains:string[];
   try { domains=parseAllowedDomains(process.env.GMAIL_ALLOWED_DOMAINS); }
   catch { throw new AccountError("domain-config"); }
@@ -101,7 +117,7 @@ export async function syncAccount(sub: string, history=false) {
   try {
     const access=(await exchangeToken({grant_type:"refresh_token",refresh_token:grant.refreshToken})).access_token;
     if (!access) throw new Error("Missing access token");
-    const after=history?"newer_than:365d":grant.lastSync?`after:${Math.floor((Date.parse(grant.lastSync)-2*86400000)/1000)}`:"newer_than:90d";
+    const after=history?`newer_than:${historyDays}d`:grant.lastSync?`after:${Math.floor((Date.parse(grant.lastSync)-2*86400000)/1000)}`:"newer_than:90d";
     // Explicit history scans always use current broad discovery, even if an old custom query omitted memberships.
     const query=gmailPaymentQuery(after,domains,history?undefined:process.env.GMAIL_ACCOUNT_QUERY);
     let accepted=0,skipped=0,scanned=0,duplicates=0,registrations=0,renewals=0,candidates=0,subscriptionSkipped=0,senderSkipped=0,marketingSkipped=0,ignored=0,page:string|undefined;

@@ -12,7 +12,7 @@ export async function POST(request:NextRequest) {
     const user=await accountForSession(request.cookies.get(SESSION)?.value);
     if (!user) return Response.json({error:"Unauthorized"},{status:401,headers});
     if (!user.linked) return fail("gmail-disconnected",409);
-    return Response.json(await syncAccount(user.sub,request.nextUrl.searchParams.get("history")==="1"),{headers});
+    return Response.json(await syncAccount(user.sub,request.nextUrl.searchParams.get("history")==="1",request.nextUrl.searchParams.get("days")==="90"?90:365),{headers});
   } catch(error) {
     const code=error instanceof AccountError?error.code:"neo4j-unavailable";
     console.warn(`Gmail sync failed [${code}]`);
