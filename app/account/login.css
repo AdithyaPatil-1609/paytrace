@@ -32,3 +32,4 @@
 .privacy-wrap { max-width: 760px; margin: 0 auto; padding: clamp(28px,5vw,64px) 22px; }
 .privacy-section h2 { margin-top: 28px; }
 .privacy-section ul { margin: 10px 0; }
+.pairing-code { font-family: var(--mono); font-size: 18px; letter-spacing: 2px; color: var(--ink); }

@@ -76,3 +76,8 @@ export async function finishSync(sub: string, lease: string, status: "ready" | "
   const s = getNeo4jDriver().session({database:neo4jDatabase});
   try { await s.run(`MATCH (u:PaytraceUser {sub:$sub,syncLease:$lease}) SET u.syncStatus=$status,u.syncError=$error, u.lastSync=CASE WHEN $status='ready' THEN $now ELSE u.lastSync END REMOVE u.syncLease,u.syncLeaseUntil`,{sub,lease,status,error:errorCode??null,now:new Date().toISOString()}); } finally { await s.close(); }
 }
+/** Ends every session of this person, on every device (plan card S3, "sign out everywhere"). */
+export async function endAllSessions(sub: string) {
+  const s = getNeo4jDriver().session({database:neo4jDatabase});
+  try { await s.run("MATCH (:PaytraceUser {sub:$sub})-[:HAS_SESSION]->(sess:PaytraceSession) DETACH DELETE sess",{sub}); } finally { await s.close(); }
+}

@@ -29,7 +29,7 @@ const sections: { title: string; points: string[] }[] = [
   { title: "Your choices", points: [
     "Gmail and the phone app are optional. You can use Paytrace, or the demo, without them.",
     "Disconnect Gmail at any time from your account. We revoke our access at Google and stop reading.",
-    "You can sign out from every device, and ask us to delete all of your data."
+    "Sign out on every device, unpair your phones, or delete all of your data from your account menu. Deleting also revokes our Gmail access."
   ] },
   { title: "How we protect it", points: [
     "Encrypted connections (HTTPS) only, secure HttpOnly session cookies, and request limits on every address.",

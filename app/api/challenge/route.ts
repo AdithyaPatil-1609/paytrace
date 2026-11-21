@@ -2,12 +2,17 @@ import { hasNeo4jConfig } from "@/db/neo4j/client";
 import { challengeInNeo4j } from "@/db/neo4j/challenge";
 import { ChallengeInputError, challengeActions, type ChallengeAction } from "@/lib/scenarios/challenge";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
+import { forbidden, fromOurSite } from "@/lib/security/origin";
+import { readJsonBody } from "@/lib/security/body";
+import { BROWSER_BODY_LIMITS } from "@/lib/payments/rules";
 
 export async function POST(request: Request) {
   const hit = takeHit("challenge", clientKey(request), LIMITS.graph);
   if (!hit.ok) return tooMany(hit.retryAfter);
-  let body: unknown;
-  try { body = await request.json(); } catch { return Response.json({ error: "Send a valid challenge request." }, { status: 400 }); }
+  if (!fromOurSite(request)) return forbidden();
+  const read = await readJsonBody(request, BROWSER_BODY_LIMITS.challengeBytes);
+  if (!read.ok) return Response.json({ error: read.status === 413 ? "Request too large." : "Send a valid challenge request." }, { status: read.status });
+  const body = read.value;
   if (!body || typeof body !== "object") return Response.json({ error: "Invalid challenge request." }, { status: 400 });
   const input = body as Record<string, unknown>;
   if (typeof input.commitmentId !== "string" || input.commitmentId.length > 200 || !input.commitmentId ||

@@ -10,6 +10,7 @@ import type { Dataset } from "@/lib/payments/types";
 import { formatINR } from "@/lib/presentation/format";
 import { SubscriptionWatchlist } from "@/components/subscription-watchlist";
 import { accountErrorMessage } from "@/lib/accounts/errors";
+import { PhonePairing } from "@/components/phone-pairing";
 
 type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
   linked: boolean; lastSync: string | null; syncStatus: string | null; syncError?:string|null;
@@ -78,7 +79,12 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       </>}
       {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
       <hr/>
+      <PhonePairing/>
+      <hr/>
       <form action="/api/auth/logout" method="post"><button className="account-button" type="submit">Sign out</button></form>
+      <form action="/api/auth/logout" method="post"><input type="hidden" name="scope" value="all"/><button className="account-button" type="submit">Sign out on every device</button></form>
+      <form action="/api/account/delete" method="post" onSubmit={event=>{ if(window.prompt("This deletes all of your Paytrace data, unpairs your phones and revokes Gmail access. Type DELETE to confirm.")!=="DELETE") event.preventDefault(); }}><input type="hidden" name="confirm" value="DELETE"/><button className="account-button danger" type="submit">Delete my data</button></form>
+      <Link className="account-demo-link" href="/privacy">Privacy notice</Link>
       <Link className="account-demo-link" href="/demo">Explore synthetic demo</Link>
     </div>
   </details>;
