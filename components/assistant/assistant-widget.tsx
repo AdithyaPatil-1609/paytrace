@@ -12,6 +12,7 @@ type Reply = {
   kind: "answer" | "alert" | "blocked" | "offline" | "out_of_scope";
   payments: { id: string; name: string }[];
   model: string | null;
+  context?: unknown;
 };
 
 type Message = { id: number; from: "you" | "assistant"; text: string; reply?: Reply; failed?: boolean };
@@ -36,6 +37,8 @@ export function AssistantWidget({ scope, onOpen }: { scope: "demo" | "demo-stati
   const [useAura, setUseAura] = useState(false);
   const auraAvailable = scope === "account" && status?.aura === true;
   const nextId = useRef(1);
+  // What the last answer was about, so a follow-up like "that's wrong" can be answered.
+  const context = useRef<unknown>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
   const log = useRef<HTMLDivElement>(null);
@@ -84,11 +87,12 @@ export function AssistantWidget({ scope, onOpen }: { scope: "demo" | "demo-stati
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, scope, useAura: auraAvailable && useAura })
+        body: JSON.stringify({ message, scope, useAura: auraAvailable && useAura, ...(context.current ? { context: context.current } : {}) })
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body?.error ?? "The assistant could not answer.");
       const reply = body as Reply;
+      if (reply.context) context.current = reply.context;
       setMessages((list) => [...list, { id: nextId.current++, from: "assistant", text: reply.reply, reply }]);
     } catch (error) {
       const text = error instanceof Error ? error.message : "The assistant could not answer.";

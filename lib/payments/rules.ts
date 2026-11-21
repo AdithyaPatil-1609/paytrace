@@ -20,7 +20,15 @@ export const RULES = {
   monthlyMaxGap: 45,
   quarterlyMaxGap: 135,
   /** Next-charge gap for a row with one debit under a mandate. */
-  defaultGapDays: 30
+  defaultGapDays: 30,
+  /**
+   * A gap close to a whole number of usual gaps is missed records (an email
+   * not synced, an SMS lost), not a slower cadence: 17 Dec to 17 Aug is eight
+   * missed months of a monthly SIP. Close means within this share of the usual gap.
+   */
+  missedCycleTolerance: 0.2,
+  /** Folding missed cycles needs at least this many gaps to know the usual one. */
+  missedCycleMinGaps: 3
 } as const;
 
 /** The same keys with any value, for a test that overrides one threshold. */
@@ -214,4 +222,18 @@ export const SANDBOX_LIMITS = {
   maxBodyBytes: 6 * 1024,
   /** Messages waiting for the AI reader before new ones get "busy". */
   maxWaitingForReader: 4
+} as const;
+
+/** How the assistant treats subscriptions seen only in emails (lib/assistant/watchlist.ts). */
+export const ASSISTANT_WATCH_LIMITS = {
+  /** Days past one full cycle after the last renewal email before a subscription counts as possibly stopped. */
+  graceDays: 10,
+  /** At most this many older, possibly stopped subscriptions are named in an answer. */
+  olderNamed: 5
+} as const;
+
+/** Job 4, everyday spending kept out of the recurring list (lib/payments/recurring-check.ts). */
+export const RECURRING_CHECK_LIMITS = {
+  /** Groups sent to the local model per refresh; the rest wait for the next dashboard load. */
+  perRun: 15
 } as const;
