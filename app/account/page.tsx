@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import "./account.css";
 import "./login.css";
 
+export const metadata = { title: "Your account · Paytrace", robots: { index: false, follow: false } };
 export const dynamic="force-dynamic";
 export default async function AccountPage({searchParams}:{searchParams:Promise<{notice?:string}>}) {
   const configured=accountConfigured();

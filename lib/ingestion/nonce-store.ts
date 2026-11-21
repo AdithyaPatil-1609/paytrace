@@ -2,7 +2,7 @@
  * Remembers the one-use number (nonce) of every signed phone request for ten
  * minutes, so the same request sent again (a replay) is refused.
  * One server process on the laptop, so memory is enough; with several servers
- * this moves to Redis (SET key NX PX 600000), as noted in docs/DEPLOY.md.
+ * this moves to Redis (SET key NX PX 600000).
  */
 import { DEVICE_LIMITS } from "@/lib/payments/rules";
 

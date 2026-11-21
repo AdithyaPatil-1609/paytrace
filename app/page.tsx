@@ -9,6 +9,10 @@ import { Landing } from "@/components/landing";
 import { SESSION } from "@/lib/accounts/security";
 import "./account/account.css";
 import "./account/login.css";
+import type { Metadata } from "next";
+
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export const dynamic = "force-dynamic";
 

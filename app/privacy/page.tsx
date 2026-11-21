@@ -7,7 +7,7 @@ import Link from "next/link";
 import "../account/account.css";
 import "../account/login.css";
 
-export const metadata = { title: "Privacy · Paytrace" };
+export const metadata = { title: "Privacy · Paytrace", alternates: { canonical: "/privacy" } };
 
 const sections: { title: string; points: string[] }[] = [
   { title: "Why we use your data", points: [

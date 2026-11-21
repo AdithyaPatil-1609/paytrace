@@ -6,14 +6,19 @@ What was found, what we fixed, what is left and why. Findings and fixes only; ne
 
 | Scan | When | Address | Result | Report |
 | --- | --- | --- | --- | --- |
-| Baseline | 21 Nov, by midnight | https://paytrace.co.in | _to fill in_ | _link or file name_ |
+| Baseline | 21 Nov, 9:09 pm | https://paytrace.co.in | VibeScore 97/100 · Security 100 · Accessibility 100 · Performance 100 · UX 88 · public surface clean, 4 low findings | ArgosX v2.0.336, 2 pages crawled, report PDF kept by Hanish |
 | Final | 22 Nov, by 11:00 am, frozen build | https://paytrace.co.in | _to fill in_ | _link or file name_ |
 
 ### Findings from the scans
 
 | ID | Severity | Finding | Fix | Owner | Status |
 | --- | --- | --- | --- | --- | --- |
-| A1 | | | | | |
+| A1 | Low (seo) | Missing Open Graph description, image, title | Site-wide Open Graph and Twitter tags; a 1200×630 preview image | Hanish | Fixed: `app/layout.tsx`, `app/opengraph-image.tsx` |
+| A2 | Low (seo) | Missing canonical link | A canonical link on every public page; account page set to noindex | Hanish | Fixed: page `metadata` in `app/page.tsx`, `app/demo`, `app/signin`, `app/privacy` |
+| A3 | Low (seo) | No /sitemap.xml | `/sitemap.xml` with the four public pages; `/robots.txt` keeps `/api/` and `/account` out of search | Hanish | Fixed: `app/sitemap.ts`, `app/robots.ts` |
+| A4 | Low (ux) | "paytrace" looks like two words run together | None: it is our brand wordmark | — | Accepted (intentional) |
+
+Nothing was found in the checks for exposed secrets, security headers, cookies, CORS, TLS, database or API exposure, or broken links. The free scan covers the public surface only; signed-in flows are covered by our own tests (`tests/security/`, `tests/cypher/`) and the manual checks below.
 
 ## Fixes made before the scans (our own review)
 

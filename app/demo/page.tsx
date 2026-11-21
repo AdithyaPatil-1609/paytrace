@@ -4,6 +4,10 @@
  */
 import { Dashboard } from "@/components/dashboard";
 import { loadDemo } from "@/lib/data/load-demo";
+import type { Metadata } from "next";
+
+
+export const metadata: Metadata = { title: "Demo · Paytrace", alternates: { canonical: "/demo" } };
 
 export const dynamic = "force-dynamic";
 
