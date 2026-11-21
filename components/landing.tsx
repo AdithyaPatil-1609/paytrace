@@ -2,7 +2,7 @@
 
 /**
  * The public landing page: the PayTrace logo, product value proposition,
- * interactive preview cards, the watercolour wave backdrop, and a slide-over
+ * interactive preview cards, the signature watercolour wave backdrop, and a slide-over
  * sign-in drawer on the right side.
  */
 import { useEffect, useState } from "react";
@@ -39,8 +39,18 @@ const mockSubscriptions = [
   { name: "Google One", cadence: "Monthly", cost: "₹130 /mo", action: "Pause" }
 ];
 
-export function Landing({ configured = true }: { configured?: boolean }) {
-  const [signInOpen, setSignInOpen] = useState(false);
+export function Landing({
+  configured = true,
+  initialNotice = "",
+  initialNoticeIsError = false,
+  initialOpen = false
+}: {
+  configured?: boolean;
+  initialNotice?: string;
+  initialNoticeIsError?: boolean;
+  initialOpen?: boolean;
+}) {
+  const [signInOpen, setSignInOpen] = useState(initialOpen);
 
   // Close drawer on Escape key
   useEffect(() => {
@@ -345,6 +355,16 @@ export function Landing({ configured = true }: { configured?: boolean }) {
               See your own recurring payments. After signing in, you choose whether
               to connect Gmail (read-only) and your phone.
             </p>
+
+            {initialNotice && (
+              <div
+                className={initialNoticeIsError ? "account-banner account-banner-error" : "account-banner"}
+                role={initialNoticeIsError ? "alert" : "status"}
+                style={{ marginBottom: "18px" }}
+              >
+                {initialNotice}
+              </div>
+            )}
 
             {configured ? (
               <form action="/api/auth/google/start" method="post" className="drawer-form">

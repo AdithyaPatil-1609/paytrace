@@ -6,19 +6,33 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Landing } from "@/components/landing";
-import { SESSION } from "@/lib/accounts/security";
+import { accountConfigured, SESSION } from "@/lib/accounts/security";
+import { noticeIsError, noticeText } from "@/lib/accounts/notices";
 import "./account/account.css";
 import "./account/login.css";
 import type { Metadata } from "next";
 
-
 export const metadata: Metadata = { alternates: { canonical: "/" } };
-
 export const dynamic = "force-dynamic";
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
-  // Old links such as /?demo=1 still work.
-  if ((await searchParams).demo === "1") redirect("/demo");
-  if ((await cookies()).get(SESSION)?.value) redirect("/account");
-  return <Landing />;
+export default async function Home({
+  searchParams
+}: {
+  searchParams: Promise<{ demo?: string; signin?: string; notice?: string }>
+}) {
+  const params = await searchParams;
+  if (params.demo === "1") redirect("/demo");
+
+  const notice = params.notice ?? "";
+  // A signed-in visitor with no pending notice goes straight to their account.
+  if ((await cookies()).get(SESSION)?.value && !notice) redirect("/account");
+
+  return (
+    <Landing
+      configured={accountConfigured()}
+      initialNotice={noticeText(notice)}
+      initialNoticeIsError={noticeIsError(notice)}
+      initialOpen={Boolean(params.signin || notice)}
+    />
+  );
 }
