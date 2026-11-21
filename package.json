@@ -17,14 +17,16 @@
     "gmail:sync": "node --import tsx scripts/gmail.ts",
     "gmail:accounts": "node --import tsx scripts/gmail-accounts.ts",
     "ai:alerts": "ml/.venv/bin/python -m mlx_lm server --model mlx-community/Qwen3-8B-4bit --adapter-path ml/adapters/qwen3-8b-alerts --host 127.0.0.1 --port 8080",
-    "ai:eval": "node --import tsx scripts/eval-assistant.ts"
+    "ai:eval": "node --import tsx scripts/eval-assistant.ts",
+    "ai:read": "node --import tsx scripts/read-message.ts"
   },
   "dependencies": {
     "google-auth-library": "^11.3.4",
     "neo4j-driver": "6.0.1",
     "next": "^16.4.6",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "24.10.0",

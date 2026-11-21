@@ -117,3 +117,9 @@ export function statusFor(signals: Signal[], kind: CommitmentKind) {
   if (signals.includes("annual_next_date")) return "Annual payment";
   return "In use";
 }
+
+/** Limits for the AI reader (card U1): longer text is refused before any model sees it. */
+export const READER_LIMITS = {
+  maxTextChars: 2000,
+  maxSenderChars: 40
+} as const;
