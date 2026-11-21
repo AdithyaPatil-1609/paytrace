@@ -14,13 +14,29 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PaytraceCompanion">
 
+        <!-- Lets Google Play services fetch the QR scanner when the app is installed. -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode_ui" />
+
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- "Open in Paytrace app": paytrace://connect?server=...&token=...
+                 The app always asks the user to confirm before connecting. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="paytrace" android:host="connect" />
+                <data android:scheme="paytrace" android:host="pair" />
             </intent-filter>
 
         </activity>
