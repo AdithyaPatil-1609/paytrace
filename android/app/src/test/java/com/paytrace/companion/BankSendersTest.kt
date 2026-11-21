@@ -4,23 +4,23 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class BankSendersTest {
-    @Test fun knownBankSenders() {
-        assertEquals("HDFCBK", BankSenders.bankOf("VM-HDFCBK"))
-        assertEquals("HDFCBK", BankSenders.bankOf("JD-HDFCBK-S"))
-        assertEquals("ICICIB", BankSenders.bankOf("ax-icicib-t"))
-        assertEquals("SBIINB", BankSenders.bankOf("SBIINB"))
+    @Test fun registeredSendersPass() {
+        assertEquals("HDFCBK", BankSenders.headerOf("VM-HDFCBK-S"))
+        assertEquals("ICICIT", BankSenders.headerOf("ax-icicit-t"))
+        assertEquals("SBIUPI", BankSenders.headerOf("JD-SBIUPI-S"))
     }
 
-    @Test fun personalNumbersAreNotBanks() {
-        assertNull(BankSenders.bankOf("+919876543210"))
-        assertNull(BankSenders.bankOf("9876543210"))
-        assertNull(BankSenders.bankOf(null))
-        assertNull(BankSenders.bankOf(""))
+    @Test fun normalNumbersAreDropped() {
+        assertNull(BankSenders.headerOf("+919876543210"))
+        assertNull(BankSenders.headerOf("9876543210"))
+        assertNull(BankSenders.headerOf(null))
+        assertNull(BankSenders.headerOf(""))
     }
 
-    @Test fun promotionalAndUnknownSendersAreRejected() {
-        assertNull(BankSenders.bankOf("VM-HDFCBK-P"))
-        assertNull(BankSenders.bankOf("VM-AMAZON"))
-        assertNull(BankSenders.bankOf("VM-HDFCBK-S-X"))
+    @Test fun promotionalAndOldFormatsAreDropped() {
+        assertNull(BankSenders.headerOf("VM-HDFCBK-P"))
+        assertNull(BankSenders.headerOf("VM-HDFCBK"))
+        assertNull(BankSenders.headerOf("HDFCBK"))
+        assertNull(BankSenders.headerOf("VM-HDFCBK-S-X"))
     }
 }

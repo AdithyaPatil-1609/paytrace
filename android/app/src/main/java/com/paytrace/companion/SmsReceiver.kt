@@ -1,8 +1,11 @@
 package com.paytrace.companion
 
-// Receives each new SMS. It checks the sender first and reads the text only
-// of a test-sender or bank message. It drops password messages, keeps only
-// payment alerts, and sends the parsed fields to the laptop.
+// Card M1. Receives each new SMS and, in this order:
+//   1. drops it unread unless the sender is a registered bank or service sender;
+//   2. drops OTP, PIN, CVV and password messages;
+//   3. masks account and card numbers to the last 4 digits;
+//   4. skips an exact repeat;
+//   5. sends the sender, the masked text and the time to the server.
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -10,136 +13,89 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.provider.Telephony
 import androidx.compose.runtime.mutableStateOf
+import java.time.Instant
 
-object PaymentInbox {
-    val latest = mutableStateOf<PaymentDetails?>(null)
+data class ReceivedSms(val sender: String, val receivedAt: String)
 
-    private const val PREFS = "paytrace_test_inbox"
+// Remembers only who sent the last bank SMS and when. Never the text.
+object LastSms {
+    val latest = mutableStateOf<ReceivedSms?>(null)
 
-    fun save(context: Context, payment: PaymentDetails) {
-        // Store only the extracted fields, never the SMS text.
+    private const val PREFS = "paytrace_last_sms"
+
+    fun save(context: Context, sms: ReceivedSms) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
-            .putString("merchant", payment.merchant)
-            .putLong("amount", payment.amountPaise)
-            .putString("date", payment.date)
-            .putString("reference", payment.reference)
-            .putString("kind", payment.kind)
+            .putString("sender", sms.sender)
+            .putString("receivedAt", sms.receivedAt)
             .apply()
-
-        latest.value = payment
+        latest.value = sms
     }
 
     fun load(context: Context) {
-        val prefs = context.getSharedPreferences(
-            PREFS, Context.MODE_PRIVATE
-        )
-
-        val merchant = prefs.getString("merchant", null)
-
-        latest.value = if (merchant != null) {
-            PaymentDetails(
-                merchant = merchant,
-                amountPaise = prefs.getLong("amount", 0),
-                date = prefs.getString("date", "") ?: "",
-                reference = prefs.getString("reference", "") ?: "",
-                kind = prefs.getString("kind", "debit_posted") ?: "debit_posted"
-            )
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val sender = prefs.getString("sender", null)
+        latest.value = if (sender != null) {
+            ReceivedSms(sender, prefs.getString("receivedAt", "").orEmpty())
         } else {
             null
         }
-    }
-
-    fun clear(context: Context) {
-        context.getSharedPreferences(
-            PREFS, Context.MODE_PRIVATE
-        ).edit().clear().apply()
-
-        latest.value = null
     }
 }
 
 class SmsReceiver : BroadcastReceiver() {
 
     companion object {
-        const val TEST_PREFIX = "PAYTRACE_TEST "
         private const val TAG = "PaytraceSMS"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
 
-        if (intent.action !=
-            Telephony.Sms.Intents.SMS_RECEIVED_ACTION
-        ) return
+        if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
 
         // Never run this receiver in a release build.
         val debuggable =
-            context.applicationInfo.flags and
-                    ApplicationInfo.FLAG_DEBUGGABLE != 0
-
+            context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
         if (!debuggable) return
 
-        val messages =
-            Telephony.Sms.Intents.getMessagesFromIntent(intent)
-
+        val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         if (messages.isEmpty()) return
 
+        // Rule 1: decide from the sender alone, BEFORE reading any text.
         val sender = messages.first().originatingAddress
         val oneSender = messages.all { it.originatingAddress == sender }
-
-        // Rule 1: decide from the sender alone, BEFORE reading any text.
-        if (CompanionSettings.testSenderOnly(context)) {
-            // Test mode: only the test sender passes. Even a real bank
-            // is ignored (Test C).
-            if (!oneSender || !CompanionSettings.isTestSender(context, sender)) {
-                CompanionSettings.recordBlocked(
-                    context,
-                    "Blocked: not the test sender"
-                )
-                android.util.Log.d(TAG, "Message from other sender blocked")
-                return
-            }
-        } else if (!oneSender || !BankSenders.isBankSender(sender)) {
-            // Live mode: personal and promotional messages are
-            // ignored without their text ever being read.
+        if (sender == null || !oneSender || !BankSenders.isRegisteredSender(sender)) {
+            CompanionSettings.recordBlocked(context, "Ignored: not a registered bank sender")
             android.util.Log.d(TAG, "Non-bank sender ignored unread")
             return
         }
 
         // Only now is the text read.
-        val body = messages.joinToString("") {
-            it.messageBody ?: ""
-        }
+        val body = messages.joinToString("") { it.messageBody ?: "" }
 
-        // Rule 2: a password message never leaves the phone (Test A).
+        // Rule 2: a password message never leaves the phone.
         if (SmsParser.isSensitive(body)) {
-            CompanionSettings.recordBlocked(
-                context,
-                "Blocked: password or OTP message"
-            )
+            CompanionSettings.recordBlocked(context, "Blocked: OTP or password message")
             android.util.Log.d(TAG, "Sensitive message blocked")
             return
         }
 
-        // Rule 3: keep only messages that read as a payment alert.
-        val text = body.removePrefix(TEST_PREFIX)
-        val payment = SmsParser.parse(text, sender) ?: return
+        // Rule 3: mask account and card numbers, and cap the length.
+        val masked = SmsParser.maskAccounts(body.trim()).take(SmsParser.MAX_TEXT)
+        val receivedAt = Instant.ofEpochMilli(messages.first().timestampMillis).toString()
 
-        // Rule 4: the same alert twice is handled once.
-        val isNew = DuplicateDetector.markIfNew(context, payment)
-
-        if (!isNew) {
-            android.util.Log.d(TAG, "Duplicate test payment ignored")
+        // Rule 4: the same SMS delivered twice is sent once.
+        if (!DuplicateDetector.markIfNew(context, sender, masked, receivedAt)) {
+            android.util.Log.d(TAG, "Duplicate SMS ignored")
             return
         }
 
-        PaymentInbox.save(context, payment)
-        android.util.Log.d(TAG, "New synthetic payment saved")
+        LastSms.save(context, ReceivedSms(sender, receivedAt))
 
-        // Rule 5: send to the laptop only when sending is switched on (Test B).
+        // Rule 5: send to the server only when sending is switched on.
         if (CompanionSettings.sendingEnabled(context)) {
             val pending = goAsync()
-            EventSender.sendAndRecord(context, payment) {
+            EventSender.sendAndRecord(context, OutgoingSms(sender, masked, receivedAt)) {
                 pending.finish()
             }
         }
