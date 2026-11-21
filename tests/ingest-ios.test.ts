@@ -49,6 +49,7 @@ test("ingest/ios answers a browser visit with a clear 405", async () => {
   const response = GET();
   assert.equal(response.status, 405);
   assert.equal(response.headers.get("allow"), "POST");
+  assert.match((await response.json()).error, /set Method to POST/);
 });
 
 test("the Shortcut body accepts an iPhone bank sender with or without the -S ending", () => {

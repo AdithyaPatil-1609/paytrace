@@ -30,7 +30,12 @@ function afterResponse(work: () => Promise<unknown>) {
 
 export function GET() {
   return Response.json(
-    { ok: false, error: "This address only accepts messages from your Paytrace iPhone Shortcut (POST)." },
+    {
+      ok: false,
+      error:
+        "Your Shortcut sent a GET request. In Get Contents of URL, tap › next to the URL and set Method to POST, " +
+        "add the header Authorization = Bearer <your token>, and set Request Body to JSON with sender and text."
+    },
     { status: 405, headers: { Allow: "POST", "Cache-Control": "no-store" } }
   );
 }
