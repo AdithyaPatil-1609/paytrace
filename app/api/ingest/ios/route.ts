@@ -47,8 +47,13 @@ export async function POST(request: Request) {
   const declared = Number(request.headers.get("content-length") ?? 0);
   if (declared > SMS_INGEST_LIMITS.maxBodyBytes) return fail(413, "Message too large");
 
+  if (!request.headers.get("authorization")?.trim()) {
+    return fail(401, "No Authorization header. Under Headers add Key Authorization, Text Bearer <your token>.");
+  }
   const token = bearerToken(request);
-  if (!token) return fail(401, "Missing or malformed token");
+  if (!token) {
+    return fail(401, "The Authorization header is not a Paytrace token. Copy it again from Connect iPhone; it starts with Bearer pt_ios_.");
+  }
   let profile: string | null;
   try {
     profile = await profileForIosToken(token);

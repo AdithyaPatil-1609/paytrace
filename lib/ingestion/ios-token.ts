@@ -14,10 +14,19 @@ export function newIosToken() {
   return `pt_ios_${randomBytes(32).toString("base64url")}`;
 }
 
-/** The token from "Authorization: Bearer <token>", or null when absent or malformed. */
+/**
+ * The token from the Authorization header, or null when absent or malformed.
+ * Typed on a phone, so small slips are forgiven: any case of "Bearer", a
+ * missing space after it, stray spaces, quotes, or the token on its own.
+ * The token itself must still match exactly.
+ */
 export function bearerToken(request: Request) {
-  const value = request.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
-  return value && IOS_TOKEN.test(value) ? value : null;
+  const value = (request.headers.get("authorization") ?? "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/^bearer\s*/i, "")
+    .trim();
+  return IOS_TOKEN.test(value) ? value : null;
 }
 
 

@@ -24,19 +24,24 @@ test("a new iPhone token has the fixed shape and is never repeated", () => {
   assert.notEqual(a, b);
 });
 
-test("only a well-formed Bearer token is read from the request", () => {
+test("the token is read despite small typing slips, but must itself be exact", () => {
   const token = newIosToken();
   const read = (value?: string) => bearerToken(new Request(URL, { headers: value ? { authorization: value } : {} }));
-  assert.equal(read(`Bearer ${token}`), token);
-  assert.equal(read(`bearer ${token}`), token);
-  assert.equal(read(token), null);
+  for (const value of [`Bearer ${token}`, `bearer ${token}`, `Bearer${token}`, `  Bearer   ${token}  `, token, `"Bearer ${token}"`]) {
+    assert.equal(read(value), token, JSON.stringify(value));
+  }
   assert.equal(read("Bearer pt_ios_short"), null);
+  assert.equal(read(`Bearer ${token}x`), null);
+  assert.equal(read(`Bearer ${token.slice(0, -1)}`), null);
+  assert.equal(read(`Bearer ${"pt_and_" + token.slice(7)}`), null);
   assert.equal(read(undefined), null);
 });
 
 test("ingest/ios refuses a missing or malformed token before touching storage", async () => {
   const body = JSON.stringify({ sender: "VM-HDFCBK", text: TEXT });
-  assert.equal((await send(body)).status, 401);
+  const missing = await send(body);
+  assert.equal(missing.status, 401);
+  assert.match((await missing.json()).error, /No Authorization header/);
   assert.equal((await send(body, { authorization: "Bearer not-a-token" })).status, 401);
   assert.equal((await send(body, { "x-paytrace-device": "anything" })).status, 401);
 });
