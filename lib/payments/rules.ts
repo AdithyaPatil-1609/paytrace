@@ -134,3 +134,17 @@ export const SMS_INGEST_LIMITS = {
   /** Retries when Qwen is down, in milliseconds after the first try. */
   retryDelaysMs: [5_000, 30_000, 120_000]
 } as const;
+
+/**
+ * Gmail API pacing for account sync. Gmail's per-user limit is shared by
+ * every laptop and server that reads the same mailbox through our Google
+ * project, so the sync slows down and waits as long as Gmail asks.
+ */
+export const GMAIL_SYNC_LIMITS = {
+  /** Pause between message reads: at most ~12 reads a second, well under Gmail's per-user limit. */
+  pauseBetweenReadsMs: 80,
+  /** Tries per request when Gmail says "slow down" or has a server error. */
+  maxAttempts: 6,
+  /** Longest single wait we accept inside one sync; a longer "retry after" stops the sync with a clear error. */
+  maxWaitMs: 120_000
+} as const;
