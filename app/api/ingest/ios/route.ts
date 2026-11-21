@@ -9,7 +9,7 @@ import { after } from "next/server";
 import { createHash } from "node:crypto";
 import { profileForIosToken } from "@/db/neo4j/accounts";
 import { ingestLiveEvent } from "@/db/neo4j/live";
-import { bearerToken, checkShortcutBody } from "@/lib/ingestion/ios-token";
+import { bearerToken, checkShortcutBody, describeHeader } from "@/lib/ingestion/ios-token";
 import { processSmsWithRetry } from "@/lib/ingestion/sms-message";
 import { SMS_INGEST_LIMITS } from "@/lib/payments/rules";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
@@ -52,7 +52,8 @@ export async function POST(request: Request) {
   }
   const token = bearerToken(request);
   if (!token) {
-    return fail(401, "The Authorization header is not a Paytrace token. Copy it again from Connect iPhone; it starts with Bearer pt_ios_.");
+    // The description names only length, prefix and odd characters, never the header itself.
+    return fail(401, `The Authorization header is not a Paytrace token. ${describeHeader(request)} Copy it again from Connect iPhone.`);
   }
   let profile: string | null;
   try {

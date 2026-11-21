@@ -31,6 +31,24 @@ export function bearerToken(request: Request) {
 
 
 /**
+ * What a refused Authorization header looked like, without revealing it:
+ * its length, whether it starts with pt_ios_, and any characters a token can
+ * never contain. Lets a person spot a cut-off paste or a changed character.
+ */
+export function describeHeader(request: Request) {
+  const value = (request.headers.get("authorization") ?? "").trim().replace(/^["']|["']$/g, "").replace(/^bearer\s*/i, "").trim();
+  const odd = [...new Set([...value].filter((char) => !/[A-Za-z0-9_-]/.test(char)))]
+    .slice(0, 5)
+    .map((char) => (/\s/.test(char) ? "a space or line break" : `"${char}" (U+${char.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")})`));
+  const parts = [
+    `After "Bearer" it has ${value.length} characters; a token has 50.`,
+    value.startsWith("pt_ios_") ? "It starts with pt_ios_ (good)." : "It does not start with pt_ios_.",
+    ...(odd.length ? [`It contains characters a token never has: ${odd.join(", ")}.`] : [])
+  ];
+  return parts.join(" ");
+}
+
+/**
  * Bank senders as an iPhone shows them: the DLT header (VM-HDFCBK), with or
  * without TRAI's -S/-T ending. Phone numbers and contact names are refused.
  */

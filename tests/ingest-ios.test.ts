@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import test, { beforeEach } from "node:test";
 import { GET, POST } from "../app/api/ingest/ios/route";
-import { bearerToken, checkShortcutBody, IOS_TOKEN, newIosToken } from "../lib/ingestion/ios-token";
+import { bearerToken, checkShortcutBody, describeHeader, IOS_TOKEN, newIosToken } from "../lib/ingestion/ios-token";
 import { resetRateLimits } from "../lib/security/rate-limit";
 
 const URL = "http://localhost/api/ingest/ios";
@@ -97,4 +97,16 @@ test("the account menu offers Connect iPhone, and Disconnect once connected", as
   assert.ok(connected.includes("Disconnect iPhone"));
   assert.ok(connected.includes("Make a new token"));
   assert.ok(!connected.includes("pt_ios_"), "a stored token is never shown again");
+});
+
+test("a refused header is described by length, prefix and odd characters, never echoed", () => {
+  const token = newIosToken();
+  const describe = (value: string) => describeHeader(new Request(URL, { headers: { authorization: value } }));
+  const cut = describe(`Bearer ${token.slice(0, 30)}`);
+  assert.match(cut, /has 30 characters; a token has 50/);
+  assert.match(cut, /starts with pt_ios_ \(good\)/);
+  assert.ok(!cut.includes(token.slice(7, 30)), "the token is never repeated back");
+  assert.match(describe("Bearer <your token>"), /does not start with pt_ios_.*"<" \(U\+003C\).*a space or line break/);
+  // An em dash typed on a phone arrives as its UTF-8 bytes, read one per character.
+  assert.match(describe(`Bearer ${token.slice(0, 20)}\u00e2\u0080\u0094${token.slice(21)}`), /U\+00E2/);
 });
