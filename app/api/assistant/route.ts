@@ -10,20 +10,36 @@ import { readLiveDashboard } from "@/db/neo4j/live";
 import { SESSION } from "@/lib/accounts/security";
 import { ask, MAX_MESSAGE } from "@/lib/assistant/assistant";
 import { demoCommitments } from "@/lib/data/load-demo";
+import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 const headers = { "Cache-Control": "no-store" };
 
 // One model call at a time: a laptop GPU serves a queue better than a crowd.
+// The line is capped, so a burst of visitors gets a quick "busy" answer
+// instead of waiting minutes for a reply that would time out anyway.
+const MAX_WAITING = 6;
+let waiting = 0;
 let queue: Promise<unknown> = Promise.resolve();
 function inTurn<T>(work: () => Promise<T>) {
-  const next = queue.then(work, work);
+  waiting += 1;
+  const run = () => work().finally(() => (waiting -= 1));
+  const next = queue.then(run, run);
   queue = next.catch(() => undefined);
   return next;
 }
 
 export async function POST(request: NextRequest) {
+  const hit = takeHit("assistant", clientKey(request), LIMITS.assistant);
+  if (!hit.ok) return tooMany(hit.retryAfter);
+  if (waiting >= MAX_WAITING) {
+    return Response.json(
+      { error: "Ask AI is busy answering other people. Try again in a minute." },
+      { status: 503, headers: { ...headers, "Retry-After": "30" } }
+    );
+  }
+
   let body: { message?: unknown; scope?: unknown };
   try {
     body = await request.json();

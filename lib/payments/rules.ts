@@ -117,3 +117,20 @@ export function statusFor(signals: Signal[], kind: CommitmentKind) {
   if (signals.includes("annual_next_date")) return "Annual payment";
   return "In use";
 }
+
+/** Limits for the AI reader (card U1): longer text is refused before any model sees it. */
+export const READER_LIMITS = {
+  maxTextChars: 2000,
+  maxSenderChars: 40
+} as const;
+
+/** Limits for POST /api/ingest/sms (plan card S2): cheap checks before the body is read. */
+export const SMS_INGEST_LIMITS = {
+  maxBodyBytes: 4096,
+  /** A phone clock may run a little fast; anything further ahead is refused. */
+  maxFutureSkewMs: 5 * 60_000,
+  /** Older messages are history imports, not live SMS. */
+  maxAgeMs: 7 * 24 * 60 * 60_000,
+  /** Retries when Qwen is down, in milliseconds after the first try. */
+  retryDelaysMs: [5_000, 30_000, 120_000]
+} as const;

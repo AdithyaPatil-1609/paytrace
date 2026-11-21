@@ -5,8 +5,11 @@
  */
 import { hasNeo4jConfig } from "@/db/neo4j/client";
 import { analyzeWithSimulatedAutopay } from "@/db/neo4j/simulate";
+import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
 
-export async function POST() {
+export async function POST(request: Request) {
+  const hit = takeHit("simulate", clientKey(request), LIMITS.graph);
+  if (!hit.ok) return tooMany(hit.retryAfter);
   if (!hasNeo4jConfig()) {
     return Response.json({ error: "Neo4j is not configured." }, { status: 503 });
   }

@@ -1,12 +1,13 @@
 # Local Neo4j for live mode, so nobody needs an Aura account.
 #   docker compose up -d && npm run seed && npm run dev
-# Credentials match the local block in .env.example. Local use only.
+# Credentials match the local block in .env.example. Local use only:
+# the ports listen on 127.0.0.1, so other devices on the Wi-Fi cannot reach it.
 services:
   neo4j:
     image: neo4j:5.26-community
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
     environment:
       NEO4J_AUTH: neo4j/paytrace-local
     volumes:
