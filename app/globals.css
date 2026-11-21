@@ -23,3 +23,5 @@
 @import "./styles/refresh.css";
 /* Last of all: the cream-and-navy ledger look of the redesign. */
 @import "./styles/ledger.css";
+/* PayTrace logo and landing extras. */
+@import "./styles/logo.css";
