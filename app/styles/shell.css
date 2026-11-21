@@ -271,3 +271,9 @@
 .iphone-steps li { margin-bottom: 6px; }
 .iphone-steps code { font-size: 12px; overflow-wrap: anywhere; }
 .link-button { background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; cursor: pointer; font: inherit; }
+
+/* Warnings from the payment graph: one row per warning, plus a small form for user-confirmed facts. */
+.graph-warnings { margin: 0 0 22px; }
+.graph-warnings .account-table small { display: block; }
+.graph-fact { display: flex !important; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.graph-fact select, .graph-fact input { font: inherit; font-size: 12px; padding: 2px 4px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); color: var(--ink); }

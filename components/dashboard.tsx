@@ -30,7 +30,7 @@ type DashboardProps = {
   source: SourceInfo;
   commitments?: Commitment[];
   graph?: GraphFacts;
-  account?: { name: string; controls: ReactNode; notice?: ReactNode; activity?: ReactNode; subscriptionAlerts?: ReactNode };
+  account?: { name: string; controls: ReactNode; notice?: ReactNode; activity?: ReactNode; subscriptionAlerts?: ReactNode; graphWarnings?: ReactNode };
 };
 type Screen = "graph" | "annual" | "list" | "issues" | "paths";
 
@@ -149,7 +149,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
             /></>
           )}
           {screen === "issues" && (
-            <><IssuesScreen
+            <>{account?.graphWarnings}<IssuesScreen
               allItems={active}
               kept={kept}
               onOpen={openPayment}
