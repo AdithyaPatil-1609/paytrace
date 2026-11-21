@@ -60,3 +60,11 @@ test("Ask AI refuses the seventh question in a minute from one person", async ()
   for (let i = 0; i < LIMITS.assistant[0].limit; i++) assert.equal((await send()).status, 400, "empty question");
   assert.equal((await send()).status, 429);
 });
+
+test("Gmail sync refuses the sixth request in a minute from one address, before any session check", async () => {
+  const { POST: sync } = await import("../app/api/account/gmail/sync/route");
+  const { NextRequest } = await import("next/server");
+  const send = () => sync(new NextRequest("http://localhost:3000/api/account/gmail/sync", { method: "POST", headers: { origin: "http://localhost:3000", "cf-connecting-ip": "203.0.113.30" } }));
+  for (let i = 0; i < LIMITS.gmailSync[0].limit; i++) assert.notEqual((await send()).status, 429);
+  assert.equal((await send()).status, 429);
+});
