@@ -65,8 +65,16 @@ class SmsReceiver : BroadcastReceiver() {
         val sender = messages.first().originatingAddress
         val oneSender = messages.all { it.originatingAddress == sender }
         if (sender == null || !oneSender || !BankSenders.isRegisteredSender(sender)) {
-            CompanionSettings.recordBlocked(context, "Ignored: not a registered bank sender")
-            android.util.Log.d(TAG, "Non-bank sender ignored unread")
+            // Show the sender ID, so a bank ID in an unexpected form can be spotted.
+            // A personal phone number is never shown.
+            val id = sender.orEmpty()
+            val shown = when {
+                id.isEmpty() -> "no sender"
+                id.count { it.isDigit() } >= 7 -> "a phone number"
+                else -> "\"" + id.take(20) + "\""
+            }
+            CompanionSettings.recordBlocked(context, "Ignored: not a registered bank sender ($shown)")
+            android.util.Log.d(TAG, "Non-bank sender ignored unread: $shown")
             return
         }
 
