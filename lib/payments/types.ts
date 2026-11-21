@@ -179,6 +179,11 @@ export type Commitment = {
   whyRecurring: string;
   evidence: string;
   evidenceRows: EvidenceRow[];
+  /**
+   * "notices" when every dated row comes from a debit or renewal notice
+   * (Gmail) and no bank debit confirms it yet. Screens must say so.
+   */
+  basis?: "debits" | "notices";
   notices: NoticeRow[];
   hasPriceChangeNotice: boolean;
   holds: EvidenceRow[];

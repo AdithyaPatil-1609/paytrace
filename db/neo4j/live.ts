@@ -1,6 +1,6 @@
 import { getNeo4jDriver, neo4jDatabase } from "./client";
 import { digest, eventKey, matchPayment, merchantKey, type PaymentEvent, type MatchablePayment } from "@/lib/ingestion/event";
-import { detectCommitments, matchDictionary } from "@/lib/payments/engine";
+import { detectCommitments, matchDictionary, NOTICE_CHANNEL } from "@/lib/payments/engine";
 import { readDictionary } from "@/data/fixtures";
 import type { Dataset, MandateRow, NotificationRow, StatementRow } from "@/lib/payments/types";
 
@@ -156,13 +156,45 @@ export async function readLiveDashboard(profile: string) {
       if (!lifecycle.has(key)) lifecycle.set(key, e);
     }
     for (const e of lifecycle.values()) if (e.kind === "mandate_created") mandates.push({ mandateId:e.id, createdOn:e.date, mechanism: "none", narration:e.merchant, brand:matchDictionary(e.merchant,dictionary)?.brand ?? e.merchant, maxAmount:Number(e.amountPaise)/100, frequency:"unknown", mandateRef:e.reference ?? "", accountId:e.accountHint ?? "unidentified", status:"active" });
+    // Gmail often holds only notices ("Rs 9,500 will be debited on 17 Nov"), not the debit itself.
+    // Repeated notices for the same merchant are real evidence of a repeating payment, so they
+    // become dated rows, marked as notices; a bank debit for the same merchant, date and amount wins.
+    const paidRows = statement.length;
+    statement.push(...noticeRows(statement, events, profile, asOf));
     const dataset: Dataset = { asOf, statement, notifications, mandates, dictionary, usage: [] };
     const commitments = detectCommitments(dataset);
-    const summary = { revision, asOf, counts: { payments: statement.length, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, review:events.filter(e=>e.status==="review").length }, commitments, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, scheduledDebits, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
+    const summary = { revision, asOf, counts: { payments: paidRows, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, review:events.filter(e=>e.status==="review").length }, commitments, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, scheduledDebits, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
     return { dataset, summary };
   } finally { await session.close(); }
 }
 
 export async function readLiveSummary(profile: string) {
   return (await readLiveDashboard(profile)).summary;
+}
+
+/**
+ * Gmail gives debit and renewal notices, not bank debits. Each dated notice
+ * becomes one statement row marked NOTICE_CHANNEL, so a Gmail-only account
+ * still shows its repeating payments, labelled "not confirmed". A notice is
+ * skipped when a real debit with the same merchant, day and amount exists,
+ * when it is a repeat of another notice, or when its day is still ahead.
+ */
+export function noticeRows(paid: StatementRow[], events: Array<Record<string, any>>, profile: string, asOf: string): StatementRow[] {
+  const confirmed = new Set(paid.map(row => JSON.stringify([merchantKey(row.narration), row.date, row.debit])));
+  // Notices rarely name the account; borrow it from a real debit to the same
+  // merchant so both land in one repeating payment, not two.
+  const accountOf = new Map(paid.map(row => [merchantKey(row.narration), row.accountId] as const));
+  const seen = new Set<string>();
+  const rows: StatementRow[] = [];
+  for (const e of events) {
+    if ((e.kind !== "debit_scheduled" && e.kind !== "subscription_renewal") || e.amountPaise == null || Number(e.amountPaise) <= 0) continue;
+    const day = typeof e.renewalDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.renewalDate) ? e.renewalDate : e.date;
+    if (typeof day !== "string" || day > asOf) continue;
+    const amount = Number(e.amountPaise) / 100;
+    const key = JSON.stringify([merchantKey(e.merchant), day, amount]);
+    if (confirmed.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    rows.push({ txnId: `notice-${e.id}`, persona: profile, date: day, accountId: e.accountHint || accountOf.get(merchantKey(e.merchant)) || "unidentified", accountType: "unknown", narration: e.merchant, debit: amount, reference: e.reference ?? "", channel: NOTICE_CHANNEL, txnKind: "debit_notice" } as StatementRow);
+  }
+  return rows;
 }

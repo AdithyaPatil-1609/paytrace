@@ -13,8 +13,11 @@ import { checkSmsBody, processSmsWithRetry } from "@/lib/ingestion/sms-message";
 import { SMS_INGEST_LIMITS } from "@/lib/payments/rules";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
 
-const fail = (status: number, error: string) =>
-  Response.json({ ok: false, error }, { status, headers: { "Cache-Control": "no-store" } });
+const fail = (status: number, error: string) => {
+  // Status and our own fixed reason only: never the sender, the text or the code.
+  console.info(`ingest/sms: refused ${status} (${error})`);
+  return Response.json({ ok: false, error }, { status, headers: { "Cache-Control": "no-store" } });
+};
 
 /** Runs work after the answer is sent; outside a Next request (tests, scripts) it simply starts it. */
 function afterResponse(work: () => Promise<unknown>) {
@@ -62,6 +65,7 @@ export async function POST(request: Request) {
   const profile = liveProfile();
   if (!profile) return fail(503, "Live storage is disabled");
 
+  console.info("ingest/sms: accepted, reading in the background");
   afterResponse(() => processSmsWithRetry(profile, checked.message, { store: ingestLiveEvent }));
   return Response.json({ ok: true, accepted: true }, { status: 202, headers: { "Cache-Control": "no-store" } });
 }

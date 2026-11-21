@@ -132,6 +132,9 @@ type Group = {
   holds: StatementRow[];
 };
 
+/** The channel of a dated row built from a debit or renewal notice, not from a bank debit. */
+export const NOTICE_CHANNEL = "email-notice";
+
 function toEvidence(row: StatementRow): EvidenceRow {
   return {
     txnId: row.txnId,
@@ -304,6 +307,7 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
       whyRecurring,
       evidence: issue ?? whyRecurring,
       evidenceRows: rows.map(toEvidence),
+      basis: rows.every((row) => row.channel === NOTICE_CHANNEL) ? "notices" : "debits",
       notices,
       hasPriceChangeNotice,
       holds: group.holds.map(toEvidence),

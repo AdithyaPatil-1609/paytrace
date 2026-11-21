@@ -123,14 +123,24 @@ export function ProofChain({ item, flagged, live }: { item: Commitment; flagged:
   const silentHike = item.signals.includes("silent_hike");
   const label = (text: string) => text.replaceAll("_", " ");
 
+  const fromNotices = item.basis === "notices";
   const nodes: Node[] = [
-    {
-      kind: "statement",
-      title: "Bank statement",
-      detail: latest
-        ? `${item.evidenceRows.length} debits · latest ${formatINR(latest.amount)} on ${formatDate(latest.date)}`
-        : "No dated debit"
-    }
+    fromNotices
+      ? {
+          kind: "email",
+          title: "Debit notices",
+          detail: latest
+            ? `${item.evidenceRows.length} notices · latest ${formatINR(latest.amount)} for ${formatDate(latest.date)} · no bank debit confirms it yet`
+            : "No dated notice",
+          tone: "muted"
+        }
+      : {
+          kind: "statement",
+          title: "Bank statement",
+          detail: latest
+            ? `${item.evidenceRows.length} debits · latest ${formatINR(latest.amount)} on ${formatDate(latest.date)}`
+            : "No dated debit"
+        }
   ];
   if (sms.length) nodes.push({ kind: "sms", title: "SMS alert", detail: `${sms.length} · ${label(sms[sms.length - 1].eventType)}` });
   if (email.length) nodes.push({ kind: "email", title: "Email notice", detail: `${email.length} · ${label(email[email.length - 1].eventType)}` });
