@@ -3,6 +3,7 @@
  * screen can be published, and it must describe what Paytrace really does.
  * Keep it in step with lib/accounts (sign-in, Gmail) and lib/ingestion (SMS).
  */
+import { PayTraceLogo } from "@/components/paytrace-logo";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -18,7 +19,7 @@ export default function PrivacyPage() {
   return (
     <main style={{ maxWidth: 760, margin: "0 auto", padding: "48px 20px 80px", lineHeight: 1.65 }}>
       <p style={{ marginBottom: 32 }}>
-        <Link href="/">← Paytrace</Link>
+        <Link href="/"><PayTraceLogo /></Link>
       </p>
       <h1 style={{ fontSize: "2.2rem", marginBottom: 4 }}>Privacy policy</h1>
       <p style={{ color: "var(--ink-soft, #555)" }}>Last updated {UPDATED}</p>

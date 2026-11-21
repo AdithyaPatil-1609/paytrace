@@ -1,8 +1,9 @@
+import { PayTraceLogo } from "@/components/paytrace-logo";
 import Link from "next/link";
 
 export function AccountLogin({configured, unavailable=false, notice}: {configured:boolean; unavailable?:boolean; notice?:string}) {
   return <main className="account-shell login-ledger">
-    <header className="account-header"><Link className="wordmark" href="/account">paytrace<span>p</span></Link><div>PAYMENTS · INSIGHTS · CONTROL</div><Link href="/demo">Try demo →</Link></header>
+    <header className="account-header"><Link className="wordmark" href="/account"><PayTraceLogo /></Link><div>PAYMENTS · INSIGHTS · CONTROL</div><Link href="/demo">Try demo →</Link></header>
     {notice && <div className="account-banner" role="status">{notice}</div>}
     <section className="account-welcome">
       <div className="login-intro"><p className="account-eyebrow">YOUR MONEY, MADE CLEAR</p><h1>See every recurring payment clearly.</h1><p>Understand what is leaving your account, discover surprising charges, and find the right way to stop them.</p>

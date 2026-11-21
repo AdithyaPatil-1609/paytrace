@@ -2,6 +2,7 @@
  * The public landing page: what Paytrace does, how it works, and how data is
  * protected. Its only actions are "Sign in" and "Try the demo".
  */
+import { PayTraceLogo } from "@/components/paytrace-logo";
 import Link from "next/link";
 
 const steps = [
@@ -13,7 +14,7 @@ const steps = [
 export function Landing() {
   return <main className="account-shell login-ledger">
     <header className="account-header">
-      <Link className="wordmark" href="/">paytrace<span>p</span></Link>
+      <Link className="wordmark" href="/"><PayTraceLogo /></Link>
       <div>PAYMENTS · INSIGHTS · CONTROL</div>
       <Link href="/signin">Sign in →</Link>
     </header>

@@ -2,12 +2,13 @@
  * The sign-in page: one Google button, any notice from the sign-in flow,
  * the test-account limit, and a way back to the demo or the landing page.
  */
+import { PayTraceLogo } from "@/components/paytrace-logo";
 import Link from "next/link";
 
 export function SignIn({ configured, notice, noticeIsError }: { configured: boolean; notice?: string; noticeIsError?: boolean }) {
   return <main className="account-shell login-ledger">
     <header className="account-header">
-      <Link className="wordmark" href="/">paytrace<span>p</span></Link>
+      <Link className="wordmark" href="/"><PayTraceLogo /></Link>
       <div>SIGN IN</div>
       <Link href="/demo">Try demo →</Link>
     </header>
