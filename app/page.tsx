@@ -13,7 +13,8 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function Home({searchParams}:{searchParams:Promise<{demo?:string}>}) {
-  if (accountConfigured() && (await searchParams).demo!=="1") redirect("/account");
-  const { dataset, source, commitments, graph } = await loadDemo();
+  const staticDemo = (await searchParams).demo === "1";
+  if (accountConfigured() && !staticDemo) redirect("/account");
+  const { dataset, source, commitments, graph } = await loadDemo(staticDemo);
   return <Dashboard dataset={dataset} source={source} commitments={commitments} graph={graph} />;
 }

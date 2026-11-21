@@ -98,6 +98,9 @@ export type NotificationRow = {
   brand: string;
   relatedTxnId?: string;
   amount?: number;
+  planPrice?: number;
+  renewalDate?: string;
+  renewalFrequency?: Exclude<Cadence, "irregular">;
   text: string;
 };
 

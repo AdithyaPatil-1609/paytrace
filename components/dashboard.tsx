@@ -30,7 +30,7 @@ type DashboardProps = {
   source: SourceInfo;
   commitments?: Commitment[];
   graph?: GraphFacts;
-  account?: { name: string; controls: ReactNode; notice?: ReactNode; activity?: ReactNode };
+  account?: { name: string; controls: ReactNode; notice?: ReactNode; activity?: ReactNode; subscriptionAlerts?: ReactNode };
 };
 type Screen = "graph" | "annual" | "list" | "issues" | "paths";
 
@@ -145,10 +145,11 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
               live={source.kind === "neo4j"}
               asOf={dataset.asOf}
               personal={Boolean(account)}
+              subscriptionNotices={account?.subscriptionAlerts}
             />{account?.activity}</>
           )}
           {screen === "issues" && (
-            <IssuesScreen
+            <><IssuesScreen
               allItems={active}
               kept={kept}
               onOpen={openPayment}
@@ -160,7 +161,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
                 setCancelTarget(id);
                 setScreen("paths");
               }}
-            />
+            />{account?.subscriptionAlerts}</>
           )}
           {screen === "paths" && (
             <CancelPathsScreen
@@ -189,7 +190,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
         </section>
       </div>
 
-      <AssistantWidget scope={account ? "account" : "demo"} onOpen={openPayment} />
+      <AssistantWidget scope={account ? "account" : source.kind === "fixture" ? "demo-static" : "demo"} onOpen={openPayment} />
 
       {openItem && (
         <DetailPanel

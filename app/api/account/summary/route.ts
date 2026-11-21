@@ -9,6 +9,6 @@ export async function GET(request: NextRequest) {
     const user=await accountForSession(request.cookies.get(SESSION)?.value);
     if (!user) return Response.json({error:"Unauthorized"},{status:401,headers});
     const data=await readLiveDashboard(user.profile);
-    return Response.json({linked:user.linked,lastSync:user.lastSync,syncStatus:user.syncStatus,...data},{headers});
+    return Response.json({linked:user.linked,lastSync:user.lastSync,syncStatus:user.syncStatus,syncError:user.syncError,...data},{headers});
   } catch { return Response.json({error:"Account data unavailable"},{status:503,headers}); }
 }

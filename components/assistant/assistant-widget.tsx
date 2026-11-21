@@ -27,7 +27,7 @@ const SUGGESTIONS = [
 
 const MAX_MESSAGE = 600;
 
-export function AssistantWidget({ scope, onOpen }: { scope: "demo" | "account"; onOpen: (id: string) => void }) {
+export function AssistantWidget({ scope, onOpen }: { scope: "demo" | "demo-static" | "account"; onOpen: (id: string) => void }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
