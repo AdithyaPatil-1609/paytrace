@@ -25,6 +25,14 @@ function afterResponse(work: () => Promise<unknown>) {
   }
 }
 
+/** A browser visit gets a clear answer instead of an empty 405 that phones offer as a download. */
+export function GET() {
+  return Response.json(
+    { ok: false, error: "This address only accepts messages from the Paytrace phone app or iPhone Shortcut (POST)." },
+    { status: 405, headers: { Allow: "POST", "Cache-Control": "no-store" } }
+  );
+}
+
 export async function POST(request: Request) {
   const byAddress = takeHit("ingest", clientKey(request), LIMITS.sms);
   if (!byAddress.ok) return tooMany(byAddress.retryAfter);
