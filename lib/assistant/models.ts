@@ -32,7 +32,7 @@ function afterThinking(text: string) {
 }
 
 /** One chat turn on Ollama. Greedy decoding, no thinking, optional JSON schema. */
-export async function ollamaChat(messages: ChatMessage[], format?: object): Promise<string> {
+export async function ollamaChat(messages: ChatMessage[], format?: object, timeoutMs=TIMEOUT_MS): Promise<string> {
   const response = await fetch(`${local(OLLAMA_URL)}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -44,7 +44,7 @@ export async function ollamaChat(messages: ChatMessage[], format?: object): Prom
       options: { temperature: 0 },
       ...(format ? { format } : {})
     }),
-    signal: AbortSignal.timeout(TIMEOUT_MS)
+    signal: AbortSignal.timeout(timeoutMs)
   });
   if (!response.ok) throw new Error(`Ollama answered ${response.status}`);
   const body = (await response.json()) as { message?: { content?: string } };

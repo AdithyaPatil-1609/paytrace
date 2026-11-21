@@ -1,4 +1,5 @@
 import { digest, isDate, validateEvent, type PaymentEvent, type RenewalFrequency } from "./event";
+import { reportedAmount } from "./recurring-email";
 
 const inr = "(?:INR|Rs\\.?|₹)\\s*([\\d,]+(?:\\.\\d{1,2})?)(?![\\d.,])";
 const toPaise = (value: string) => Math.round(Number(value.replaceAll(",", "")) * 100);
@@ -130,5 +131,6 @@ export function parseSubscriptionCandidate(text:string,input:{id:string;date:str
   const datePattern="(?:\\d{4}-\\d{2}-\\d{2}|\\d{1,2} +[A-Za-z]+ +\\d{4}|[A-Za-z]+ +\\d{1,2},? +\\d{4})";
   const dates=[...text.matchAll(new RegExp(`\\b(?:starting (?:from|on)|renews? on|renewal date|next (?:billing|renewal|payment|charge) date|next charge on)\\s*:?\\s*(${datePattern})`,"gi"))].map(m=>receiptDate(m[1]));
   const renewalDate=dates.length&&dates[0]&&dates.every(d=>d===dates[0])?dates[0]:undefined;
-  try{return validateEvent({source:"email",kind:"subscription_candidate",merchant,amountPaise:null,date:input.date,reference:null,sourceId:input.id,...(rate?{planPricePaise:rate.amount,renewalFrequency:rate.frequency}:{}),...(renewalDate?{renewalDate}:{})});}catch{return null;}
+  const price=rate?.amount??(rates.length?undefined:reportedAmount(text,subjectConfirmed||lifecycle));
+  try{return validateEvent({source:"email",kind:"subscription_candidate",merchant,amountPaise:null,date:input.date,reference:null,sourceId:input.id,...(price===undefined?{}:{planPricePaise:price}),...(rate?{renewalFrequency:rate.frequency}:{}),...(renewalDate?{renewalDate}:{})});}catch{return null;}
 }

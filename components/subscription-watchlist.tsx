@@ -11,14 +11,19 @@ export function renewalNotice(renewalDate: string | undefined, asOf: string) {
   return `Reported renewal · ${formatDate(renewalDate)} · charge not confirmed`;
 }
 
-export function SubscriptionWatchlist({registrations,renewals=[],candidates=[],asOf,showEmpty=false}: {registrations:NotificationRow[];renewals?:NotificationRow[];candidates?:NotificationRow[];asOf:string;showEmpty?:boolean}) {
-  if (!registrations.length && !renewals.length && !candidates.length && !showEmpty) return null;
+export function SubscriptionWatchlist({registrations,renewals=[],candidates=[],scheduled=[],asOf,showEmpty=false}: {registrations:NotificationRow[];renewals?:NotificationRow[];candidates?:NotificationRow[];scheduled?:NotificationRow[];asOf:string;showEmpty?:boolean}) {
+  if (!registrations.length && !renewals.length && !candidates.length && !scheduled.length && !showEmpty) return null;
   const periods={weekly:52,monthly:12,quarterly:4,annual:1};
   return <details className="personal-activity" open>
-    <summary>Subscription watchlist <small>{renewals.length} renewal notices · {registrations.length} zero-cost registrations · {candidates.length} to verify</small></summary>
-    <p>Detected from subscription confirmations and renewal notices. These are not completed debits or guaranteed future charges. Review renewal terms with the provider.</p>
-    {!registrations.length&&!renewals.length&&!candidates.length&&<p>No subscription notices have been recognized yet. Use Rescan last 12 months in your account menu to check older confirmations.</p>}
+    <summary>Subscription watchlist &amp; recurring debits <small>{renewals.length} renewal notices · {scheduled.length} scheduled debits · {registrations.length} zero-cost registrations · {candidates.length} to verify</small></summary>
+    <p>Detected from billing confirmations, renewal and scheduled payment notices. These are not completed debits or guaranteed future charges. Verify the terms with the provider.</p>
+    {!registrations.length&&!renewals.length&&!candidates.length&&!scheduled.length&&<p>No recurring payment notices have been recognized yet. Use Rescan last 12 months in your account menu to check older confirmations.</p>}
     <div className="account-table">
+      {scheduled.map(item=><div key={item.noticeId}>
+        <span><strong>{item.brand}</strong><small>{item.channel.toUpperCase()} · Scheduled debit notice · {formatDate(item.sentOn)}</small>
+          <small>{item.renewalFrequency??"Frequency unknown"} · {item.renewalDate?`Reported debit date: ${formatDate(item.renewalDate)}${item.renewalDate<asOf?" (passed; verify status)":""}`:"Debit date unknown"}</small>
+        </span><strong>{item.amount===undefined?"Amount unknown":money.format(item.amount)} scheduled · Not confirmed paid</strong>
+      </div>)}
       {renewals.map(item=><div key={item.noticeId}>
         <span><strong>{item.brand}</strong><small>EMAIL · Automatic renewal notice · {formatDate(item.sentOn)}</small>
           <small>{item.renewalFrequency??"Frequency unknown"} · {renewalNotice(item.renewalDate,asOf)}</small>

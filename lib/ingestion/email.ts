@@ -1,6 +1,7 @@
 import { isSensitive, validateEvent, type PaymentEvent, type EventKind } from "./event";
 import { isAllowedSender } from "./gmail-filter";
 import { hasZeroReportedTotal, parseZeroCostSubscription, parseSubscriptionRenewal, parseSubscriptionCandidate, hasSubscriptionConfirmationSubject, isMarketingSubject, isSubscriptionCancellation } from "./subscription-email";
+import { parseRecurringDebit } from "./recurring-email";
 
 /** Normalize common email text formatting without inventing receipt fields. */
 export function normalizeReceiptText(text:string) {
@@ -25,8 +26,8 @@ export function parseFinancialEmail(input: { id: string; from: string; subject: 
   if (isMarketingSubject(input.subject)||isSensitiveFinancialEmail(input.subject,text))return null;
   const subjectConfirmation=hasSubscriptionConfirmationSubject(input.subject);
   const fallback=()=>subjectConfirmation&&!isSubscriptionCancellation(text)&&!/\b(?:payment (?:failed|declined)|refund (?:issued|processed|completed))\b/i.test(text)?parseSubscriptionCandidate(normalizeReceiptText(input.subject),input):null;
-  if(isSensitive(text))return fallback();
-  if (/\b(?:refund|credited|credit received|payment declined|invoice due)\b/i.test(text)) {
+  if(isSensitive(text))return parseSubscriptionCandidate(text.split("\n").filter(line=>!isSensitive(line)).join("\n"),input)??fallback();
+  if (/\b(?:refund|credited|credit received|payment declined)\b/i.test(text)) {
     // Refund-policy wording is not a refund event. Keep only provisional membership evidence.
     if(!fallback())return null;
     return parseSubscriptionCandidate(text,input)??fallback();
@@ -35,6 +36,9 @@ export function parseFinancialEmail(input: { id: string; from: string; subject: 
   if (registration) return registration;
   const renewal = parseSubscriptionRenewal(text,input);
   if (renewal) return renewal;
+  const scheduled = parseRecurringDebit(text,input);
+  if (scheduled) return scheduled;
+  if (/\binvoice due\b/i.test(text)) return parseSubscriptionCandidate(text,input);
   let kind: EventKind;
   if (/\b(?:price increase|price change|new subscription price)\b/i.test(text)) kind = "price_change";
   else if (/\b(?:mandate cancelled|autopay cancelled)\b/i.test(text)) kind = "mandate_cancelled";

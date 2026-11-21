@@ -43,7 +43,7 @@ export async function ingestLiveEvent(profile: string, event: PaymentEvent, gran
       const prior = await tx.run("MATCH (:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent {id:$id}) RETURN properties(e) AS item", { profile, id });
       if (prior.records.length) {
         const item=prior.records[0].get("item");
-        const changed=item.status==="ignored"||event.kind!==item.kind||event.merchant!==item.merchant||(event.planPricePaise??null)!==(item.planPricePaise==null?null:Number(item.planPricePaise))||(event.renewalDate??null)!==(item.renewalDate??null)||(event.renewalFrequency??null)!==(item.renewalFrequency??null);
+        const changed=item.status==="ignored"||event.kind!==item.kind||event.merchant!==item.merchant||(event.amountPaise??null)!==(item.amountPaise==null?null:Number(item.amountPaise))||(event.planPricePaise??null)!==(item.planPricePaise==null?null:Number(item.planPricePaise))||(event.renewalDate??null)!==(item.renewalDate??null)||(event.renewalFrequency??null)!==(item.renewalFrequency??null);
         if(item.kind!=="subscription_candidate"||!changed)return {eventId:id,status:"duplicate",paymentId:item.paymentId??null};
         // Only provisional email evidence is reclassified; never overwrite a confirmed charge.
         await tx.run("MATCH (:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent {id:$id})-[r:ABOUT]->(:LiveMerchant) DELETE r",{profile,id});
@@ -123,9 +123,14 @@ export async function readLiveDashboard(profile: string) {
     const subscriptionRegistrations: NotificationRow[] = [];
     const subscriptionRenewals: NotificationRow[] = [];
     const subscriptionCandidates: NotificationRow[] = [];
+    const scheduledDebits: NotificationRow[] = [];
     const seenOrders = new Set<string>();
     const seenRenewals = new Set<string>();
     events.forEach((e,i) => {
+      if(e.kind === "debit_scheduled" && e.date <= asOf) {
+        const key=JSON.stringify([e.merchant,e.renewalDate??e.date,Number(e.amountPaise)]);
+        if(!seenRenewals.has(key)){seenRenewals.add(key);scheduledDebits.push(notifications[i]);}
+      }
       if(e.kind === "subscription_renewal" && e.date <= asOf) {
         const key=JSON.stringify([e.merchant,e.renewalDate,Number(e.amountPaise),e.renewalFrequency]);
         if(!seenRenewals.has(key)) { seenRenewals.add(key); subscriptionRenewals.push(notifications[i]); }
@@ -136,7 +141,7 @@ export async function readLiveDashboard(profile: string) {
       seenOrders.add(key);
       subscriptionRegistrations.push(notifications[i]);
     });
-    const knownSubscriptions=new Set([...subscriptionRegistrations,...subscriptionRenewals].map(row=>merchantKey(row.brand)));
+    const knownSubscriptions=new Set([...subscriptionRegistrations,...subscriptionRenewals,...scheduledDebits].map(row=>merchantKey(row.brand)));
     for(const row of notifications) {
       const key=merchantKey(row.brand);
       if(row.eventType!=="subscription_candidate"||row.sentOn>asOf||knownSubscriptions.has(key))continue;
@@ -153,7 +158,7 @@ export async function readLiveDashboard(profile: string) {
     for (const e of lifecycle.values()) if (e.kind === "mandate_created") mandates.push({ mandateId:e.id, createdOn:e.date, mechanism: "none", narration:e.merchant, brand:matchDictionary(e.merchant,dictionary)?.brand ?? e.merchant, maxAmount:Number(e.amountPaise)/100, frequency:"unknown", mandateRef:e.reference ?? "", accountId:e.accountHint ?? "unidentified", status:"active" });
     const dataset: Dataset = { asOf, statement, notifications, mandates, dictionary, usage: [] };
     const commitments = detectCommitments(dataset);
-    const summary = { revision, asOf, counts: { payments: statement.length, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, review:events.filter(e=>e.status==="review").length }, commitments, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
+    const summary = { revision, asOf, counts: { payments: statement.length, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, review:events.filter(e=>e.status==="review").length }, commitments, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, scheduledDebits, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
     return { dataset, summary };
   } finally { await session.close(); }
 }

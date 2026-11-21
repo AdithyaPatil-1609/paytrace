@@ -3,7 +3,8 @@ import { ingestLiveEvent, ignoreSubscriptionCandidates } from "@/db/neo4j/live";
 import { isSensitiveFinancialEmail, normalizeReceiptText, parseFinancialEmail } from "@/lib/ingestion/email";
 import { gmailPaymentQuery, isAllowedSender, parseAllowedDomains } from "@/lib/ingestion/gmail-filter";
 import { hasNonzeroReportedTotal, hasZeroReportedTotal, hasSubscriptionConfirmationSubject, isMarketingSubject } from "@/lib/ingestion/subscription-email";
-import { type PaymentEvent } from "@/lib/ingestion/event";
+import { merchantKey, type PaymentEvent } from "@/lib/ingestion/event";
+import { semanticEmailCandidate } from "@/lib/ingestion/semantic-email";
 import { exchangeToken, GoogleTokenError } from "./google";
 import { AccountError, type AccountErrorCode } from "./errors";
 
@@ -47,14 +48,15 @@ export function parseGmailReceipt(input:{id:string;from:string;subject:string;da
   const event=registration??safe[0]??null;
   if(input.labelIds?.includes("CATEGORY_PROMOTIONS")&&(!event||event.kind==="subscription_candidate"&&!hasSubscriptionConfirmationSubject(input.subject)))return {event:null,reason:"marketing"};
   // Conflicting parsed representations are ambiguous, not two payments.
-  if(event&&safe.some(other=>other.kind!==event.kind||other.amountPaise!==event.amountPaise||other.merchant!==event.merchant||(event.kind==="subscription_renewal"&&(other.renewalDate!==event.renewalDate||other.renewalFrequency!==event.renewalFrequency))))return {event:null,reason:"unsupported"};
+  if(event&&safe.some(other=>other.kind!==event.kind||other.amountPaise!==event.amountPaise||other.merchant!==event.merchant||(["subscription_renewal","debit_scheduled"].includes(event.kind)&&(other.renewalDate!==event.renewalDate||other.renewalFrequency!==event.renewalFrequency))))return {event:null,reason:"unsupported"};
   if(event?.kind==="subscription_candidate") {
     // Missing fields in one MIME alternative must not erase explicit terms in another.
     const prices=safe.filter(e=>e.planPricePaise!==undefined);
+    const frequencies=safe.filter(e=>e.renewalFrequency!==undefined);
     const dates=safe.filter(e=>e.renewalDate!==undefined);
     const {planPricePaise,renewalFrequency,renewalDate,...base}=event;
     void planPricePaise;void renewalFrequency;void renewalDate;
-    return {event:{...base,...(prices.length&&prices.every(e=>e.planPricePaise===prices[0].planPricePaise&&e.renewalFrequency===prices[0].renewalFrequency)?{planPricePaise:prices[0].planPricePaise,renewalFrequency:prices[0].renewalFrequency}:{}),...(dates.length&&dates.every(e=>e.renewalDate===dates[0].renewalDate)?{renewalDate:dates[0].renewalDate}:{})},reason:"parsed"};
+    return {event:{...base,...(prices.length&&prices.every(e=>e.planPricePaise===prices[0].planPricePaise)?{planPricePaise:prices[0].planPricePaise}:{}),...(frequencies.length&&frequencies.every(e=>e.renewalFrequency===frequencies[0].renewalFrequency)?{renewalFrequency:frequencies[0].renewalFrequency}:{}),...(dates.length&&dates.every(e=>e.renewalDate===dates[0].renewalDate)?{renewalDate:dates[0].renewalDate}:{})},reason:"parsed"};
   }
   return {event,reason:event?"parsed":messageText.some(text=>/\b(?:subscriptions?|memberships?|free trial|your new plan|renewal|recurring billing)\b/i.test(text))?"subscription":"unsupported"};
 }
@@ -121,6 +123,8 @@ export async function syncAccount(sub: string, history=false,historyDays:90|365=
     // Explicit history scans always use current broad discovery, even if an old custom query omitted memberships.
     const query=gmailPaymentQuery(after,domains,history?undefined:process.env.GMAIL_ACCOUNT_QUERY);
     let accepted=0,skipped=0,scanned=0,duplicates=0,registrations=0,renewals=0,candidates=0,subscriptionSkipped=0,senderSkipped=0,marketingSkipped=0,ignored=0,page:string|undefined;
+    // Explicit local AI opt-in. Bound inference time and never block sync if the model is unavailable.
+    let semanticBudget=process.env.PAYTRACE_EMAIL_AI_ENABLED==="true"?12:0;
     const accessGrant={sub:grant.sub,grantId:grant.grantId,lease:grant.lease};
     do {
       stage="neo4j"; await renewSyncLease(grant.sub,grant.lease); stage="google";
@@ -137,7 +141,19 @@ export async function syncAccount(sub: string, history=false,historyDays:90|365=
         if(!mail.payload || !mail.internalDate || !Number.isFinite(timestamp.valueOf())){skipped++;continue;}
         const payload=mail.payload;
         const header=(name:string)=>payload.headers?.find(h=>h.name.toLowerCase()===name)?.value??"";
-        const {event,reason}=parseGmailReceipt({id,from:header("from"),subject:header("subject"),payload,labelIds:mail.labelIds,date:timestamp.toISOString().slice(0,10)},domains);
+        const date=timestamp.toISOString().slice(0,10),subject=header("subject");
+        let {event,reason}=parseGmailReceipt({id,from:header("from"),subject,payload,labelIds:mail.labelIds,date},domains);
+        if(semanticBudget>0&&!mail.labelIds?.includes("CATEGORY_PROMOTIONS")&&["subscription","unsupported","parsed"].includes(reason)&&(!event||event.kind==="subscription_candidate"&&event.planPricePaise===undefined)){
+          const text=normalizeReceiptText(`${subject}\n${emailTextVariants(payload).sort((a,b)=>b.length-a.length)[0]??""}`);
+          try{
+            const result=await semanticEmailCandidate({id,date,subject,text},async(messages,format)=>{
+              semanticBudget--;
+              const {ollamaChat}=await import("@/lib/assistant/models");
+              return ollamaChat(messages,format,8000);
+            });
+            if(result&&(!event||merchantKey(event.merchant)===merchantKey(result.merchant))){event=event?{...event,...(result.planPricePaise===undefined?{}:{planPricePaise:result.planPricePaise}),...(!event.renewalDate&&result.renewalDate?{renewalDate:result.renewalDate}:{})}:result;reason="parsed";}
+          }catch{semanticBudget=0;}
+        }
         if (!event) {
           skipped++; if(reason==="subscription")subscriptionSkipped++; if(reason==="sender")senderSkipped++; if(reason==="marketing")marketingSkipped++;
           if(history&&reason!=="sender")rejected.push(id);
