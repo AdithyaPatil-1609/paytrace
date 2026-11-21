@@ -7,7 +7,7 @@
 import "../../scripts/load-env-local";
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { generateKeyPairSync, randomUUID } from "node:crypto";
 import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
 import { accountForSession, createSession, endAllSessions } from "../../db/neo4j/accounts";
 import { createPairingCode, deviceById, pairDevice, removeDevices } from "../../db/neo4j/devices";
@@ -17,7 +17,8 @@ import { profileFor } from "../../lib/accounts/security";
 import type { PaymentEvent } from "../../lib/ingestion/event";
 
 const env = () => Object.assign(process.env, { GOOGLE_WEB_CLIENT_ID: "test-client", GOOGLE_WEB_CLIENT_SECRET: "test-secret", PAYTRACE_APP_URL: "http://localhost:3000", PAYTRACE_AUTH_KEY: "ab".repeat(32) });
-const key = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE" + "A".repeat(86) + "==";
+// A throwaway P-256 public key, made fresh for each run (never a fixed string in the code).
+const devicePublicKey = generateKeyPairSync("ec", { namedCurve: "prime256v1" }).publicKey.export({ format: "der", type: "spki" }).toString("base64");
 
 // The shared driver keeps a connection pool open; close it so the test process can exit.
 after(async () => { if (hasNeo4jConfig()) await getNeo4jDriver().close(); });
@@ -28,9 +29,9 @@ test("pairing codes work once and phones belong to one person", { skip: !hasNeo4
   await createSession({ sub: a, email: "a@example.com", name: "A" });
   try {
     const { code } = await createPairingCode(a);
-    const first = await pairDevice(code, key, "Test phone");
+    const first = await pairDevice(code, devicePublicKey, "Test phone");
     assert.equal(first.ok, true);
-    assert.deepEqual(await pairDevice(code, key, "Second try"), { ok: false, reason: "invalid-code" });
+    assert.deepEqual(await pairDevice(code, devicePublicKey, "Second try"), { ok: false, reason: "invalid-code" });
     if (first.ok) {
       const owner = await deviceById(first.deviceId);
       assert.equal(owner?.sub, a);
@@ -56,7 +57,7 @@ test("sign out everywhere ends every session; delete my data removes only that p
     await ingestLiveEvent(profileFor(a), event);
     await ingestLiveEvent(profileFor(b), { ...event, sourceId: `sms-${randomUUID()}` });
     const { code } = await createPairingCode(a);
-    await pairDevice(code, key, "Phone A");
+    await pairDevice(code, devicePublicKey, "Phone A");
 
     assert.equal((await deleteAllUserData(a, profileFor(a))).found, true);
     const s = getNeo4jDriver().session({ database: neo4jDatabase });

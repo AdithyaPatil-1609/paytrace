@@ -1,0 +1,4 @@
+# Reviewed false positives: a made-up P-256 public key in an old version of
+# tests/cypher/devices-and-delete.test.ts (not a secret; the test now generates its key at run time).
+ad1e29dbd686ea13146e64cd1289400deb202904:tests/cypher/devices-and-delete.test.ts:generic-api-key:20
+9b9793778f1e42688753c2453ab7ffa17fc7c9c6:tests/cypher/devices-and-delete.test.ts:generic-api-key:20
