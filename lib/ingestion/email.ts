@@ -2,6 +2,7 @@ import { isSensitive, validateEvent, type PaymentEvent, type EventKind } from ".
 import { isAllowedSender } from "./gmail-filter";
 import { hasZeroReportedTotal, parseZeroCostSubscription, parseSubscriptionRenewal, parseSubscriptionCandidate, hasSubscriptionConfirmationSubject, isMarketingSubject, isSubscriptionCancellation } from "./subscription-email";
 import { parseRecurringDebit } from "./recurring-email";
+import { parseStoreConfirmation, parseStorePriceChange, parseStoreReceipt, parseStoreReminder } from "./store-email";
 
 /** Normalize common email text formatting without inventing receipt fields. */
 export function normalizeReceiptText(text:string) {
@@ -27,6 +28,9 @@ export function parseFinancialEmail(input: { id: string; from: string; subject: 
   const subjectConfirmation=hasSubscriptionConfirmationSubject(input.subject);
   const fallback=()=>subjectConfirmation&&!isSubscriptionCancellation(text)&&!/\b(?:payment (?:failed|declined)|refund (?:issued|processed|completed))\b/i.test(text)?parseSubscriptionCandidate(normalizeReceiptText(input.subject),input):null;
   if(isSensitive(text))return parseSubscriptionCandidate(text.split("\n").filter(line=>!isSensitive(line)).join("\n"),input)??fallback();
+  // Store cards first: a receipt's refund-policy footer must not hide the charge.
+  const store = parseStorePriceChange(text,input) ?? parseStoreReceipt(text,input) ?? parseStoreReminder(text,input) ?? parseStoreConfirmation(text,input);
+  if (store) return store;
   if (/\b(?:refund|credited|credit received|payment declined)\b/i.test(text)) {
     // Refund-policy wording is not a refund event. Keep only provisional membership evidence.
     if(!fallback())return null;

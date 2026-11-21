@@ -180,7 +180,9 @@ export async function readLiveSummary(profile: string) {
  * when it is a repeat of another notice, or when its day is still ahead.
  */
 export function noticeRows(paid: StatementRow[], events: Array<Record<string, any>>, profile: string, asOf: string): StatementRow[] {
-  const confirmed = new Set(paid.map(row => JSON.stringify([merchantKey(row.narration), row.date, row.debit])));
+  const dayMs = 86_400_000;
+  const confirmedBy = (key: string, day: string) =>
+    paid.some(row => merchantKey(row.narration) === key && Math.abs(Date.parse(row.date) - Date.parse(day)) <= 3 * dayMs);
   // Notices rarely name the account; borrow it from a real debit to the same
   // merchant so both land in one repeating payment, not two.
   const accountOf = new Map(paid.map(row => [merchantKey(row.narration), row.accountId] as const));
@@ -192,7 +194,7 @@ export function noticeRows(paid: StatementRow[], events: Array<Record<string, an
     if (typeof day !== "string" || day > asOf) continue;
     const amount = Number(e.amountPaise) / 100;
     const key = JSON.stringify([merchantKey(e.merchant), day, amount]);
-    if (confirmed.has(key) || seen.has(key)) continue;
+    if (confirmedBy(merchantKey(e.merchant), day) || seen.has(key)) continue;
     seen.add(key);
     rows.push({ txnId: `notice-${e.id}`, persona: profile, date: day, accountId: e.accountHint || accountOf.get(merchantKey(e.merchant)) || "unidentified", accountType: "unknown", narration: e.merchant, debit: amount, reference: e.reference ?? "", channel: NOTICE_CHANNEL, txnKind: "debit_notice" } as StatementRow);
   }

@@ -97,8 +97,6 @@ export function AllPaymentsScreen({
           </p>
         </header>
 
-        {subscriptionNotices}
-
         <PaymentRadar items={items} flagged={flagged} asOf={asOf} onOpen={pick} />
 
         <section className="ledger-table" aria-label="Every repeating payment">
@@ -111,7 +109,7 @@ export function AllPaymentsScreen({
 
           {personal && items.length === 0 && (
             <p className="personal-empty">
-              No recurring payments detected yet from completed debits. Check the subscription watchlist for reported renewals, or import more payment history.
+              No repeating payments yet. A payment appears here once two charges or renewal notices show it repeating. Rescan the last 12 months from your account menu to read older emails.
             </p>
           )}
 
@@ -158,6 +156,8 @@ export function AllPaymentsScreen({
             );
           })}
         </section>
+
+        {subscriptionNotices}
 
         <p className="exclusion-note">
           {personal ? (

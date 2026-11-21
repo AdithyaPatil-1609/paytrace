@@ -56,6 +56,8 @@ export function parseSubscriptionRenewal(text: string, input: {id:string;date:st
       const heading=lines[rateLine-2];
       if (withDetail && heading?.toLowerCase()===withDetail.toLowerCase()) merchant=heading;
       else if (withDetail) merchant=withDetail;
+      // A plan line such as "Student (1 month)" sits under the product name.
+      else if (/^[A-Za-z0-9][A-Za-z0-9 .&+'-]{0,39}\((?:monthly|yearly|annual|weekly|quarterly|\d+ (?:month|year|week)s?)\)$/i.test(description) && heading && new RegExp(`^${namePattern}$`).test(heading.split(":")[0].trim()) && !/\b(?:subscription renewal|renewal|billing|your|dear)\b/i.test(heading)) merchant=heading.split(":")[0].trim();
       else if (/^[A-Za-z0-9][A-Za-z0-9 .&*+_'@/-]{0,49}$/.test(description) && !/\b(?:subscription renewal|billing|amount|total|payment|your|dear|renewal)\b/i.test(description)) merchant=description;
     }
   }

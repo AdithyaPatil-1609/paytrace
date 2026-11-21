@@ -136,7 +136,8 @@ export function ProofChain({ item, flagged, live }: { item: Commitment; flagged:
         }
       : {
           kind: "statement",
-          title: "Bank statement",
+          // Store receipts by email are real charges, but they are not a bank statement.
+          title: item.evidenceRows.every((row) => row.channel === "email") ? "Payment receipts" : "Bank statement",
           detail: latest
             ? `${item.evidenceRows.length} debits · latest ${formatINR(latest.amount)} on ${formatDate(latest.date)}`
             : "No dated debit"

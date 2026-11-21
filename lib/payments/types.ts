@@ -27,7 +27,7 @@ export type Mechanism =
 
 /** The four ways money leaves, for the annual composition chart. "Unused" is
     a status, not a spend group, so it is deliberately not one of these. */
-export type SpendGroup = "subscriptions" | "utilities" | "insurance" | "debt";
+export type SpendGroup = "subscriptions" | "utilities" | "insurance" | "debt" | "investments";
 
 /** How much we trust the next-charge date. Never invent one. */
 export type DateConfidence = "confirmed" | "estimated" | "unknown";

@@ -2,6 +2,10 @@ import type { NotificationRow } from "@/lib/payments/types";
 import { formatDate } from "@/lib/presentation/format";
 
 const money = new Intl.NumberFormat("en-IN", {style:"currency",currency:"INR",minimumFractionDigits:2,maximumFractionDigits:2});
+const periods = {weekly:52,monthly:12,quarterly:4,annual:1};
+const nameKey = (name: string) => name.toUpperCase().replace(/[^A-Z0-9]/g, "");
+/** A bare sender domain ("EMAIL.APPLE.COM") names nobody; it is not shown as a merchant. */
+const isDomain = (name: string) => /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(name.trim());
 
 export function renewalNotice(renewalDate: string | undefined, asOf: string) {
   if (!renewalDate) return "Next renewal not confirmed · check your provider";
@@ -11,37 +15,63 @@ export function renewalNotice(renewalDate: string | undefined, asOf: string) {
   return `Reported renewal · ${formatDate(renewalDate)} · charge not confirmed`;
 }
 
-export function SubscriptionWatchlist({registrations,renewals=[],candidates=[],scheduled=[],asOf,showEmpty=false}: {registrations:NotificationRow[];renewals?:NotificationRow[];candidates?:NotificationRow[];scheduled?:NotificationRow[];asOf:string;showEmpty?:boolean}) {
-  if (!registrations.length && !renewals.length && !candidates.length && !scheduled.length && !showEmpty) return null;
-  const periods={weekly:52,monthly:12,quarterly:4,annual:1};
-  return <details className="personal-activity" open>
-    <summary>Subscription watchlist &amp; recurring debits <small>{renewals.length} renewal notices · {scheduled.length} scheduled debits · {registrations.length} zero-cost registrations · {candidates.length} to verify</small></summary>
-    <p>Detected from billing confirmations, renewal and scheduled payment notices. These are not completed debits or guaranteed future charges. Verify the terms with the provider.</p>
-    {!registrations.length&&!renewals.length&&!candidates.length&&!scheduled.length&&<p>No recurring payment notices have been recognized yet. Use Rescan last 12 months in your account menu to check older confirmations.</p>}
+type Kind = "renewal" | "scheduled" | "registration" | "candidate";
+const rank: Record<Kind, number> = {renewal:0,scheduled:1,registration:2,candidate:3};
+
+/** What we know about one merchant, from its most telling notice. */
+function describe(kind: Kind, item: NotificationRow, asOf: string) {
+  if (kind === "scheduled") return {
+    lines: [`${item.renewalFrequency??"Frequency unknown"} · ${item.renewalDate?`Reported debit date: ${formatDate(item.renewalDate)}${item.renewalDate<asOf?" (passed; verify status)":""}`:"Debit date unknown"}`],
+    amount: `${item.amount===undefined?"Amount unknown":money.format(item.amount)} scheduled · Not confirmed paid`
+  };
+  if (kind === "renewal") return {
+    lines: [`${item.renewalFrequency??"Frequency unknown"} · ${renewalNotice(item.renewalDate,asOf)}`, ...(item.amount!==undefined&&item.renewalFrequency?[`Projected annual cost if renewed: ${money.format(item.amount*periods[item.renewalFrequency])}`]:[])],
+    amount: `${item.amount===undefined?"Amount unknown":money.format(item.amount)} scheduled`
+  };
+  if (kind === "registration") return {
+    lines: [item.planPrice===undefined?"Listed plan price unknown":`Listed plan price: ${money.format(item.planPrice)}`, renewalNotice(item.renewalDate,asOf)],
+    amount: `${money.format(0)} paid`
+  };
+  return {
+    lines: [`${item.renewalFrequency??"Frequency unknown"} · ${renewalNotice(item.renewalDate,asOf)}`],
+    amount: `${item.planPrice===undefined?"Price unknown":`${money.format(item.planPrice)} reported`} · Not confirmed paid`
+  };
+}
+
+/**
+ * Subscriptions seen in Gmail that are not yet repeating payments on the
+ * table: one row per merchant, never one row per email. Merchants already on
+ * the table (exclude) are left out so nothing is shown twice.
+ */
+export function SubscriptionWatchlist({registrations,renewals=[],candidates=[],scheduled=[],asOf,showEmpty=false,exclude=[]}: {registrations:NotificationRow[];renewals?:NotificationRow[];candidates?:NotificationRow[];scheduled?:NotificationRow[];asOf:string;showEmpty?:boolean;exclude?:string[]}) {
+  const skip = new Set(exclude.map(nameKey));
+  const merchants = new Map<string, {kind: Kind; item: NotificationRow; count: number; latest: string}>();
+  const tagged: [Kind, NotificationRow[]][] = [["renewal",renewals],["scheduled",scheduled],["registration",registrations],["candidate",candidates]];
+  for (const [kind, rows] of tagged) for (const item of rows) {
+    const key = nameKey(item.brand);
+    if (!key || skip.has(key) || isDomain(item.brand)) continue;
+    const seen = merchants.get(key);
+    if (!seen) { merchants.set(key, {kind, item, count: 1, latest: item.sentOn}); continue; }
+    seen.count++;
+    if (item.sentOn > seen.latest) seen.latest = item.sentOn;
+    const better = rank[kind] < rank[seen.kind] || (rank[kind] === rank[seen.kind] && item.sentOn > seen.item.sentOn);
+    if (better) { seen.kind = kind; seen.item = item; }
+  }
+  const rows = [...merchants.values()].sort((a, b) => b.latest.localeCompare(a.latest));
+  if (!rows.length && !showEmpty) return null;
+  return <details className="personal-activity watchlist">
+    <summary>Subscription watchlist <small>{rows.length} {rows.length===1?"merchant":"merchants"} seen in Gmail, not yet repeating payments</small></summary>
+    <p>From renewal notices, confirmations and scheduled debit emails. A merchant moves into the table once two charges or notices show it repeating. Nothing here is a confirmed charge.</p>
+    {!rows.length&&<p>No other subscription notices have been recognized. Use Rescan last 12 months in your account menu to check older emails.</p>}
     <div className="account-table">
-      {scheduled.map(item=><div key={item.noticeId}>
-        <span><strong>{item.brand}</strong><small>{item.channel.toUpperCase()} · Scheduled debit notice · {formatDate(item.sentOn)}</small>
-          <small>{item.renewalFrequency??"Frequency unknown"} · {item.renewalDate?`Reported debit date: ${formatDate(item.renewalDate)}${item.renewalDate<asOf?" (passed; verify status)":""}`:"Debit date unknown"}</small>
-        </span><strong>{item.amount===undefined?"Amount unknown":money.format(item.amount)} scheduled · Not confirmed paid</strong>
-      </div>)}
-      {renewals.map(item=><div key={item.noticeId}>
-        <span><strong>{item.brand}</strong><small>EMAIL · Automatic renewal notice · {formatDate(item.sentOn)}</small>
-          <small>{item.renewalFrequency??"Frequency unknown"} · {renewalNotice(item.renewalDate,asOf)}</small>
-          {item.amount!==undefined&&item.renewalFrequency&&<small>Projected annual cost if renewed: {money.format(item.amount*periods[item.renewalFrequency])}</small>}
-        </span><strong>{item.amount===undefined?"Amount unknown":money.format(item.amount)} scheduled</strong>
-      </div>)}
-      {registrations.map(item=><div key={item.noticeId}>
-        <span><strong>{item.brand}</strong><small>EMAIL · Zero-cost subscription · {formatDate(item.sentOn)}</small>
-          <small>{item.planPrice===undefined?"Listed plan price unknown":`Listed plan price: ${money.format(item.planPrice)}`}</small>
-          <small>{renewalNotice(item.renewalDate,asOf)}</small>
-        </span><strong>{money.format(0)} paid</strong>
-      </div>)}
-      {candidates.map(item=><div key={item.noticeId}>
-        <span><strong>{item.brand}</strong><small>EMAIL · Subscription evidence · {formatDate(item.sentOn)}</small>
-          <small>{item.renewalFrequency??"Frequency unknown"} · {renewalNotice(item.renewalDate,asOf)}</small>
-          <small>Verify current membership and billing with the provider.</small>
-        </span><strong>{item.planPrice===undefined?"Price unknown":`${money.format(item.planPrice)} reported`} · Not confirmed paid</strong>
-      </div>)}
+      {rows.map(({kind,item,count,latest})=>{
+        const view = describe(kind,item,asOf);
+        return <div key={nameKey(item.brand)}>
+          <span><strong>{item.brand}</strong><small>{count} {count===1?"email":"emails"} · latest {formatDate(latest)}</small>
+            {view.lines.map(line=><small key={line}>{line}</small>)}
+          </span><strong>{view.amount}</strong>
+        </div>;
+      })}
     </div>
   </details>;
 }

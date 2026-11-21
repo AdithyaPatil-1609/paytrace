@@ -142,6 +142,7 @@ test("receipt text accepts markdown formatting and narrow spaces",()=>{
 test("subscription watchlist shows actual zero cost and never invents a renewal date",()=>{
   const html=renderToStaticMarkup(createElement(SubscriptionWatchlist,{asOf:"2026-11-19",registrations:[{noticeId:"test",sentOn:"2026-10-22",channel:"email",sender:"email",eventType:"subscription_registered",brand:"CHATGPT PLUS",amount:0,planPrice:1694.07,text:"Registration"}]}));
   assert.ok(html.includes("Subscription watchlist"));
+  assert.ok(html.includes("1 email"));
   assert.ok(html.includes("₹1,694.07"));
   assert.ok(html.includes("₹0.00 paid"));
   assert.ok(html.includes("Next renewal not confirmed"));
@@ -196,7 +197,7 @@ test("signed-in dashboard retains all original tabs without demo payments",()=>{
   for(const tab of ["All payments","Issues","Cancel paths","Annual","Evidence graph"]) assert.ok(html.includes(tab),tab);
   assert.ok(html.includes("Connect Gmail"));
   assert.ok(html.includes("Sign out"));
-  assert.ok(html.includes("No recurring payments detected yet"));
+  assert.ok(html.includes("No repeating payments yet"));
   assert.ok(!html.includes("Priya"));
   assert.ok(!html.includes("Spotify"));
   assert.ok(!html.includes("Simulate a new Autopay"));

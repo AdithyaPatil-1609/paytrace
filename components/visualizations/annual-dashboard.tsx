@@ -19,7 +19,8 @@ const sliceColor: Record<SpendGroup, string> = {
   debt: "var(--ink-soft)",
   subscriptions: "var(--marigold)",
   utilities: "var(--plum)",
-  insurance: "var(--sage)"
+  insurance: "var(--sage)",
+  investments: "var(--cyan-deep)"
 };
 
 export function AnnualDashboard({
