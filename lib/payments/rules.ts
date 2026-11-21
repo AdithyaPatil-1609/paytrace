@@ -176,3 +176,20 @@ export const DEVICE_LIMITS = {
   /** How long a device lookup is cached in memory. */
   deviceCacheMs: 60_000
 } as const;
+
+/**
+ * The public sandbox (/sandbox): each visitor gets a private, temporary copy of
+ * the synthetic demo person, kept in this server's memory only.
+ */
+export const SANDBOX_LIMITS = {
+  /** A sandbox not used for this long is forgotten. */
+  idleMs: 2 * 60 * 60_000,
+  /** Sandboxes kept at once; the least recently used is dropped first. */
+  maxSandboxes: 300,
+  /** Messages one sandbox may hold before it must be reset. */
+  maxMessages: 60,
+  /** Request body limit for the sandbox routes. */
+  maxBodyBytes: 6 * 1024,
+  /** Messages waiting for the AI reader before new ones get "busy". */
+  maxWaitingForReader: 4
+} as const;

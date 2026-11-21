@@ -89,6 +89,11 @@ export const LIMITS = {
   ],
   // Starting Google sign-in: slows down anyone hammering the login button or the flow cookie.
   signIn: [{ limit: 10, ms: 60_000 }],
+  // The public sandbox: every message may wake the AI reader on this laptop.
+  sandbox: [
+    { limit: 20, ms: 60_000 },
+    { limit: 300, ms: 60 * 60_000 }
+  ],
   // Pairing a phone: a guessed pairing code gets very few tries.
   pairing: [
     { limit: 5, ms: 60_000 },

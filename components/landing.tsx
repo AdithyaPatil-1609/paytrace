@@ -25,8 +25,9 @@ export function Landing() {
         <div className="landing-actions">
           <Link className="account-button primary" href="/signin">Sign in</Link>
           <Link className="account-button demo-button" href="/demo">Try the demo <span aria-hidden="true">→</span></Link>
+          <Link className="account-button demo-button" href="/sandbox">Open the sandbox <span aria-hidden="true">→</span></Link>
         </div>
-        <p className="login-footnote landing-note">Gmail sign-in is open only to approved test accounts while Google reviews the app. Evaluators: please use the demo, which needs no sign-in.</p>
+        <p className="login-footnote landing-note">Gmail sign-in is open only to approved test accounts while Google reviews the app. Evaluators: use the demo, or the sandbox to send your own SMS and emails. Neither needs a sign-in.</p>
       </div>
       <div className="login-options">
         <p className="account-eyebrow">HOW IT WORKS</p>
