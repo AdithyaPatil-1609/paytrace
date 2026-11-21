@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { accountForSession } from "@/db/neo4j/accounts";
 import { authorizationUrl, createFlow } from "@/lib/accounts/google";
 import { accountConfig, cookieOptions, FLOW, sameOrigin, seal, SESSION } from "@/lib/accounts/security";
+import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const hit = takeHit("sign-in", clientKey(request), LIMITS.signIn);
+  if (!hit.ok) return tooMany(hit.retryAfter);
   if (!sameOrigin(request)) return new Response("Forbidden",{status:403});
   try {
     const mode=(await request.formData()).get("mode");

@@ -81,5 +81,12 @@ export const LIMITS = {
   // The phone sends one event per bank SMS.
   sms: [{ limit: 30, ms: 60_000 }],
   // Rolled-back Neo4j queries: cheap, but not free.
-  graph: [{ limit: 20, ms: 60_000 }]
+  graph: [{ limit: 20, ms: 60_000 }],
+  // Each sync calls Gmail; Google's quota is per project, so one person must not use it up.
+  gmailSync: [
+    { limit: 5, ms: 60_000 },
+    { limit: 60, ms: 60 * 60_000 }
+  ],
+  // Starting Google sign-in: slows down anyone hammering the login button or the flow cookie.
+  signIn: [{ limit: 10, ms: 60_000 }]
 } satisfies Record<string, Window[]>;
