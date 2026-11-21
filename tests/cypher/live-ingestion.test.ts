@@ -29,6 +29,9 @@ test("live graph writes, deduplicates and exposes recurring commitments in a sco
     const renewal:PaymentEvent={source:"email",kind:"subscription_renewal",merchant:"TEST CLOUD",date:"2026-02-03",amountPaise:74900,renewalDate:"2026-03-03",renewalFrequency:"monthly",reference:null,sourceId:"renewal1"};
     assert.equal((await ingestLiveEvent(profile,renewal)).paymentId,null);
     await ingestLiveEvent(profile,{...renewal,sourceId:"renewal2"});
+    const membership:PaymentEvent={source:"email",kind:"subscription_candidate",merchant:"TEST MEMBERSHIP",date:"2026-02-04",amountPaise:null,reference:null,sourceId:"membership1"};
+    assert.equal((await ingestLiveEvent(profile,membership)).paymentId,null);
+    await ingestLiveEvent(profile,{...membership,sourceId:"membership2"});
     const summary = await readLiveSummary(profile);
     assert.equal(summary.counts.payments,3);
     assert.equal(summary.counts.review,1);
@@ -41,6 +44,10 @@ test("live graph writes, deduplicates and exposes recurring commitments in a sco
     assert.equal(summary.subscriptionRenewals.length,1);
     assert.equal(summary.subscriptionRenewals[0].amount,749);
     assert.equal(summary.subscriptionRenewals[0].renewalFrequency,"monthly");
+    assert.equal(summary.subscriptionCandidates.length,1);
+    assert.equal(summary.subscriptionCandidates[0].amount,undefined);
+    assert.ok(!summary.commitments.some(c=>c.merchant==="TEST MEMBERSHIP"));
+    assert.equal((await readLiveSummary(profile+"-other")).subscriptionCandidates.length,0);
     assert.ok(!summary.commitments.some(c=>c.merchant==="TEST CLOUD"));
     assert.equal((await readLiveSummary(profile+"-other")).subscriptionRenewals.length,0);
     assert.equal((await readLiveSummary(profile+"-other")).subscriptionRegistrations.length,0);

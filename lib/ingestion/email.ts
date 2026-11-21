@@ -1,6 +1,6 @@
 import { isSensitive, validateEvent, type PaymentEvent, type EventKind } from "./event";
 import { isAllowedSender } from "./gmail-filter";
-import { hasZeroReportedTotal, parseZeroCostSubscription, parseSubscriptionRenewal } from "./subscription-email";
+import { hasZeroReportedTotal, parseZeroCostSubscription, parseSubscriptionRenewal, parseSubscriptionCandidate } from "./subscription-email";
 
 /** Normalize common email text formatting without inventing receipt fields. */
 export function normalizeReceiptText(text:string) {
@@ -24,14 +24,14 @@ export function parseFinancialEmail(input: { id: string; from: string; subject: 
   else if (/\b(?:mandate cancelled|autopay cancelled)\b/i.test(text)) kind = "mandate_cancelled";
   else if (/\b(?:mandate created|autopay activated)\b/i.test(text)) kind = "mandate_created";
   else if (/\b(?:payment (?:was |has been )?(?:successful|received|completed|confirmed)|payment confirmation|amount debited|paid successfully|payment receipt|successful payment|you (?:have been|were) charged)\b/i.test(text)) kind = "debit_posted";
-  else return null;
+  else return parseSubscriptionCandidate(text,input);
   // A displayed list price is never proof of a debit when the receipt reports a zero total.
-  if (kind === "debit_posted" && hasZeroReportedTotal(text)) return null;
+  if (kind === "debit_posted" && hasZeroReportedTotal(text)) return parseSubscriptionCandidate(text,input);
   const merchant = text.match(/(?:^|\n)\s*(?:Merchant(?: name)?|Payee(?: name)?|Service|Paid to|Billed by|Sold by)\s*:\s*([A-Za-z0-9][A-Za-z0-9 .&*_'@/-]{0,79})(?=\r?\n|$)/i)?.[1]?.trim();
-  if (!merchant) return null;
+  if (!merchant) return parseSubscriptionCandidate(text,input);
   const amountText = text.match(/(?:^|\n)\s*(?:Amount(?: paid| debited| charged)?|New price|Total(?: paid| charged)?)\s*:?\s*(?:INR|Rs\.?|₹)\s*([\d,]+(?:\.\d{1,2})?)(?![\d.,])/i)?.[1];
   const amountPaise = amountText ? Math.round(Number(amountText.replaceAll(",", ""))*100) : null;
   const reference = text.match(/(?:^|\n)\s*(?:Transaction (?:ID|reference)|Reference|UTR|RRN|Mandate ID)\s*:\s*([A-Za-z0-9-]{3,80})\b/i)?.[1] ?? null;
   const date = text.match(/(?:^|\n)\s*(?:Date|Payment date)\s*:\s*(\d{4}-\d{2}-\d{2})\b/i)?.[1] ?? input.date;
-  try { return validateEvent({ source:"email", kind, merchant, amountPaise, date, reference, sourceId: input.id }); } catch { return null; }
+  try { return validateEvent({ source:"email", kind, merchant, amountPaise, date, reference, sourceId: input.id }); } catch { return parseSubscriptionCandidate(text,input); }
 }

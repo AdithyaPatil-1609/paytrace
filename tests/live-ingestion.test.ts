@@ -69,7 +69,9 @@ test("fully discounted subscription orders are zero-cost registrations, not debi
   assert.match(result?.reference??"",/^[A-F0-9]{64}$/);
   assert.equal(parseFinancialEmail({...mail,body:mail.body+"\nNext billing date: Nov 22, 2026"},[".com"])?.renewalDate,"2026-11-22");
   assert.equal(parseFinancialEmail({...mail,body:mail.body+"\nAmount paid: ₹99"},[".com"]),null);
-  assert.equal(parseFinancialEmail({...mail,body:mail.body.replace("Total: ₹0.00","Total: ₹99.00")},[".com"]),null);
+  const unverified=parseFinancialEmail({...mail,body:mail.body.replace("Total: ₹0.00","Total: ₹99.00")},[".com"]);
+  assert.equal(unverified?.kind,"subscription_candidate");
+  assert.equal(unverified?.amountPaise,null);
   assert.equal(parseFinancialEmail({...mail,body:"Subscribe now!\nPlan: Example\nSubscription price: INR 100\nTotal: INR 0"},[".com"]),null);
   assert.equal(parseFinancialEmail({...mail,subject:"Payment receipt",body:"Merchant: Example\nAmount: INR 100\nTotal: INR 0"},[".com"]),null);
   assert.equal(parseFinancialEmail({...mail,body:mail.body+"\nSubscription cancelled"},[".com"]),null);
@@ -97,8 +99,43 @@ test("automatic renewal notices import explicit terms without recording a debit"
   assert.equal(annual?.merchant,"EXAMPLE CLOUD");
   assert.equal(annual?.renewalFrequency,"annual");
   assert.equal(annual?.amountPaise,120000);
-  for (const body of [mail.body+"\nYour OTP is 123456",mail.body.replace("20 November 2026","31 November 2026"),mail.body.replace("automatically renews for ₹749.00","automatically renews for ₹899.00"),mail.body+"\nYour subscription has been cancelled",mail.body.replaceAll("₹749.00/month","USD 749.00/month"),"Subscribe now! Plan: Example\n₹749/month"]){
+  for (const body of [mail.body+"\nYour OTP is 123456",mail.body+"\nYour subscription has been cancelled"]){
     assert.equal(parseFinancialEmail({...mail,body},[".com"]),null,body);
   }
+  for(const body of [mail.body.replace("20 November 2026","31 November 2026"),mail.body.replace("automatically renews for ₹749.00","automatically renews for ₹899.00"),mail.body.replaceAll("₹749.00/month","USD 749.00/month")]){
+    const candidate=parseFinancialEmail({...mail,body},[".com"]);
+    assert.equal(candidate?.kind,"subscription_candidate");
+    assert.equal(candidate?.amountPaise,null);
+  }
+  assert.equal(parseFinancialEmail({...mail,subject:"Special offer",body:"Subscribe now! Plan: Example\n₹749/month"},[".com"]),null);
   assert.throws(()=>validateEvent({...event,renewalFrequency:"unknown"}));
+});
+
+test("merchant-independent membership discovery retains incomplete confirmations without fabricating charges",()=>{
+  const mail={id:"membership123",from:"YouTube <noreply-purchases@youtube.com>",subject:"Your YouTube Premium student membership is good to go!",date:"2026-10-11",body:""};
+  const candidate=parseFinancialEmail(mail,[".com",".in"]);
+  assert.equal(candidate?.kind,"subscription_candidate");
+  assert.equal(candidate?.merchant,"YOUTUBE PREMIUM STUDENT");
+  assert.equal(candidate?.amountPaise,null);
+  assert.equal(candidate?.planPricePaise,undefined);
+  assert.equal(candidate?.renewalDate,undefined);
+  const examples=[
+    {subject:"Your Acme Fitness membership is active",body:"Billed at INR 899/month",name:"ACME FITNESS"},
+    {subject:"Your Example Cloud subscription has been confirmed",body:"Next charge on 25 November 2026\n₹1,299/year",name:"EXAMPLE CLOUD"},
+    {subject:"Welcome to Fictional Audio",body:"Thanks for subscribing. ₹99 per month",name:"FICTIONAL AUDIO"},
+    {subject:"Membership renewed",body:"Your membership has been renewed",name:"YOUTUBE.COM"}
+  ];
+  for(const {subject,body,name} of examples){
+    const e=parseFinancialEmail({...mail,subject,body},[".com"]);
+    assert.equal(e?.merchant,name);
+    assert.equal(e?.kind,"subscription_candidate");
+    assert.equal(e?.amountPaise,null);
+  }
+  for(const subject of ["Subscribe now for 50% off","Your membership has been cancelled","YouTube newsletter","Start your free trial today"]){
+    assert.equal(parseFinancialEmail({...mail,subject,body:""},[".com"]),null);
+  }
+  assert.equal(parseFinancialEmail(mail,[".in"]),null);
+  assert.throws(()=>validateEvent({...candidate,amountPaise:9900}));
+  assert.throws(()=>validateEvent({...candidate,source:"sms"}));
+  assert.match(gmailPaymentQuery("newer_than:365d",[".com"]),/\bmembership\b/);
 });

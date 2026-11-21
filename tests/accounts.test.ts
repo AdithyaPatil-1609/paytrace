@@ -156,6 +156,20 @@ test("HTML renewal notices are visible as scheduled cost, never paid",()=>{
   assert.ok(!view.includes("₹749.00 paid"));
 });
 
+test("membership confirmation survives missing fields and MIME alternatives",()=>{
+  const part=(mimeType:string,body:string)=>({mimeType,body:{data:Buffer.from(body).toString("base64url")}});
+  const input={id:"youtube123",from:"YouTube <noreply-purchases@youtube.com>",subject:"Your YouTube Premium student membership is good to go!",date:"2026-10-11",payload:{parts:[part("text/plain","Thanks for joining"),part("text/html","<p>Membership active</p><p>₹89/month</p>")]}};
+  const event=parseGmailReceipt(input,[".com"]).event;
+  assert.equal(event?.kind,"subscription_candidate");
+  assert.equal(event?.planPricePaise,8900);
+  assert.equal(event?.amountPaise,null);
+  assert.equal(parseGmailReceipt({...input,payload:{}},[".com"]).event?.kind,"subscription_candidate");
+  const view=renderToStaticMarkup(createElement(SubscriptionWatchlist,{asOf:"2026-11-21",registrations:[],candidates:[{noticeId:"youtube",sentOn:"2026-10-11",channel:"email",sender:"email",eventType:"subscription_candidate",brand:"YOUTUBE PREMIUM STUDENT",text:"Membership confirmed"}]}));
+  assert.ok(view.includes("YOUTUBE PREMIUM STUDENT"));
+  assert.ok(view.includes("Price unknown"));
+  assert.ok(view.includes("Not confirmed paid"));
+});
+
 test("signed-in dashboard retains all original tabs without demo payments",()=>{
   const html=renderToStaticMarkup(createElement(AccountDashboard,{name:"Example User",email:"user@example.com",linked:false,lastSync:null,asOf:"2026-11-16"}));
   for(const tab of ["All payments","Issues","Cancel paths","Annual","Evidence graph"]) assert.ok(html.includes(tab),tab);

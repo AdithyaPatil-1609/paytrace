@@ -87,3 +87,31 @@ export function parseZeroCostSubscription(text: string, input: {id:string;date:s
     return validateEvent({source:"email",kind:"subscription_registered",merchant,amountPaise:0,date,reference:order ? digest("subscription-order",order) : null,sourceId:input.id,...(listed===undefined?{}:{planPricePaise:toPaise(listed)}),...(renewalDate && renewalDate>=date?{renewalDate}:{})});
   } catch { return null; }
 }
+
+/** Preserve useful evidence even when a receipt does not state all billing fields. */
+export function parseSubscriptionCandidate(text:string,input:{id:string;date:string;subject:string;from:string}):PaymentEvent|null {
+  const subscription=/\b(?:subscriptions?|subscrib(?:ed|ing)|memberships?|free trial|auto[- ]?renew(?:al|s)?|auto[- ]?pay|recurring (?:billing|payment|charge)|next (?:billing|renewal|charge)|(?:paid|monthly|annual|yearly) plan|billing agreement)\b/i;
+  if(!subscription.test(text))return null;
+  if(hasZeroReportedTotal(text)&&hasNonzeroReportedTotal(text))return null;
+  if(/\b(?:cancel(?:led|ed)|cancellation confirmed|will not renew|payment (?:failed|declined)|not yet subscribed|auto[- ]renewal (?:is |has been )?(?:off|disabled))\b/i.test(text))return null;
+  // Positive account/order evidence, not just the word "subscription" in a newsletter.
+  const confirmed=/\b(?:membership|subscription|plan|trial|autopay|billing agreement) (?:is |has been |was )?(?:now )?(?:good to go|active|activated|confirmed|started|registered|created|renewed|ready|successful|enabled)\b|\b(?:you (?:have |have successfully )?(?:subscribed|joined)|you['’]ve (?:subscribed|joined)|thanks? for (?:subscribing|joining|your (?:purchase|subscription|membership))|welcome to|order (?:placed|confirmed|number|id)|payment (?:successful|received|completed)|automatically renews?|will (?:automatically )?renew|renews? on|next (?:billing|renewal|charge) (?:date|on)|subscription renewal|billing confirmation)\b/i;
+  if(!confirmed.test(text))return null;
+  if(/\b(?:subscribe now|join now|limited[- ]time offer|sign up today|start your free trial|upgrade now|newsletter|marketing emails|mailing list)\b/i.test(input.subject))return null;
+  if(/\b(?:newsletter|mailing list|marketing emails|email updates)\b/i.test(text)&&!new RegExp(inr,"i").test(text)&&!/\b(?:paid plan|membership|billing|renewal|free trial)\b/i.test(text))return null;
+  const name="[A-Za-z0-9][A-Za-z0-9 .&*+_'@/-]{0,79}";
+  const named=input.subject.match(new RegExp(`^(?:Your\\s+)?(${name}?)\\s+(?:subscription|membership|plan|trial)\\b`,"i"))?.[1];
+  const labeled=text.match(new RegExp(`^\\s*(?:Subscription|Membership|Plan|Service|Merchant(?: name)?)\\s*:\\s*(${name})\\s*$`,"im"))?.[1];
+  const product=text.match(new RegExp(`^\\s*(${name}?)\\s+(?:Subscription|Membership)\\s+${inr}`,"im"))?.[1];
+  const welcome=input.subject.match(new RegExp(`^Welcome to\\s+(${name})[!.]?$`,"i"))?.[1];
+  const domain=input.from.match(/@([\w.-]+)>?\s*$/)?.[1];
+  const merchant=[named,labeled,product,welcome,domain].map(x=>x?.trim()).find(x=>x&&!/^(?:your|this|the|a|my|new|paid|monthly|annual|premium|subscription|membership|plan|trial)$/i.test(x));
+  if(!merchant)return null;
+  const ratePattern=new RegExp(`${inr}\\s*(?:/\\s*|per\\s+|every\\s+|\\s+)(week|month|quarter|year|annum|weekly|monthly|quarterly|annually)\\b`,"gi");
+  const rates=[...text.matchAll(ratePattern)].map(m=>({amount:toPaise(m[1]),frequency:(m[2].toLowerCase().startsWith("week")?"weekly":m[2].toLowerCase().startsWith("month")?"monthly":m[2].toLowerCase().startsWith("quarter")?"quarterly":"annual") as RenewalFrequency}));
+  const rate=rates.length&&rates.every(r=>r.amount===rates[0].amount&&r.frequency===rates[0].frequency)?rates[0]:undefined;
+  const datePattern="(?:\\d{4}-\\d{2}-\\d{2}|\\d{1,2} +[A-Za-z]+ +\\d{4}|[A-Za-z]+ +\\d{1,2},? +\\d{4})";
+  const dates=[...text.matchAll(new RegExp(`\\b(?:starting (?:from|on)|renews? on|renewal date|next (?:billing|renewal|payment|charge) date|next charge on)\\s*:?\\s*(${datePattern})`,"gi"))].map(m=>receiptDate(m[1]));
+  const renewalDate=dates.length&&dates[0]&&dates.every(d=>d===dates[0])?dates[0]:undefined;
+  try{return validateEvent({source:"email",kind:"subscription_candidate",merchant,amountPaise:null,date:input.date,reference:null,sourceId:input.id,...(rate?{planPricePaise:rate.amount,renewalFrequency:rate.frequency}:{}),...(renewalDate?{renewalDate}:{})});}catch{return null;}
+}

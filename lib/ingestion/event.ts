@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-export const kinds = ["debit_posted", "mandate_created", "mandate_cancelled", "debit_scheduled", "debit_failed", "price_change", "trial_ending", "subscription_registered", "subscription_renewal"] as const;
+export const kinds = ["debit_posted", "mandate_created", "mandate_cancelled", "debit_scheduled", "debit_failed", "price_change", "trial_ending", "subscription_registered", "subscription_renewal", "subscription_candidate"] as const;
 export type EventKind = typeof kinds[number];
 export const renewalFrequencies = ["weekly", "monthly", "quarterly", "annual"] as const;
 export type RenewalFrequency = typeof renewalFrequencies[number];
@@ -45,14 +45,16 @@ export function validateEvent(input: unknown): PaymentEvent {
   if (typeof x.merchant !== "string" || !/^[A-Za-z0-9][A-Za-z0-9 .&*+_'@/-]{0,79}$/.test(x.merchant.trim()) || isSensitive(x.merchant)) throw new Error("Invalid merchant");
   if (!isDate(x.date)) throw new Error("Invalid date");
   const amount = x.amountPaise;
-  const noAmount = x.kind === "mandate_cancelled" || x.kind === "trial_ending";
+  const candidate = x.kind === "subscription_candidate";
+  const noAmount = x.kind === "mandate_cancelled" || x.kind === "trial_ending" || candidate;
   const registration = x.kind === "subscription_registered";
   const renewal = x.kind === "subscription_renewal";
   if (renewal && (x.source !== "email" || !isDate(x.renewalDate) || !renewalFrequencies.includes(x.renewalFrequency as RenewalFrequency))) throw new Error("Invalid renewal notice");
+  if (candidate && (x.source !== "email" || amount !== null)) throw new Error("Candidate must not report a debit");
   if (registration ? x.source !== "email" || amount !== 0 : amount === null ? !noAmount : typeof amount !== "number" || !Number.isSafeInteger(amount) || amount <= 0 || amount > 100_000_000_000) throw new Error("Invalid amount");
-  if (x.planPricePaise !== undefined && (!registration || typeof x.planPricePaise !== "number" || !Number.isSafeInteger(x.planPricePaise) || x.planPricePaise < 0 || x.planPricePaise > 100_000_000_000)) throw new Error("Invalid listed price");
-  if (x.renewalDate !== undefined && ((!registration && !renewal) || !isDate(x.renewalDate) || (registration && x.renewalDate < x.date))) throw new Error("Invalid renewal date");
-  if (x.renewalFrequency !== undefined && !renewal) throw new Error("Invalid renewal frequency");
+  if (x.planPricePaise !== undefined && (!(registration || candidate) || typeof x.planPricePaise !== "number" || !Number.isSafeInteger(x.planPricePaise) || x.planPricePaise < 0 || x.planPricePaise > 100_000_000_000)) throw new Error("Invalid listed price");
+  if (x.renewalDate !== undefined && ((!registration && !renewal && !candidate) || !isDate(x.renewalDate) || (registration && x.renewalDate < x.date))) throw new Error("Invalid renewal date");
+  if (x.renewalFrequency !== undefined && (!(renewal || candidate) || !renewalFrequencies.includes(x.renewalFrequency as RenewalFrequency))) throw new Error("Invalid renewal frequency");
   if (x.reference !== null && (typeof x.reference !== "string" || !/^[A-Za-z0-9-]{3,80}$/.test(x.reference) || isSensitive(x.reference))) throw new Error("Invalid reference");
   if (x.sourceId !== undefined && (typeof x.sourceId !== "string" || !/^[A-Za-z0-9_-]{3,128}$/.test(x.sourceId))) throw new Error("Invalid source ID");
   if (x.accountHint !== undefined && (typeof x.accountHint !== "string" || !/^[A-Za-z0-9-]{2,30}$/.test(x.accountHint))) throw new Error("Invalid masked account hint");
