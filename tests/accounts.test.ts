@@ -1,5 +1,4 @@
 import { Landing } from "../components/landing";
-import { SignIn } from "../components/sign-in";
 import { noticeIsError, noticeText } from "../lib/accounts/notices";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -219,18 +218,20 @@ test("login offers a no-account static demo even when Google sign-in is unavaila
   assert.ok(dataset.statement.every(row=>row.persona==="priya"));
 });
 
-test("the landing page and the sign-in page are separate, and both offer the demo",()=>{
+test("the landing drawer handles sign-in, errors and offline demo access",()=>{
   const landing=renderToStaticMarkup(createElement(Landing));
   assert.ok(landing.includes('href="/signin"'));
   assert.ok(landing.includes('href="/demo"'));
   assert.ok(!landing.includes("Continue with Google"),"the landing page has no sign-in form");
-  assert.ok(landing.includes("Sign in / Sign up"));
-  const signin=renderToStaticMarkup(createElement(SignIn,{configured:true}));
+  const signin=renderToStaticMarkup(createElement(Landing,{configured:true,initialOpen:true,initialNotice:"Please retry",initialNoticeIsError:true}));
+  assert.ok(signin.includes('role="dialog"'));
+  assert.ok(signin.includes('role="alert"'));
+  assert.ok(signin.includes('Please retry'));
   assert.ok(signin.includes('action="/api/auth/google/start"'));
   assert.ok(signin.includes("Approved test accounts only"));
   assert.ok(signin.includes('href="/demo"'));
   assert.ok(signin.includes('href="/"'));
-  const offline=renderToStaticMarkup(createElement(SignIn,{configured:false}));
+  const offline=renderToStaticMarkup(createElement(Landing,{configured:false,initialOpen:true}));
   assert.ok(!offline.includes("Continue with Google"));
   assert.ok(offline.includes('href="/demo"'));
 });

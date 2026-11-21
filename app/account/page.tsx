@@ -18,9 +18,8 @@ export default async function AccountPage({searchParams}:{searchParams:Promise<{
   if (configured && raw) { try { account=await accountForSession(raw); } catch { unavailable=true; } }
   const text=noticeText(notice);
   if(account) return <AccountDashboard name={account.name} email={account.email} linked={account.linked} lastSync={account.lastSync} asOf={new Date().toISOString().slice(0,10)} notice={text} noticeIsError={noticeIsError(notice)}/>;
-  // The sign-in page is separate from the landing page. Only a database outage
-  // keeps the old combined page, because it explains what is wrong.
-  // A cookie that no longer opens a session means it timed out: say so on the sign-in page.
-  if(!unavailable) redirect(notice?`/signin?notice=${encodeURIComponent(notice)}`:raw?"/signin?notice=session-expired":"/signin");
+
+  // Unauthenticated users are redirected to the home page with the sign-in drawer opened.
+  if(!unavailable) redirect(notice ? `/?signin=1&notice=${encodeURIComponent(notice)}` : raw ? "/?signin=1&notice=session-expired" : "/?signin=1");
   return <AccountLogin configured={configured} unavailable={unavailable} notice={text}/>;
 }
