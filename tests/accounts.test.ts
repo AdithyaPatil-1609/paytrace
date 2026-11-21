@@ -1,4 +1,5 @@
 import { Landing } from "../components/landing";
+import { gmailDateFilter, gmailHistoryDays } from "../lib/accounts/gmail-history";
 import { noticeIsError, noticeText } from "../lib/accounts/notices";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -163,6 +164,27 @@ test("HTML renewal notices are visible as scheduled cost, never paid",()=>{
   assert.ok(view.includes("₹8,988.00"));
   assert.ok(view.includes("has passed"));
   assert.ok(!view.includes("₹749.00 paid"));
+});
+
+test("two-year Gmail history is explicit; normal sync never silently expands",()=>{
+  assert.equal(gmailDateFilter(true,gmailHistoryDays("730")),"newer_than:730d");
+  assert.equal(gmailDateFilter(false,730),"newer_than:90d");
+  assert.match(gmailDateFilter(false,730,"2026-11-22"),/^after:/);
+  assert.equal(gmailHistoryDays("9999"),365);
+  assert.equal(gmailHistoryDays("90"),90);
+});
+
+test("YouTube Music student welcome records only the explicitly stated monthly schedule",()=>{
+  const body="Welcome to your Music Premium student membership! Your payment method will be charged monthly starting on <b>Nov 5, 2025</b>. You can explore, manage, and cancel your membership any time by visiting YouTube account settings.";
+  const mail={id:"sampleyoutube123",from:"YouTube <noreply-purchases@youtube.com>",subject:"Your Music Premium student membership is good to go!",date:"2025-10-05",payload:{mimeType:"text/html",body:{data:Buffer.from(body).toString("base64url")}}};
+  const {event}=parseGmailReceipt(mail,[".com"]);
+  assert.equal(event?.merchant,"YOUTUBE MUSIC PREMIUM STUDENT");
+  assert.equal(event.kind,"subscription_candidate");
+  assert.equal(event.renewalFrequency,"monthly");
+  assert.equal(event.renewalDate,"2025-11-05");
+  assert.equal(event.amountPaise,null);
+  assert.equal(event.planPricePaise,undefined);
+  assert.notEqual(parseGmailReceipt({...mail,from:"YouTube <billing@example.com>"},[".com"]).event?.merchant,event.merchant);
 });
 
 test("membership confirmation survives missing fields and MIME alternatives",()=>{

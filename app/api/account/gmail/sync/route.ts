@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { accountForSession } from "@/db/neo4j/accounts";
 import { sameOrigin, SESSION } from "@/lib/accounts/security";
 import { syncAccount } from "@/lib/accounts/sync";
+import { gmailHistoryDays } from "@/lib/accounts/gmail-history";
 import { AccountError, accountErrors, type AccountErrorCode } from "@/lib/accounts/errors";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
 
@@ -20,7 +21,7 @@ export async function POST(request:NextRequest) {
     const byAccount=takeHit("gmail-sync-account",user.sub,LIMITS.gmailSync);
     if (!byAccount.ok) return tooMany(byAccount.retryAfter);
     if (!user.linked) return fail("gmail-disconnected",409);
-    return Response.json(await syncAccount(user.sub,request.nextUrl.searchParams.get("history")==="1",request.nextUrl.searchParams.get("days")==="90"?90:365),{headers});
+    return Response.json(await syncAccount(user.sub,request.nextUrl.searchParams.get("history")==="1",gmailHistoryDays(request.nextUrl.searchParams.get("days"))),{headers});
   } catch(error) {
     const code=error instanceof AccountError?error.code:"neo4j-unavailable";
     console.warn(`Gmail sync failed [${code}]`);

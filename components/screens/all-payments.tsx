@@ -110,7 +110,7 @@ export function AllPaymentsScreen({
 
           {personal && items.length === 0 && (
             <p className="personal-empty">
-              No repeating payments yet. A payment appears here once two charges or renewal notices show it repeating. Rescan the last 12 months from your account menu to read older emails.
+              No repeating payments yet. A payment appears here once two charges or renewal notices show it repeating. Check the Subscription watchlist for signup emails, or use the account menu to rescan up to 2 years.
             </p>
           )}
 
