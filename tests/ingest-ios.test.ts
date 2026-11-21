@@ -27,7 +27,7 @@ test("a new iPhone token has the fixed shape and is never repeated", () => {
 test("the token is read despite small typing slips, but must itself be exact", () => {
   const token = newIosToken();
   const read = (value?: string) => bearerToken(new Request(URL, { headers: value ? { authorization: value } : {} }));
-  for (const value of [`Bearer ${token}`, `bearer ${token}`, `Bearer${token}`, `  Bearer   ${token}  `, token, `"Bearer ${token}"`]) {
+  for (const value of [`Bearer ${token}`, `bearer ${token}`, `Bearer${token}`, `  Bearer   ${token}  `, token, `"Bearer ${token}"`, `Bearer Bearer ${token}`, `BearerBearer ${token}`]) {
     assert.equal(read(value), token, JSON.stringify(value));
   }
   assert.equal(read("Bearer pt_ios_short"), null);

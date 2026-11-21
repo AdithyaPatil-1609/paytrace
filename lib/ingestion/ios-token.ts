@@ -17,16 +17,22 @@ export function newIosToken() {
 /**
  * The token from the Authorization header, or null when absent or malformed.
  * Typed on a phone, so small slips are forgiven: any case of "Bearer", a
- * missing space after it, stray spaces, quotes, or the token on its own.
+ * missing space after it, "Bearer" twice, stray spaces, quotes, or the token
+ * on its own.
  * The token itself must still match exactly.
  */
 export function bearerToken(request: Request) {
-  const value = (request.headers.get("authorization") ?? "")
+  const value = headerValue(request);
+  return IOS_TOKEN.test(value) ? value : null;
+}
+
+/** The header without quotes and without "Bearer", even typed twice ("Bearer Bearer pt_ios_…"). */
+function headerValue(request: Request) {
+  return (request.headers.get("authorization") ?? "")
     .trim()
     .replace(/^["']|["']$/g, "")
-    .replace(/^bearer\s*/i, "")
+    .replace(/^(?:bearer\s*)+/i, "")
     .trim();
-  return IOS_TOKEN.test(value) ? value : null;
 }
 
 
@@ -36,7 +42,7 @@ export function bearerToken(request: Request) {
  * never contain. Lets a person spot a cut-off paste or a changed character.
  */
 export function describeHeader(request: Request) {
-  const value = (request.headers.get("authorization") ?? "").trim().replace(/^["']|["']$/g, "").replace(/^bearer\s*/i, "").trim();
+  const value = headerValue(request);
   const odd = [...new Set([...value].filter((char) => !/[A-Za-z0-9_-]/.test(char)))]
     .slice(0, 5)
     .map((char) => (/\s/.test(char) ? "a space or line break" : `"${char}" (U+${char.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")})`));
