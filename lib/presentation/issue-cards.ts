@@ -1,7 +1,7 @@
 import type { Commitment } from "@/lib/payments/types";
 import { formatDate, formatINR } from "./format";
 
-export type IssueCategory = "price" | "unused" | "trial" | "new" | "unknown";
+export type IssueCategory = "price" | "announced" | "unused" | "trial" | "new" | "unknown";
 
 export function annualPriceIncrease(item: Commitment) {
   if (
@@ -27,6 +27,19 @@ export function issueGroups(items: Commitment[], kept: string[] = []) {
         (item) =>
           item.signals.includes("silent_hike") &&
           !item.hasPriceChangeNotice &&
+          item.previousAmount !== undefined &&
+          item.amount > item.previousAmount
+      )
+    },
+    {
+      id: "announced",
+      title: "Price rises you were told about",
+      badge: "PRICE ROSE",
+      description:
+        "The provider sent a price-change notice and the charges went up. Decide whether the new price is still worth it.",
+      rows: available.filter(
+        (item) =>
+          item.hasPriceChangeNotice &&
           item.previousAmount !== undefined &&
           item.amount > item.previousAmount
       )
@@ -75,6 +88,12 @@ export function issueDescription(item: Commitment, category: IssueCategory) {
     const changed = item.priceSeries.find((point) => point.amount !== item.priceSeries[0]?.amount);
     const extra = annualPriceIncrease(item);
     return `Went from ${formatINR(item.previousAmount ?? 0)} to ${formatINR(item.amount)}${changed ? ` on ${formatDate(changed.date)}` : ""}. No matching notice was found in the supplied messages.${extra !== undefined ? ` That is ${formatINR(extra)} more a year if this price continues.` : " Future cost depends on the payment schedule."}`;
+  }
+  if (category === "announced") {
+    const changed = item.priceSeries.find((point) => point.amount !== item.priceSeries[0]?.amount);
+    const notice = [...item.notices].reverse().find((entry) => entry.eventType === "price_change");
+    const extra = annualPriceIncrease(item);
+    return `Went from ${formatINR(item.previousAmount ?? 0)} to ${formatINR(item.amount)}${changed ? ` on ${formatDate(changed.date)}` : ""}.${notice ? ` Price-change notice received ${formatDate(notice.sentOn)}.` : ""}${extra !== undefined ? ` That is ${formatINR(extra)} more a year at the new price.` : ""}`;
   }
   if (category === "unused") {
     const charges = item.lastOpened

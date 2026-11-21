@@ -22,6 +22,18 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["paytrace.co.in", "www.paytrace.co.in"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  // Google sign-in accepts one address (PAYTRACE_APP_URL). Send www visitors
+  // to it, or "Continue with Google" answers Forbidden on www.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.paytrace.co.in" }],
+        destination: "https://paytrace.co.in/:path*",
+        permanent: true
+      }
+    ];
   }
 };
 

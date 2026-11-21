@@ -92,11 +92,20 @@ function multiplierFor(cadence: Cadence) {
   return 1;
 }
 
+/**
+ * A plan change (₹219, ₹727 for the switch, then ₹749 every month) is not a
+ * varying bill: once the last three charges agree, that is the price now.
+ */
+function settledPrice(amounts: number[]): number | undefined {
+  const tail = amounts.slice(-3);
+  return tail.length === 3 && tail.every((value) => value === tail[0]) ? tail[0] : undefined;
+}
+
 function projectYear(cadence: Cadence, pattern: AmountPattern, amounts: number[], latest: number) {
   // An irregular row is the money that actually left over the window.
   if (cadence === "irregular") return amounts.reduce((sum, value) => sum + value, 0);
   if (cadence === "annual") return latest;
-  if (pattern === "variable") return Math.round(median(amounts)) * multiplierFor(cadence);
+  if (pattern === "variable") return (settledPrice(amounts) ?? Math.round(median(amounts))) * multiplierFor(cadence);
   return latest * multiplierFor(cadence);
 }
 
@@ -105,6 +114,8 @@ function spendGroupFor(mechanism: Mechanism, category: string): SpendGroup {
   if (mechanism === "emi_ach") return "debt";
   if (mechanism === "enach" || category === "insurance") return "insurance";
   if (mechanism === "bbps" || mechanism === "neft_standing") return "utilities";
+  // A SIP is saving, not spending on a service.
+  if (category === "investment") return "investments";
   return "subscriptions";
 }
 
@@ -131,6 +142,9 @@ type Group = {
   rows: StatementRow[];
   holds: StatementRow[];
 };
+
+/** The channel of a dated row built from a debit or renewal notice, not from a bank debit. */
+export const NOTICE_CHANNEL = "email-notice";
 
 function toEvidence(row: StatementRow): EvidenceRow {
   return {
@@ -166,7 +180,7 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
   for (const row of statement) {
     if (!row.debit || row.debit <= 0) continue; // Salary and card repayments are credits.
     const entry = matchDictionary(row.narration, dictionary);
-    const key = `${entry ? entry.pattern : row.narration}|${row.accountId}`;
+    const key = `${entry ? entry.pattern : row.narration.toUpperCase().replace(/[^A-Z0-9]/g, "")}|${row.accountId}`;
     const group =
       groups.get(key) ?? { key, narration: row.narration, accountId: row.accountId, entry, rows: [], holds: [] };
     // The ₹1 hold belongs to its commitment as evidence, never as its own price.
@@ -196,14 +210,16 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
     const { cadence } = cadenceFromGaps(gaps, mandate?.frequency);
     const { pattern, previous } = amountShape(amounts);
     const latest = amounts[amounts.length - 1];
-    const headline = pattern === "variable" ? Math.round(median(amounts)) : latest;
+    const headline = pattern === "variable" ? settledPrice(amounts) ?? Math.round(median(amounts)) : latest;
     const annualCost = projectYear(cadence, pattern, amounts, latest);
 
     const notices: NoticeRow[] = notifications
       .filter((notice) => {
         const byTxn = notice.relatedTxnId && rows.some((row) => row.txnId === notice.relatedTxnId);
         const byHold = notice.relatedTxnId && group.holds.some((row) => row.txnId === notice.relatedTxnId);
-        const byBrand = entry ? notice.brand === entry.brand : false;
+        const byBrand = entry
+          ? notice.brand === entry.brand
+          : notice.brand.toUpperCase().replace(/[^A-Z0-9]/g, "") === group.narration.toUpperCase().replace(/[^A-Z0-9]/g, "");
         return notice.sentOn <= asOf && Boolean(byTxn || byHold || (!notice.relatedTxnId && byBrand));
       })
       .map((notice) => ({
@@ -304,6 +320,7 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
       whyRecurring,
       evidence: issue ?? whyRecurring,
       evidenceRows: rows.map(toEvidence),
+      basis: rows.every((row) => row.channel === NOTICE_CHANNEL) ? "notices" : "debits",
       notices,
       hasPriceChangeNotice,
       holds: group.holds.map(toEvidence),
@@ -334,7 +351,8 @@ export const spendGroupLabels: Record<SpendGroup, string> = {
   subscriptions: "Subscriptions and apps",
   utilities: "Utilities and maintenance",
   insurance: "Insurance",
-  debt: "Loan"
+  debt: "Loan",
+  investments: "Investments (SIP)"
 };
 
 export const bucketLabels: Record<Bucket, string> = {

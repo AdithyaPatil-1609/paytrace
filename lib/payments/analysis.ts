@@ -73,7 +73,7 @@ export type CategorySlice = {
  * rather than a category of spend.
  */
 export function groupByCategory(items: Commitment[]): CategorySlice[] {
-  const order: SpendGroup[] = ["debt", "subscriptions", "utilities", "insurance"];
+  const order: SpendGroup[] = ["debt", "subscriptions", "utilities", "insurance", "investments"];
   const total = yearlyTotal(items);
   return order
     .map((group) => {

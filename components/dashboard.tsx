@@ -146,7 +146,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
               asOf={dataset.asOf}
               personal={Boolean(account)}
               subscriptionNotices={account?.subscriptionAlerts}
-            />{account?.activity}</>
+            /></>
           )}
           {screen === "issues" && (
             <><IssuesScreen
@@ -161,7 +161,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
                 setCancelTarget(id);
                 setScreen("paths");
               }}
-            />{account?.subscriptionAlerts}</>
+            /></>
           )}
           {screen === "paths" && (
             <CancelPathsScreen

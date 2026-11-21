@@ -81,7 +81,8 @@
   font: 500 11px/1.5 var(--mono);
   letter-spacing: 0.04em;
 }
-.badge-price {
+.badge-price,
+.badge-announced {
   background: var(--ember);
 }
 .badge-trial {

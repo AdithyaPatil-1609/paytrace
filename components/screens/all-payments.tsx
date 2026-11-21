@@ -97,8 +97,6 @@ export function AllPaymentsScreen({
           </p>
         </header>
 
-        {subscriptionNotices}
-
         <PaymentRadar items={items} flagged={flagged} asOf={asOf} onOpen={pick} />
 
         <section className="ledger-table" aria-label="Every repeating payment">
@@ -111,12 +109,13 @@ export function AllPaymentsScreen({
 
           {personal && items.length === 0 && (
             <p className="personal-empty">
-              No recurring payments detected yet from completed debits. Check the subscription watchlist for reported renewals, or import more payment history.
+              No repeating payments yet. A payment appears here once two charges or renewal notices show it repeating. Rescan the last 12 months from your account menu to read older emails.
             </p>
           )}
 
           {items.map((item) => {
-            const rail = RAIL[item.mechanism] ?? item.instrument;
+            // A notice rarely says how the money moves; say so instead of guessing "Card".
+            const rail = RAIL[item.mechanism] ?? (item.basis === "notices" ? "Rail not known" : item.instrument);
             const rise = priceRise(item);
             const warning = flagged.has(item.id) && item.kind !== "silent" ? warningLabel(item.kind) : undefined;
             return (
@@ -137,6 +136,11 @@ export function AllPaymentsScreen({
                 </span>
                 <span className="ledger-rail">
                   <span className="rail-tag">{rail}</span>
+                  {item.basis === "notices" && (
+                    <em className="notice-tag" title="Built from debit or renewal notices in Gmail. No bank debit confirms it yet.">
+                      From notices · not confirmed
+                    </em>
+                  )}
                 </span>
                 <ChargeSparkline rows={item.evidenceRows} flagged={false} />
                 <span className="ledger-amount">
@@ -152,6 +156,8 @@ export function AllPaymentsScreen({
             );
           })}
         </section>
+
+        {subscriptionNotices}
 
         <p className="exclusion-note">
           {personal ? (

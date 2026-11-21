@@ -64,12 +64,12 @@ export function IssuesScreen({
         .filter((group) => group.rows.length > 0)
         .map((group) => {
           const yearly =
-            group.id === "price"
+            group.id === "price" || group.id === "announced"
               ? group.rows.reduce((sum, item) => sum + (annualPriceIncrease(item) ?? 0), 0)
               : group.rows.reduce((sum, item) => sum + item.annualCost, 0);
           const showTotal =
             group.id === "unused" ||
-            (group.id === "price" &&
+            ((group.id === "price" || group.id === "announced") &&
               group.rows.every((item) => annualPriceIncrease(item) !== undefined));
           return (
             <section
@@ -84,7 +84,7 @@ export function IssuesScreen({
                 {showTotal && (
                   <p>
                     {formatINR(yearly)} / year{" "}
-                    <small>{group.id === "price" ? "estimated extra" : "estimated cost"}</small>
+                    <small>{group.id === "price" || group.id === "announced" ? "estimated extra" : "estimated cost"}</small>
                   </p>
                 )}
               </header>

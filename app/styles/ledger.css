@@ -963,3 +963,18 @@ body {
   font-weight: 500;
   letter-spacing: -0.025em;
 }
+
+/* A repeating payment built only from Gmail notices: honest, quieter than a warning. */
+.notice-tag {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border: 1px dashed currentColor;
+  border-radius: 999px;
+  color: #6b5a3a;
+  font-size: 0.72rem;
+  font-style: normal;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.ledger-rail { display: flex; flex-direction: column; align-items: flex-start; }

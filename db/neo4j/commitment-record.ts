@@ -5,6 +5,7 @@ import {
   instrumentByMechanism,
   statusFor
 } from "@/lib/payments/rules";
+import { NOTICE_CHANNEL } from "@/lib/payments/engine";
 import type {
   AmountPattern,
   Bucket,
@@ -161,6 +162,8 @@ export function commitmentFromAnalysisRecord(record: AnalysisRecord): Commitment
     whyRecurring: why,
     evidence: issueText ?? why,
     evidenceRows: evidence,
+    // Same rule as the offline engine: built only from notices until a real debit confirms it.
+    basis: evidence.every((row) => row.channel === NOTICE_CHANNEL) ? "notices" : "debits",
     notices,
     hasPriceChangeNotice: asBool(record.get("hasPriceChangeNotice")),
     holds: rowsOf(record.get("holdRows"), account),

@@ -10,9 +10,10 @@ import type { Dataset } from "@/lib/payments/types";
 import { formatINR } from "@/lib/presentation/format";
 import { SubscriptionWatchlist } from "@/components/subscription-watchlist";
 import { accountErrorMessage } from "@/lib/accounts/errors";
+import { IphoneConnect } from "@/components/iphone-connect";
 
 type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
-  linked: boolean; lastSync: string | null; syncStatus: string | null; syncError?:string|null;
+  linked: boolean; lastSync: string | null; syncStatus: string | null; syncError?:string|null; iphone?: boolean;
 };
 
 export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeIsError}: {
@@ -78,6 +79,8 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       </>}
       {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
       <hr/>
+      <IphoneConnect connected={snapshot?.iphone===true} onChange={()=>void refresh()}/>
+      <hr/>
       <form action="/api/auth/logout" method="post"><button className="account-button" type="submit">Sign out</button></form>
       <Link className="account-demo-link" href="/?demo=1">Explore synthetic demo</Link>
     </div>
@@ -85,7 +88,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
   const persistedError=accountErrorMessage(snapshot?.syncError);
   const message=loadError||error||(syncingNow?"Synchronizing financial emails…":persistedError|| (needsReconnect?"Reconnect Gmail from your account menu to resume imports.":!connected?noticeIsError&&notice?notice:"Connect Gmail from your account menu to import payments. Gmail access is optional.":!snapshot?"Loading your personal payment history…":notice?.includes("first sync")&&snapshot.lastSync?"Gmail connected. Your payment history is up to date.":noticeIsError&&notice?notice:"Gmail connected · read-only. Use your account menu to sync."));
   const banner=<p className="personal-status" role={error||loadError||persistedError||noticeIsError?"alert":"status"}>{message}</p>;
-  const watchlist=<SubscriptionWatchlist registrations={data?.subscriptionRegistrations??[]} renewals={data?.subscriptionRenewals??[]} candidates={data?.subscriptionCandidates??[]} scheduled={data?.scheduledDebits??[]} asOf={dataset.asOf} showEmpty={Boolean(snapshot)}/>;
+  const watchlist=<SubscriptionWatchlist registrations={data?.subscriptionRegistrations??[]} renewals={data?.subscriptionRenewals??[]} candidates={data?.subscriptionCandidates??[]} scheduled={data?.scheduledDebits??[]} asOf={dataset.asOf} showEmpty={Boolean(snapshot)} exclude={(data?.commitments??[]).flatMap(item=>[item.merchant,item.rawNarration])}/>;
   const activity=<details className="personal-activity" open>
     <summary>Recent imported payment evidence <small>{data?.counts.review??0} need duplicate review</small></summary>
     <p>Includes one-off events and notices that may not be recurring payments.</p>
