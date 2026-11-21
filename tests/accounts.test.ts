@@ -1,3 +1,6 @@
+import { Landing } from "../components/landing";
+import { SignIn } from "../components/sign-in";
+import { noticeIsError, noticeText } from "../lib/accounts/notices";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
@@ -207,13 +210,37 @@ test("login offers a no-account static demo even when Google sign-in is unavaila
   const html=renderToStaticMarkup(createElement(AccountLogin,{configured:true}));
   assert.ok(html.includes("Continue with Google"));
   assert.ok(html.includes("View static demo (Priya)"));
-  assert.ok(html.includes('href="/?demo=1"'));
+  assert.ok(html.includes('href="/demo"'));
   const offline=renderToStaticMarkup(createElement(AccountLogin,{configured:false}));
   assert.ok(offline.includes("View static demo (Priya)"));
   const {dataset,source}=await loadDemo(true);
   assert.equal(source.kind,"fixture");
   assert.ok(dataset.statement.length>0);
   assert.ok(dataset.statement.every(row=>row.persona==="priya"));
+});
+
+test("the landing page and the sign-in page are separate, and both offer the demo",()=>{
+  const landing=renderToStaticMarkup(createElement(Landing));
+  assert.ok(landing.includes('href="/signin"'));
+  assert.ok(landing.includes('href="/demo"'));
+  assert.ok(!landing.includes("Continue with Google"),"the landing page has no sign-in form");
+  assert.ok(landing.includes("approved test accounts"));
+  const signin=renderToStaticMarkup(createElement(SignIn,{configured:true}));
+  assert.ok(signin.includes('action="/api/auth/google/start"'));
+  assert.ok(signin.includes("Approved test accounts only"));
+  assert.ok(signin.includes('href="/demo"'));
+  assert.ok(signin.includes('href="/"'));
+  const offline=renderToStaticMarkup(createElement(SignIn,{configured:false}));
+  assert.ok(!offline.includes("Continue with Google"));
+  assert.ok(offline.includes('href="/demo"'));
+});
+
+test("sign-in notices: known codes get their text, unknown codes are ignored",()=>{
+  assert.equal(noticeText("signed-in"),"You're signed in. Gmail linking is optional.");
+  assert.equal(noticeText("<script>"),undefined);
+  assert.equal(noticeText("toString"),undefined);
+  assert.equal(noticeIsError("declined"),true);
+  assert.equal(noticeIsError("signed-in"),false);
 });
 
 test("original all-payments screen renders personal recurring data, not demo records",()=>{
