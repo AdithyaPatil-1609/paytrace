@@ -179,7 +179,10 @@ export async function readLiveSummary(profile: string) {
  * skipped when a real debit with the same merchant, day and amount exists,
  * when it is a repeat of another notice, or when its day is still ahead.
  */
-export function noticeRows(paid: StatementRow[], events: Array<Record<string, any>>, profile: string, asOf: string): StatementRow[] {
+/** The stored event fields noticeRows reads. Amounts may arrive as Neo4j integers. */
+export type NoticeEvent = { id: string; kind: string; merchant: string; date: string; amountPaise?: unknown; renewalDate?: unknown; accountHint?: string | null; reference?: string | null };
+
+export function noticeRows(paid: StatementRow[], events: NoticeEvent[], profile: string, asOf: string): StatementRow[] {
   const dayMs = 86_400_000;
   const confirmedBy = (key: string, day: string) =>
     paid.some(row => merchantKey(row.narration) === key && Math.abs(Date.parse(row.date) - Date.parse(day)) <= 3 * dayMs);
