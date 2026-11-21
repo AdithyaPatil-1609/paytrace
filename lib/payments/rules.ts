@@ -237,3 +237,22 @@ export const RECURRING_CHECK_LIMITS = {
   /** Groups sent to the local model per refresh; the rest wait for the next dashboard load. */
   perRun: 15
 } as const;
+
+/**
+ * Merchant matching (lib/payments/merchant-match.ts). Scores run from 0 to 1.
+ * A score never merges payments: it only suggests a SIMILAR link that the
+ * person confirms or rejects. Thresholds are checked by tests/merchant-match.test.ts.
+ */
+export const MERCHANT_MATCH = {
+  /** At or above this: a strong candidate ("probably the same merchant"). */
+  strong: 0.9,
+  /** At or above this and below strong: needs the person's review. Below: kept separate. */
+  review: 0.75,
+  /** Two words count as the same word at this similarity (typos), and only when both have this many letters. */
+  fuzzyWord: 0.85,
+  fuzzyWordMinLength: 5,
+  /** The person's own merchants compared at most, newest first, so a long history stays fast. */
+  maxProfileMerchants: 200,
+  /** Bumped when the scoring changes; stored on every SIMILAR link. */
+  algorithmVersion: "merchant-match-v1"
+} as const;
