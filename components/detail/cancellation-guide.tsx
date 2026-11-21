@@ -2,6 +2,7 @@
 
 import { formatDate, formatINR } from "@/lib/presentation/format";
 import type { Commitment } from "@/lib/payments/types";
+import { UpiCancelLink } from "./upi-cancel-link";
 
 function InstructionFlow({ text }: { text: string }) {
   const parts = text
@@ -115,6 +116,7 @@ export function CancellationGuide({
               </span>
             </li>
           </ol>
+          <UpiCancelLink item={item} />
         </div>
         <div>
           <h3 className="cancellation-eyebrow">IF THEY DON&apos;T STOP</h3>
