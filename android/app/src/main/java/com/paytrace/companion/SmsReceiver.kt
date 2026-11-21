@@ -1,7 +1,8 @@
 package com.paytrace.companion
 
-// Receives each new SMS, keeps only payment alerts, drops password messages,
-// applies the "Test sender only" switch, and sends the parsed event to the laptop.
+// Receives each new SMS. It checks the sender first and reads the text only
+// of a test-sender or bank message. It drops password messages, keeps only
+// payment alerts, and sends the parsed fields to the laptop.
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -83,11 +84,34 @@ class SmsReceiver : BroadcastReceiver() {
 
         if (messages.isEmpty()) return
 
+        val sender = messages.first().originatingAddress
+        val oneSender = messages.all { it.originatingAddress == sender }
+
+        // Rule 1: decide from the sender alone, BEFORE reading any text.
+        if (CompanionSettings.testSenderOnly(context)) {
+            // Test mode: only the test sender passes. Even a real bank
+            // is ignored (Test C).
+            if (!oneSender || !CompanionSettings.isTestSender(context, sender)) {
+                CompanionSettings.recordBlocked(
+                    context,
+                    "Blocked: not the test sender"
+                )
+                android.util.Log.d(TAG, "Message from other sender blocked")
+                return
+            }
+        } else if (!oneSender || !BankSenders.isBankSender(sender)) {
+            // Live mode: personal and promotional messages are
+            // ignored without their text ever being read.
+            android.util.Log.d(TAG, "Non-bank sender ignored unread")
+            return
+        }
+
+        // Only now is the text read.
         val body = messages.joinToString("") {
             it.messageBody ?: ""
         }
 
-        // Rule 1: a password message never leaves the phone (Test A).
+        // Rule 2: a password message never leaves the phone (Test A).
         if (SmsParser.isSensitive(body)) {
             CompanionSettings.recordBlocked(
                 context,
@@ -97,25 +121,9 @@ class SmsReceiver : BroadcastReceiver() {
             return
         }
 
-        // Rule 2: while "Test sender only" is on, every other sender
-        // is ignored, including a real bank (Test C).
-        if (CompanionSettings.testSenderOnly(context)) {
-            val allFromTestSender = messages.all {
-                CompanionSettings.isTestSender(context, it.originatingAddress)
-            }
-            if (!allFromTestSender) {
-                CompanionSettings.recordBlocked(
-                    context,
-                    "Blocked: not the test sender"
-                )
-                android.util.Log.d(TAG, "Message from other sender blocked")
-                return
-            }
-        }
-
         // Rule 3: keep only messages that read as a payment alert.
         val text = body.removePrefix(TEST_PREFIX)
-        val payment = SmsParser.parse(text, messages.first().originatingAddress) ?: return
+        val payment = SmsParser.parse(text, sender) ?: return
 
         // Rule 4: the same alert twice is handled once.
         val isNew = DuplicateDetector.markIfNew(context, payment)

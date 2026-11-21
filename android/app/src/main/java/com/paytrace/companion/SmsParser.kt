@@ -175,7 +175,7 @@ object SmsParser {
 
     // Strict, opt-in debit formats; no arbitrary sender, credit, or OTP parsing.
     private fun parseBankDebit(text: String, sender: String?): PaymentDetails? {
-        val bank = sender?.uppercase()?.split('-')?.firstOrNull { it in setOf("HDFCBK", "ICICIB", "SBIINB", "SBIPSG", "AXISBK", "KOTAKB") } ?: return null
+        val bank = BankSenders.bankOf(sender) ?: return null
         if (Regex("""\b(credited|refunded|failed|declined|scheduled|reversed)\b""", RegexOption.IGNORE_CASE).containsMatchIn(text)) return null
         if (!Regex("""\b(debited|spent|paid)\b""", RegexOption.IGNORE_CASE).containsMatchIn(text)) return null
         val options = RegexOption.IGNORE_CASE
