@@ -93,6 +93,7 @@ export function CancellationGuide({
           consequences with your provider first.
         </p>
       )}
+      <UpiCancelLink item={item} />
       <div className="cancellation-columns">
         <div>
           <h3 className="cancellation-eyebrow">DO THIS</h3>
@@ -116,7 +117,6 @@ export function CancellationGuide({
               </span>
             </li>
           </ol>
-          <UpiCancelLink item={item} />
         </div>
         <div>
           <h3 className="cancellation-eyebrow">IF THEY DON&apos;T STOP</h3>
