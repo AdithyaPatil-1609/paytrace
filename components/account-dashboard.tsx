@@ -42,7 +42,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
         setError(accountErrorMessage(result.code)??"Sync could not finish. Check Gmail connection and retry.");
       } else {
         const result=await response.json();
-        if(result.status==="ready")setSyncResult(`Scanned ${result.scanned??0} emails · ${result.accepted} new · ${result.duplicates??0} already recorded · ${result.skipped} skipped (${result.senderSkipped??0} sender-filtered, ${result.subscriptionSkipped??0} unrecognized subscription notices) · ${result.registrations??0} zero-cost subscriptions · ${result.renewals??0} renewal notices · ${result.candidates??0} subscription candidates.`);
+        if(result.status==="ready")setSyncResult(`Scanned ${result.scanned??0} emails · ${result.accepted} new or updated · ${result.duplicates??0} already recorded · ${result.skipped} skipped (${result.marketingSkipped??0} promotional, ${result.senderSkipped??0} sender-filtered, ${result.subscriptionSkipped??0} unrecognized) · ${result.ignored??0} old false positives hidden · ${result.registrations??0} zero-cost subscriptions · ${result.renewals??0} renewal notices · ${result.candidates??0} subscription candidates.`);
         else setSyncResult("A sync is already running or Gmail was disconnected. Wait for it to finish, then retry.");
       }
     } catch {setError("Sync could not finish. Check Gmail connection and retry.");}

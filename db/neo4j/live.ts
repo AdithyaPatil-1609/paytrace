@@ -40,8 +40,14 @@ export async function ingestLiveEvent(profile: string, event: PaymentEvent, gran
       }
       // The write lock serializes concurrent events for one profile (including SMS/Email races).
       await tx.run("MERGE (u:LiveProfile {id:$profile}) SET u.revision=coalesce(u.revision,0)+1", { profile });
-      const prior = await tx.run("MATCH (:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent {id:$id}) RETURN e.status AS status, e.paymentId AS paymentId", { profile, id });
-      if (prior.records.length) return { eventId: id, status: "duplicate", paymentId: prior.records[0].get("paymentId") ?? null };
+      const prior = await tx.run("MATCH (:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent {id:$id}) RETURN properties(e) AS item", { profile, id });
+      if (prior.records.length) {
+        const item=prior.records[0].get("item");
+        const changed=item.status==="ignored"||event.kind!==item.kind||event.merchant!==item.merchant||(event.planPricePaise??null)!==(item.planPricePaise==null?null:Number(item.planPricePaise))||(event.renewalDate??null)!==(item.renewalDate??null)||(event.renewalFrequency??null)!==(item.renewalFrequency??null);
+        if(item.kind!=="subscription_candidate"||!changed)return {eventId:id,status:"duplicate",paymentId:item.paymentId??null};
+        // Only provisional email evidence is reclassified; never overwrite a confirmed charge.
+        await tx.run("MATCH (:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent {id:$id})-[r:ABOUT]->(:LiveMerchant) DELETE r",{profile,id});
+      }
       let result: { status: "recorded" | "created" | "matched" | "review"; id: string | null; candidates: string[] } = { status: "recorded", id: null, candidates: [] };
       if (event.kind === "debit_posted") {
         const rows = await tx.run(`MATCH (:LiveProfile {id:$profile})-[:HAS_PAYMENT]->(p:LivePayment)
@@ -62,9 +68,9 @@ export async function ingestLiveEvent(profile: string, event: PaymentEvent, gran
       }
       await tx.run(`MATCH (u:LiveProfile {id:$profile})
         MERGE (m:LiveMerchant {id:$merchantId}) SET m.name=$merchant, m.key=$key
-        CREATE (e:LiveEvent {id:$id, source:$source, kind:$kind, merchant:$merchant, amountPaise:$amount,
+        MERGE (e:LiveEvent {id:$id}) SET e += {source:$source, kind:$kind, merchant:$merchant, amountPaise:$amount,
           date:$date, reference:$reference, paymentId:$paymentId, status:$status, receivedAt:datetime(), accountHint:$account,
-          planPricePaise:$planPrice, renewalDate:$renewalDate, renewalFrequency:$renewalFrequency})
+          planPricePaise:$planPrice, renewalDate:$renewalDate, renewalFrequency:$renewalFrequency}
         MERGE (u)-[:RECEIVED]->(e) MERGE (e)-[:ABOUT]->(m)
         WITH e,m OPTIONAL MATCH (p:LivePayment {id:$paymentId})
         FOREACH (_ IN CASE WHEN p IS NULL THEN [] ELSE [1] END | MERGE (p)-[:EVIDENCED_BY]->(e) MERGE (p)-[:PAID_TO]->(m))
@@ -77,11 +83,25 @@ export async function ingestLiveEvent(profile: string, event: PaymentEvent, gran
   } finally { await session.close(); }
 }
 
+/** Reversible exclusion of a re-scanned false positive; scoped to the current Gmail grant. */
+export async function ignoreSubscriptionCandidates(profile:string,sourceIds:string[],grant:{sub:string;grantId:string;lease:string}) {
+  if(!sourceIds.length)return 0;
+  const session=getNeo4jDriver().session({database:neo4jDatabase});
+  try {
+    const result=await session.run(`MATCH (u:PaytraceUser {sub:$sub}) SET u.syncLock=coalesce(u.syncLock,0)+1
+      WITH u WHERE u.profile=$profile AND u.grantId=$grantId AND u.syncLease=$lease AND u.syncLeaseUntil>datetime()
+      UNWIND $ids AS id MATCH (p:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent {id:id,kind:'subscription_candidate'})
+      WHERE e.source='email' AND coalesce(e.status,'') <> 'ignored'
+      SET e.status='ignored',p.revision=coalesce(p.revision,0)+1 RETURN e.id AS id`,{...grant,profile,ids:[...new Set(sourceIds)].map(id=>digest(profile,"email",id))});
+    return result.records.length;
+  } finally {await session.close();}
+}
+
 /** Read-only, profile-scoped queries suitable for fixed chatbot tools. */
 export const LIVE_QUERIES = {
   payments: `MATCH (:LiveProfile {id:$profile})-[:HAS_PAYMENT]->(p:LivePayment) RETURN properties(p) AS item ORDER BY p.date DESC`,
   evidence: `MATCH (:LiveProfile {id:$profile})-[:HAS_PAYMENT]->(p:LivePayment {id:$paymentId})-[:EVIDENCED_BY]->(e:LiveEvent) RETURN properties(e) AS item ORDER BY e.receivedAt DESC`,
-  events: `MATCH (:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent) RETURN properties(e) AS item ORDER BY e.date DESC, e.receivedAt DESC`,
+  events: `MATCH (:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent) WHERE coalesce(e.status,'') <> 'ignored' RETURN properties(e) AS item ORDER BY e.date DESC, e.receivedAt DESC`,
   review: `MATCH (:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent)-[:POSSIBLE_MATCH]->(p:LivePayment) WHERE e.status='review' RETURN e.id AS eventId,p.id AS candidatePaymentId`
 } as const;
 

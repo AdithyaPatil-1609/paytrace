@@ -3,11 +3,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { ingestLiveEvent, readLiveSummary, LIVE_QUERIES } from "../../db/neo4j/live";
+import { ingestLiveEvent, ignoreSubscriptionCandidates, readLiveSummary, LIVE_QUERIES } from "../../db/neo4j/live";
 import type { PaymentEvent } from "../../lib/ingestion/event";
 
 test("live graph writes, deduplicates and exposes recurring commitments in a scoped summary", { skip: !hasNeo4jConfig() }, async () => {
   const profile = `test-${randomUUID()}`;
+  const grant={sub:profile,grantId:"test-grant",lease:"test-lease"};
   const event: PaymentEvent = {source:"sms",kind:"debit_posted",merchant:"TEST STREAMING",amountPaise:19900,date:"2026-01-01",reference:"REF123",accountHint:"TEST-1234"};
   const driver = getNeo4jDriver();
   const session = driver.session({ database:neo4jDatabase });
@@ -48,6 +49,15 @@ test("live graph writes, deduplicates and exposes recurring commitments in a sco
     assert.equal(summary.subscriptionCandidates[0].amount,undefined);
     assert.ok(!summary.commitments.some(c=>c.merchant==="TEST MEMBERSHIP"));
     assert.equal((await readLiveSummary(profile+"-other")).subscriptionCandidates.length,0);
+    const ad={...membership,sourceId:"ad1",merchant:"TEST AD"};
+    await ingestLiveEvent(profile,ad);
+    await session.run("CREATE (:PaytraceUser {sub:$sub,profile:$profile,grantId:$grantId,syncLease:$lease,syncLeaseUntil:datetime()+duration({minutes:10})})",{...grant,profile});
+    assert.equal(await ignoreSubscriptionCandidates(profile,["ad1"],{...grant,lease:"wrong"}),0);
+    assert.equal(await ignoreSubscriptionCandidates(profile,["renewal1"],grant),0);
+    assert.equal(await ignoreSubscriptionCandidates(profile,["ad1"],grant),1);
+    assert.ok(!(await readLiveSummary(profile)).subscriptionCandidates.some(c=>c.brand==="TEST AD"));
+    assert.equal((await ingestLiveEvent(profile,{...ad,merchant:"TEST CORRECTED"},grant)).status,"recorded");
+    assert.ok((await readLiveSummary(profile)).subscriptionCandidates.some(c=>c.brand==="TEST CORRECTED"));
     assert.ok(!summary.commitments.some(c=>c.merchant==="TEST CLOUD"));
     assert.equal((await readLiveSummary(profile+"-other")).subscriptionRenewals.length,0);
     assert.equal((await readLiveSummary(profile+"-other")).subscriptionRegistrations.length,0);
@@ -55,6 +65,7 @@ test("live graph writes, deduplicates and exposes recurring commitments in a sco
     assert.equal(evidence.records.length,2);
     assert.equal((await readLiveSummary(profile+"-other")).counts.payments,0);
   } finally {
+    await session.run("MATCH (u:PaytraceUser {sub:$sub}) WHERE u.profile=$profile DETACH DELETE u",{sub:grant.sub,profile});
     // Remove only this test's dedicated graph, not demo or real records.
     await session.run(`MATCH (u:LiveProfile {id:$profile})-[:RECEIVED|HAS_PAYMENT]->(n) OPTIONAL MATCH (n)-[:ABOUT|PAID_TO]->(m:LiveMerchant) WITH collect(DISTINCT n)+collect(DISTINCT m)+collect(DISTINCT u) AS nodes UNWIND nodes AS node DETACH DELETE node`,{profile});
     await session.close(); await driver.close();

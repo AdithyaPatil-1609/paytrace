@@ -170,6 +170,21 @@ test("membership confirmation survives missing fields and MIME alternatives",()=
   assert.ok(view.includes("Not confirmed paid"));
 });
 
+test("promotions and newsletter footers are rejected, but genuine membership confirmations survive boilerplate",()=>{
+  const part=(body:string)=>({mimeType:"text/plain",body:{data:Buffer.from(body).toString("base64url")}});
+  const ad={id:"promotion123",from:"Adidas <news@comm.adidas.in>",subject:"Black Friday Favourites Come with Bigger Savings!",date:"2026-11-21",payload:part("Welcome to our store. Shop now. Manage your subscription and order number. Thanks for subscribing.")};
+  assert.equal(parseGmailReceipt(ad,[".com",".in"]).reason,"marketing");
+  assert.equal(parseGmailReceipt({...ad,subject:"Originals Sport. Made to move.",payload:part("Welcome to adidas. Thank you for subscribing. Manage your email subscription.")},[".in"]).event,null);
+  assert.equal(parseGmailReceipt({...ad,subject:"Our new collection",labelIds:["CATEGORY_PROMOTIONS"],payload:part("Plan: Example\nSubscription renewal ₹500/month")},[".in"]).event,null);
+  const confirmed={id:"youtube123",from:"YouTube <noreply-purchases@youtube.com>",subject:"Your YouTube Premium student membership is good to go!",date:"2026-10-11",payload:part("Welcome! If your membership is cancelled, refund eligibility may vary. Keep your account password safe."),labelIds:["CATEGORY_PROMOTIONS"]};
+  const result=parseGmailReceipt(confirmed,[".com"]).event;
+  assert.equal(result?.kind,"subscription_candidate");
+  assert.equal(result?.merchant,"YOUTUBE PREMIUM STUDENT");
+  assert.equal(result?.amountPaise,null);
+  assert.equal(parseGmailReceipt({...confirmed,payload:part("Your OTP is 123456")},[".com"]).reason,"sensitive");
+  assert.equal(parseGmailReceipt({...confirmed,payload:part("Your subscription has been cancelled")},[".com"]).event,null);
+});
+
 test("signed-in dashboard retains all original tabs without demo payments",()=>{
   const html=renderToStaticMarkup(createElement(AccountDashboard,{name:"Example User",email:"user@example.com",linked:false,lastSync:null,asOf:"2026-11-16"}));
   for(const tab of ["All payments","Issues","Cancel paths","Annual","Evidence graph"]) assert.ok(html.includes(tab),tab);

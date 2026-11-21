@@ -1,9 +1,9 @@
 import { claimSync, finishSync, renewSyncLease } from "@/db/neo4j/accounts";
-import { ingestLiveEvent } from "@/db/neo4j/live";
-import { normalizeReceiptText, parseFinancialEmail } from "@/lib/ingestion/email";
+import { ingestLiveEvent, ignoreSubscriptionCandidates } from "@/db/neo4j/live";
+import { isSensitiveFinancialEmail, normalizeReceiptText, parseFinancialEmail } from "@/lib/ingestion/email";
 import { gmailPaymentQuery, isAllowedSender, parseAllowedDomains } from "@/lib/ingestion/gmail-filter";
-import { hasNonzeroReportedTotal, hasZeroReportedTotal } from "@/lib/ingestion/subscription-email";
-import { isSensitive, type PaymentEvent } from "@/lib/ingestion/event";
+import { hasNonzeroReportedTotal, hasZeroReportedTotal, hasSubscriptionConfirmationSubject, isMarketingSubject } from "@/lib/ingestion/subscription-email";
+import { type PaymentEvent } from "@/lib/ingestion/event";
 import { exchangeToken, GoogleTokenError } from "./google";
 import { AccountError, type AccountErrorCode } from "./errors";
 
@@ -28,21 +28,24 @@ export function emailTextVariants(part: Part): string[] {
 export function emailText(part:Part):string { return emailTextVariants(part)[0]??""; }
 
 /** Each MIME alternative is parsed independently; do not double count it. */
-export function parseGmailReceipt(input:{id:string;from:string;subject:string;date:string;payload:Part},domains:string[]):{event:PaymentEvent|null;reason:"sender"|"sensitive"|"unsupported"|"subscription"|"parsed"} {
+export function parseGmailReceipt(input:{id:string;from:string;subject:string;date:string;payload:Part;labelIds?:string[]},domains:string[]):{event:PaymentEvent|null;reason:"sender"|"sensitive"|"marketing"|"unsupported"|"subscription"|"parsed"} {
   if(!isAllowedSender(input.from,domains))return {event:null,reason:"sender"};
+  if(isMarketingSubject(input.subject))return {event:null,reason:"marketing"};
   const texts=emailTextVariants(input.payload);
   if(!texts.length)texts.push("");
   const messageText=texts.map(text=>normalizeReceiptText(`${input.subject}\n${text}`));
-  if(messageText.some(isSensitive))return {event:null,reason:"sensitive"};
+  if(messageText.some(text=>isSensitiveFinancialEmail(input.subject,text)))return {event:null,reason:"sensitive"};
   const events=texts.map(body=>parseFinancialEmail({id:input.id,from:input.from,subject:input.subject,date:input.date,body},domains)).filter((event):event is PaymentEvent=>event!==null);
   // A zero-total receipt in either MIME part must never become a posted debit.
   const hasZero=messageText.some(hasZeroReportedTotal);
+  if(hasZero&&messageText.some(hasNonzeroReportedTotal))return {event:null,reason:"unsupported"};
   const eligible=events.filter(event=>!hasZero||event.kind!=="debit_posted");
   const precise=eligible.filter(event=>event.kind!=="subscription_candidate");
   const safe=precise.length?precise:eligible;
   const registration=safe.find(event=>event.kind==="subscription_registered");
   if(registration&&messageText.some(hasNonzeroReportedTotal))return {event:null,reason:"unsupported"};
   const event=registration??safe[0]??null;
+  if(input.labelIds?.includes("CATEGORY_PROMOTIONS")&&(!event||event.kind==="subscription_candidate"&&!hasSubscriptionConfirmationSubject(input.subject)))return {event:null,reason:"marketing"};
   // Conflicting parsed representations are ambiguous, not two payments.
   if(event&&safe.some(other=>other.kind!==event.kind||other.amountPaise!==event.amountPaise||other.merchant!==event.merchant||(event.kind==="subscription_renewal"&&(other.renewalDate!==event.renewalDate||other.renewalFrequency!==event.renewalFrequency))))return {event:null,reason:"unsupported"};
   if(event?.kind==="subscription_candidate") {
@@ -99,35 +102,43 @@ export async function syncAccount(sub: string, history=false) {
     const access=(await exchangeToken({grant_type:"refresh_token",refresh_token:grant.refreshToken})).access_token;
     if (!access) throw new Error("Missing access token");
     const after=history?"newer_than:365d":grant.lastSync?`after:${Math.floor((Date.parse(grant.lastSync)-2*86400000)/1000)}`:"newer_than:90d";
-    const query=gmailPaymentQuery(after,domains,process.env.GMAIL_ACCOUNT_QUERY);
-    let accepted=0,skipped=0,scanned=0,duplicates=0,registrations=0,renewals=0,candidates=0,subscriptionSkipped=0,senderSkipped=0,page:string|undefined;
+    // Explicit history scans always use current broad discovery, even if an old custom query omitted memberships.
+    const query=gmailPaymentQuery(after,domains,history?undefined:process.env.GMAIL_ACCOUNT_QUERY);
+    let accepted=0,skipped=0,scanned=0,duplicates=0,registrations=0,renewals=0,candidates=0,subscriptionSkipped=0,senderSkipped=0,marketingSkipped=0,ignored=0,page:string|undefined;
+    const accessGrant={sub:grant.sub,grantId:grant.grantId,lease:grant.lease};
     do {
       stage="neo4j"; await renewSyncLease(grant.sub,grant.lease); stage="google";
       const params=new URLSearchParams({q:query,maxResults:"100",...(page?{pageToken:page}:{})});
       const list=await gmailGet(access,`messages?${params}`) as {messages?:{id:string}[];nextPageToken?:string};
+      const rejected:string[]=[];
       for (const {id} of list.messages??[]) {
         scanned++;
         stage="google";
-        let mail:{payload?:Part;internalDate?:string};
+        let mail:{payload?:Part;internalDate?:string;labelIds?:string[]};
         try { mail=await gmailGet(access,`messages/${encodeURIComponent(id)}?format=full`); }
         catch(error) { if(error instanceof GoogleTokenError && error.status===404){skipped++;continue;} throw error; }
         const timestamp=new Date(Number(mail.internalDate));
         if(!mail.payload || !mail.internalDate || !Number.isFinite(timestamp.valueOf())){skipped++;continue;}
         const payload=mail.payload;
         const header=(name:string)=>payload.headers?.find(h=>h.name.toLowerCase()===name)?.value??"";
-        const {event,reason}=parseGmailReceipt({id,from:header("from"),subject:header("subject"),payload,date:timestamp.toISOString().slice(0,10)},domains);
-        if (!event) { skipped++; if(reason==="subscription")subscriptionSkipped++; if(reason==="sender")senderSkipped++; continue; }
+        const {event,reason}=parseGmailReceipt({id,from:header("from"),subject:header("subject"),payload,labelIds:mail.labelIds,date:timestamp.toISOString().slice(0,10)},domains);
+        if (!event) {
+          skipped++; if(reason==="subscription")subscriptionSkipped++; if(reason==="sender")senderSkipped++; if(reason==="marketing")marketingSkipped++;
+          if(history&&reason!=="sender")rejected.push(id);
+          continue;
+        }
         if(event.kind==="subscription_registered")registrations++;
         if(event.kind==="subscription_renewal")renewals++;
         if(event.kind==="subscription_candidate")candidates++;
         stage="neo4j";
-        const result=await ingestLiveEvent(grant.profile,event,{sub:grant.sub,grantId:grant.grantId,lease:grant.lease});
+        const result=await ingestLiveEvent(grant.profile,event,accessGrant);
         if (result.status!=="duplicate") accepted++; else duplicates++;
       }
+      if(rejected.length){stage="neo4j";ignored+=await ignoreSubscriptionCandidates(grant.profile,rejected,accessGrant);}
       page=list.nextPageToken;
     } while (page);
     state="ready";
-    return {status:"ready",accepted,skipped,scanned,duplicates,registrations,renewals,candidates,subscriptionSkipped,senderSkipped};
+    return {status:"ready",accepted,skipped,scanned,duplicates,registrations,renewals,candidates,subscriptionSkipped,senderSkipped,marketingSkipped,ignored};
   } catch (error) {
     errorCode=syncFailureCode(error,stage);
     if (errorCode==="gmail-reconnect") state="reauthorize";

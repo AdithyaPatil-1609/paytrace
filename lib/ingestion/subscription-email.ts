@@ -88,16 +88,27 @@ export function parseZeroCostSubscription(text: string, input: {id:string;date:s
   } catch { return null; }
 }
 
+const confirmationPattern=/\b(?:membership|subscription|plan|trial|autopay|billing agreement) (?:is |has been |was )?(?:now )?(?:good to go|active|activated|confirmed|started|registered|created|renewed|ready|successful|enabled)\b/i;
+export function hasSubscriptionConfirmationSubject(subject:string) {
+  return confirmationPattern.test(subject) && /\b(?:membership|subscription|trial|autopay|billing agreement|monthly plan|annual plan|premium|good to go)\b/i.test(subject);
+}
+export function isMarketingSubject(subject:string) {
+  return /\b(?:black friday|cyber monday|sale|savings|limited[- ]time|exclusive offer|early access|shop now|shop the|subscribe now|join now|sign up today|upgrade now|newsletter|marketing emails|mailing list|special offer|\d+% off)\b/i.test(subject);
+}
+export function isSubscriptionCancellation(text:string) {
+  return /(?:^|[\n.!?])\s*(?:(?:your )?(?:subscription|membership|trial) (?:has been |is |was )?cancel(?:led|ed)|(?:your )?(?:subscription|membership|trial) will not renew|cancellation confirmed|you are not yet subscribed|auto[- ]renewal (?:is |has been )?(?:off|disabled))\b/i.test(text);
+}
+
 /** Preserve useful evidence even when a receipt does not state all billing fields. */
 export function parseSubscriptionCandidate(text:string,input:{id:string;date:string;subject:string;from:string}):PaymentEvent|null {
   const subscription=/\b(?:subscriptions?|subscrib(?:ed|ing)|memberships?|free trial|auto[- ]?renew(?:al|s)?|auto[- ]?pay|recurring (?:billing|payment|charge)|next (?:billing|renewal|charge)|(?:paid|monthly|annual|yearly) plan|billing agreement)\b/i;
   if(!subscription.test(text))return null;
   if(hasZeroReportedTotal(text)&&hasNonzeroReportedTotal(text))return null;
-  if(/\b(?:cancel(?:led|ed)|cancellation confirmed|will not renew|payment (?:failed|declined)|not yet subscribed|auto[- ]renewal (?:is |has been )?(?:off|disabled))\b/i.test(text))return null;
+  if(isSubscriptionCancellation(text)||/\bpayment (?:failed|declined)\b/i.test(text))return null;
   // Positive account/order evidence, not just the word "subscription" in a newsletter.
   const confirmed=/\b(?:membership|subscription|plan|trial|autopay|billing agreement) (?:is |has been |was )?(?:now )?(?:good to go|active|activated|confirmed|started|registered|created|renewed|ready|successful|enabled)\b|\b(?:you (?:have |have successfully )?(?:subscribed|joined)|you['’]ve (?:subscribed|joined)|thanks? for (?:subscribing|joining|your (?:purchase|subscription|membership))|welcome to|order (?:placed|confirmed|number|id)|payment (?:successful|received|completed)|automatically renews?|will (?:automatically )?renew|renews? on|next (?:billing|renewal|charge) (?:date|on)|subscription renewal|billing confirmation)\b/i;
   if(!confirmed.test(text))return null;
-  if(/\b(?:subscribe now|join now|limited[- ]time offer|sign up today|start your free trial|upgrade now|newsletter|marketing emails|mailing list)\b/i.test(input.subject))return null;
+  if(isMarketingSubject(input.subject)||/\bstart your free trial\b/i.test(input.subject))return null;
   if(/\b(?:newsletter|mailing list|marketing emails|email updates)\b/i.test(text)&&!new RegExp(inr,"i").test(text)&&!/\b(?:paid plan|membership|billing|renewal|free trial)\b/i.test(text))return null;
   const name="[A-Za-z0-9][A-Za-z0-9 .&*+_'@/-]{0,79}";
   const named=input.subject.match(new RegExp(`^(?:Your\\s+)?(${name}?)\\s+(?:subscription|membership|plan|trial)\\b`,"i"))?.[1];
@@ -109,6 +120,12 @@ export function parseSubscriptionCandidate(text:string,input:{id:string;date:str
   if(!merchant)return null;
   const ratePattern=new RegExp(`${inr}\\s*(?:/\\s*|per\\s+|every\\s+|\\s+)(week|month|quarter|year|annum|weekly|monthly|quarterly|annually)\\b`,"gi");
   const rates=[...text.matchAll(ratePattern)].map(m=>({amount:toPaise(m[1]),frequency:(m[2].toLowerCase().startsWith("week")?"weekly":m[2].toLowerCase().startsWith("month")?"monthly":m[2].toLowerCase().startsWith("quarter")?"quarterly":"annual") as RenewalFrequency}));
+  // Newsletter footers frequently say "subscription", "welcome" and "order".
+  // Require subscription-specific confirmation or actual recurring billing evidence.
+  const subjectConfirmed=hasSubscriptionConfirmationSubject(input.subject);
+  const lifecycle=confirmationPattern.test(text)||/\b(?:automatically renews?|will (?:automatically )?renew|renews? on|next (?:billing|renewal|charge) (?:date|on)|subscription renewal)\b/i.test(text);
+  if(!subjectConfirmed&&!lifecycle&&!product&&!(rates.length&&(labeled||named||welcome||/\b(?:subscribed|subscribing|membership|free trial|recurring billing)\b/i.test(text))))return null;
+  if(!subjectConfirmed&&/\b(?:newsletter|mailing list|email preferences|email subscription|marketing emails|unsubscribe from (?:our |these )?emails)\b/i.test(text)&&!rates.length&&!product&&!labeled)return null;
   const rate=rates.length&&rates.every(r=>r.amount===rates[0].amount&&r.frequency===rates[0].frequency)?rates[0]:undefined;
   const datePattern="(?:\\d{4}-\\d{2}-\\d{2}|\\d{1,2} +[A-Za-z]+ +\\d{4}|[A-Za-z]+ +\\d{1,2},? +\\d{4})";
   const dates=[...text.matchAll(new RegExp(`\\b(?:starting (?:from|on)|renews? on|renewal date|next (?:billing|renewal|payment|charge) date|next charge on)\\s*:?\\s*(${datePattern})`,"gi"))].map(m=>receiptDate(m[1]));

@@ -1,6 +1,6 @@
 import { isSensitive, validateEvent, type PaymentEvent, type EventKind } from "./event";
 import { isAllowedSender } from "./gmail-filter";
-import { hasZeroReportedTotal, parseZeroCostSubscription, parseSubscriptionRenewal, parseSubscriptionCandidate } from "./subscription-email";
+import { hasZeroReportedTotal, parseZeroCostSubscription, parseSubscriptionRenewal, parseSubscriptionCandidate, hasSubscriptionConfirmationSubject, isMarketingSubject, isSubscriptionCancellation } from "./subscription-email";
 
 /** Normalize common email text formatting without inventing receipt fields. */
 export function normalizeReceiptText(text:string) {
@@ -10,11 +10,27 @@ export function normalizeReceiptText(text:string) {
     .replace(/^\s*\|([^\n]+)\|\s*$/gm,(_,row:string)=>row.split("|").map(cell=>cell.trim()).join(" "));
 }
 
+/** A confirmation may mention security in its footer; never extract fields from such a body. */
+export function isSensitiveFinancialEmail(subject:string,text:string) {
+  if(isSensitive(subject))return true;
+  if(!isSensitive(text))return false;
+  if(!hasSubscriptionConfirmationSubject(subject))return true;
+  return /\b(?:OTP|PIN|CVV|password|verification[\s-]*code|one[\s-]*time[\s-]*password)\b\s*(?:is|was|=|:)\s*\S+/i.test(text) || /\b(?:OTP|PIN|CVV|verification code)\s+\d{3,}\b/i.test(text) || /\b(?:your|use this|enter the)\s+(?:OTP|PIN|CVV|verification code|one.time password)\b/i.test(text);
+}
+
 /** Deliberately narrow receipt/notice patterns; unrelated messages are skipped. */
 export function parseFinancialEmail(input: { id: string; from: string; subject: string; body: string; date: string }, allowedDomains: string[]): PaymentEvent | null {
   if (!isAllowedSender(input.from, allowedDomains)) return null;
   const text = normalizeReceiptText(`${input.subject}\n${input.body}`);
-  if (isSensitive(text) || /\b(?:refund|credited|credit received|payment declined|invoice due)\b/i.test(text)) return null;
+  if (isMarketingSubject(input.subject)||isSensitiveFinancialEmail(input.subject,text))return null;
+  const subjectConfirmation=hasSubscriptionConfirmationSubject(input.subject);
+  const fallback=()=>subjectConfirmation&&!isSubscriptionCancellation(text)&&!/\b(?:payment (?:failed|declined)|refund (?:issued|processed|completed))\b/i.test(text)?parseSubscriptionCandidate(normalizeReceiptText(input.subject),input):null;
+  if(isSensitive(text))return fallback();
+  if (/\b(?:refund|credited|credit received|payment declined|invoice due)\b/i.test(text)) {
+    // Refund-policy wording is not a refund event. Keep only provisional membership evidence.
+    if(!fallback())return null;
+    return parseSubscriptionCandidate(text,input)??fallback();
+  }
   const registration = parseZeroCostSubscription(text,input);
   if (registration) return registration;
   const renewal = parseSubscriptionRenewal(text,input);
