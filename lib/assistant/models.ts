@@ -41,6 +41,8 @@ export async function ollamaChat(messages: ChatMessage[], format?: object): Prom
       messages,
       stream: false,
       think: false,
+      // Keep Qwen loaded between messages, so a live SMS is read in seconds, not after a cold start.
+      keep_alive: process.env.PAYTRACE_OLLAMA_KEEP_ALIVE ?? "30m",
       options: { temperature: 0 },
       ...(format ? { format } : {})
     }),

@@ -1,26 +1,59 @@
-import { authorized, liveProfile } from "@/lib/ingestion/auth";
-import { validateEvent } from "@/lib/ingestion/event";
+/**
+ * POST /api/ingest/sms: one real bank SMS from the Android companion app,
+ * {sender, text, receivedAt}. Cheap checks run first, in this order: limit per
+ * network address, body size from the header, the device code, limit per
+ * device, then the body itself. The phone gets 202 at once; the AI reader and
+ * Neo4j run right after, because Qwen can take longer than the phone waits.
+ */
+import { after } from "next/server";
+import { createHash } from "node:crypto";
 import { ingestLiveEvent } from "@/db/neo4j/live";
+import { authorized, liveProfile } from "@/lib/ingestion/auth";
+import { checkSmsBody, processSmsWithRetry } from "@/lib/ingestion/sms-message";
+import { SMS_INGEST_LIMITS } from "@/lib/payments/rules";
+import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
+
+const fail = (status: number, error: string) =>
+  Response.json({ ok: false, error }, { status, headers: { "Cache-Control": "no-store" } });
+
+/** Runs work after the answer is sent; outside a Next request (tests, scripts) it simply starts it. */
+function afterResponse(work: () => Promise<unknown>) {
+  try {
+    after(work);
+  } catch {
+    void work();
+  }
+}
 
 export async function POST(request: Request) {
-  if (!authorized(request, "x-paytrace-device", process.env.PAYTRACE_DEVICE_CODE)) {
-    return Response.json({ ok: false, error: "Unknown device" }, { status: 401 });
-  }
+  const byAddress = takeHit("ingest", clientKey(request), LIMITS.sms);
+  if (!byAddress.ok) return tooMany(byAddress.retryAfter);
 
-  const text = await request.text();
-  if (text.length > 2000) {
-    return Response.json({ ok: false, error: "Message too large" }, { status: 413 });
-  }
+  const declared = Number(request.headers.get("content-length") ?? 0);
+  if (declared > SMS_INGEST_LIMITS.maxBodyBytes) return fail(413, "Message too large");
 
-  let event;
+  const code = process.env.PAYTRACE_DEVICE_CODE;
+  if (!authorized(request, "x-paytrace-device", code)) return fail(401, "Unknown device");
+
+  const device = createHash("sha256").update(code!).digest("hex").slice(0, 16);
+  const byDevice = takeHit("ingest-device", device, LIMITS.sms);
+  if (!byDevice.ok) return tooMany(byDevice.retryAfter);
+
+  const raw = await request.text();
+  if (Buffer.byteLength(raw) > SMS_INGEST_LIMITS.maxBodyBytes) return fail(413, "Message too large");
+
+  let body: unknown;
   try {
-    event = validateEvent(JSON.parse(text));
-    if (event.source !== "sms") throw new Error("Wrong source");
+    body = JSON.parse(raw);
   } catch {
-    return Response.json({ ok: false, error: "Invalid payment event" }, { status: 400 });
+    return fail(400, "Send JSON");
   }
+  const checked = checkSmsBody(body);
+  if (!checked.ok) return fail(400, checked.error);
+
   const profile = liveProfile();
-  if (!profile) return Response.json({ ok: false, error: "Live storage is disabled" }, { status: 503 });
-  try { return Response.json({ ok: true, ...await ingestLiveEvent(profile, event) }); }
-  catch { return Response.json({ ok: false, error: "Live storage unavailable" }, { status: 503 }); }
+  if (!profile) return fail(503, "Live storage is disabled");
+
+  afterResponse(() => processSmsWithRetry(profile, checked.message, { store: ingestLiveEvent }));
+  return Response.json({ ok: true, accepted: true }, { status: 202, headers: { "Cache-Control": "no-store" } });
 }
