@@ -165,6 +165,9 @@ RETURN
   CASE
     WHEN cadence = 'irregular' THEN null
     WHEN cadence = 'annual' THEN toString(charges[size(charges) - 1].date + duration({years: 1}))
+    // Same calendar day next month (or quarter), clamped to the month's end, as lib/payments/engine.ts does.
+    WHEN cadence = 'monthly' THEN toString(charges[size(charges) - 1].date + duration({months: 1}))
+    WHEN cadence = 'quarterly' THEN toString(charges[size(charges) - 1].date + duration({months: 3}))
     ELSE toString(charges[size(charges) - 1].date + duration({days: toInteger(round(CASE WHEN size(gaps) = 0 THEN toFloat($rules.defaultGapDays) ELSE gapMedian END))}))
   END AS nextCharge,
   CASE WHEN m IS NULL OR m.last_opened IS NULL THEN null ELSE toString(m.last_opened) END AS lastOpened,

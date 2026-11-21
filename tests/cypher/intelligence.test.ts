@@ -1,12 +1,15 @@
 /** Regression tests for the read-only Neo4j intelligence API queries. */
 import "../../scripts/load-env-local";
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
 import { HIDDEN_MANDATES } from "../../db/neo4j/queries/hidden-mandates";
 import { MERCHANT_EVIDENCE } from "../../db/neo4j/queries/evidence";
 
 const skip = !hasNeo4jConfig() ? "Neo4j is not configured" : false;
+
+// The shared driver keeps a connection pool open; close it so the test process can exit.
+after(async () => { if (!skip) await getNeo4jDriver().close(); });
 
 test("hidden mandate discovery excludes linked debit payments", { skip }, async () => {
   const session = getNeo4jDriver().session({ database: neo4jDatabase });
