@@ -1,12 +1,16 @@
-
 package com.paytrace.companion
+
+// The one screen of the Paytrace Companion app (card M1).
+// It shows the SMS permission, the server connection and the counters.
+// The phone does not read payment fields: it sends the bank SMS text,
+// with account numbers masked, and the server's AI reads it.
 
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -20,16 +24,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.paytrace.companion.ui.theme.PaytraceCompanionTheme
-import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        PaymentInbox.load(this)
+        LastSms.load(this)
         CompanionSettings.load(this)
-
         setContent {
             PaytraceCompanionTheme {
                 PaytraceScreen()
@@ -39,7 +40,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        PaymentInbox.load(this)
+        LastSms.load(this)
         CompanionSettings.load(this)
     }
 }
@@ -48,23 +49,6 @@ class MainActivity : ComponentActivity() {
 fun PaytraceScreen() {
 
     val context = LocalContext.current
-
-    var smsText by remember {
-        mutableStateOf(
-            "Rs. 499 debited from A/c XX1234 for NETFLIX " +
-                    "on 21-11-2026. Ref: TXN98765."
-        )
-    }
-
-    var manualPayment by remember {
-        mutableStateOf<PaymentDetails?>(null)
-    }
-
-    var attempted by remember {
-        mutableStateOf(false)
-    }
-
-    val automaticPayment = PaymentInbox.latest.value
 
     var permissionGranted by remember {
         mutableStateOf(
@@ -75,24 +59,20 @@ fun PaytraceScreen() {
         )
     }
 
-    val permissionLauncher =
-        rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { granted ->
-            permissionGranted = granted
-        }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        permissionGranted = granted
+    }
 
     Scaffold { innerPadding ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
-
-            verticalArrangement =
-                Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
             Text(
@@ -101,152 +81,63 @@ fun PaytraceScreen() {
             )
 
             Text(
-                "Automatic SMS Detection",
-                style = MaterialTheme.typography.titleLarge
+                "Sends your bank SMS to your Paytrace account. Only registered " +
+                        "bank and service senders, like VM-HDFCBK-S, are read. OTP, " +
+                        "PIN and password messages never leave the phone. Account " +
+                        "numbers are masked to the last 4 digits.",
+                style = MaterialTheme.typography.bodyMedium
             )
 
-            Text(
-                "Synthetic test mode. While \"Test sender only\" " +
-                        "is on, only messages from the test sender " +
-                        "are read. Password and OTP messages never " +
-                        "leave the phone."
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement =
-                        Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-
-                    Text(
-                        "TEST MODE ENABLED",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Text(
-                        if (permissionGranted)
-                            "SMS permission: Granted"
-                        else
-                            "SMS permission: Not granted"
-                    )
-
-                    Text(
-                        "Sender rules: see Laptop Connection below"
-                    )
-
+                    Text("SMS permission", style = MaterialTheme.typography.titleMedium)
+                    Text(if (permissionGranted) "Granted" else "Not granted")
                     if (!permissionGranted) {
                         Button(
                             onClick = {
-                                permissionLauncher.launch(
-                                    Manifest.permission.RECEIVE_SMS
-                                )
+                                permissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
                             }
                         ) {
-                            Text("Enable Test SMS Reception")
+                            Text("Allow SMS access")
                         }
+                        Text(
+                            "If Allow is grey: Settings > Apps > Paytrace Companion > " +
+                                    "menu > Allow restricted settings.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             }
 
-            LaptopConnectionCard()
+            ServerConnectionCard()
 
-            Text(
-                "Automatically Detected Payment",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            if (automaticPayment == null) {
-
-                Text(
-                    "No synthetic SMS received yet. " +
-                            "Send a test message using the " +
-                            "Android emulator's Phone controls."
-                )
-
-            } else {
-
-                PaymentCard(
-                    payment = automaticPayment,
-                    status = "Automatically Detected"
-                )
-
-
-                OutlinedButton(
-                    onClick = {
-                        PaymentInbox.clear(context)
-                        DuplicateDetector.clear(context)
-                    },
-                    modifier = Modifier.fillMaxWidth()
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Reset Test Payments")
+                    Text("Last bank SMS", style = MaterialTheme.typography.titleMedium)
+                    val last = LastSms.latest.value
+                    if (last == null) {
+                        Text("No bank SMS received yet.")
+                    } else {
+                        Text("From: ${last.sender}")
+                        Text("Received: ${last.receivedAt}")
+                    }
+                    Text(
+                        "The message text is not kept on this screen.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
-
             }
 
             HorizontalDivider()
 
             Text(
-                "Manual Payment Detection",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            OutlinedTextField(
-                value = smsText,
-
-                onValueChange = {
-                    smsText = it
-                    manualPayment = null
-                    attempted = false
-                },
-
-                label = {
-                    Text("Fictional Payment SMS")
-                },
-
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 4
-            )
-
-            Button(
-                onClick = {
-                    attempted = true
-                    manualPayment = SmsParser.parse(smsText)
-                },
-
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Detect Payment")
-            }
-
-            if (attempted && manualPayment == null) {
-
-                Text(
-                    "Message rejected. Invalid or " +
-                            "unsupported fictional SMS.",
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-
-            manualPayment?.let { result ->
-
-                PaymentCard(
-                    payment = result,
-                    status = "Parsed Manually"
-                )
-            }
-
-            HorizontalDivider()
-
-            Text(
-                "HackFront 2026 | Member 4",
-                style = MaterialTheme.typography.bodySmall
-            )
-
-            Text(
-                "Version 0.3 - Sends to laptop",
+                "HackFront 2026 | Version 0.4 - Real bank SMS",
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -254,135 +145,37 @@ fun PaytraceScreen() {
 }
 
 @Composable
-fun PaymentCard(
-    payment: PaymentDetails,
-    status: String
-) {
-
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement =
-                Arrangement.spacedBy(8.dp)
-        ) {
-
-            Text(
-                "Payment Detected",
-                style = MaterialTheme.typography.titleLarge
-            )
-
-            HorizontalDivider()
-
-            val eventLabel = when (payment.kind) {
-                "debit_posted" -> "Payment Debited"
-                "mandate_created" -> "Autopay Mandate Created"
-                "mandate_cancelled" -> "Autopay Mandate Cancelled"
-                "debit_scheduled" -> "Upcoming Debit"
-                "debit_failed" -> "Payment Failed"
-                else -> "Unknown Event"
-            }
-
-            Text(
-                text = "Event: $eventLabel",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text("Merchant: ${payment.merchant}")
-
-            val rupees = payment.amountPaise / 100
-            val paise = (payment.amountPaise % 100)
-                .toString()
-                .padStart(2, '0')
-
-
-            if (payment.kind == "mandate_cancelled") {
-                Text("Amount: Not applicable")
-            } else {
-                val amountLabel = when (payment.kind) {
-                    "mandate_created" -> "Mandate Limit"
-                    "debit_scheduled" -> "Scheduled Amount"
-                    "debit_failed" -> "Attempted Amount"
-                    else -> "Amount"
-                }
-
-                Text("$amountLabel: Rs. $rupees.$paise")
-            }
-
-
-            Text("Date: ${payment.date}")
-
-            Text("Reference: ${payment.reference}")
-
-            HorizontalDivider()
-
-            Text(
-                "Status: $status",
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Text(
-                "Synthetic payment. Only the fields above " +
-                        "are kept; the SMS text is never stored or sent.",
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
-}
-
-@Composable
-fun LaptopConnectionCard() {
+fun ServerConnectionCard() {
 
     val context = LocalContext.current
 
-    var serverUrl by remember {
-        mutableStateOf(CompanionSettings.serverUrl(context))
-    }
-    var pairingCode by remember {
-        mutableStateOf(CompanionSettings.pairingCode(context))
-    }
-    var testSender by remember {
-        mutableStateOf(CompanionSettings.testSender(context))
-    }
-    var testSenderOnly by remember {
-        mutableStateOf(CompanionSettings.testSenderOnly(context))
-    }
-    var sendingEnabled by remember {
-        mutableStateOf(CompanionSettings.sendingEnabled(context))
-    }
-    var savedMessage by remember {
-        mutableStateOf("")
-    }
+    var serverUrl by remember { mutableStateOf(CompanionSettings.serverUrl(context)) }
+    var pairingCode by remember { mutableStateOf(CompanionSettings.pairingCode(context)) }
+    var sendingEnabled by remember { mutableStateOf(CompanionSettings.sendingEnabled(context)) }
+    var savedMessage by remember { mutableStateOf("") }
 
     fun saveAll() {
         CompanionSettings.save(
             context,
             serverUrl,
             pairingCode,
-            testSender,
-            testSenderOnly,
+            CompanionSettings.testSender(context),
+            false,
             sendingEnabled
         )
     }
 
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
 
-            Text(
-                "Laptop Connection",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text("Server connection", style = MaterialTheme.typography.titleMedium)
 
             Text(
-                "Emulator: http://10.0.2.2:3000\n" +
-                        "Real phone: the https://...trycloudflare.com address",
+                "Paste the server's https:// address. On the emulator, use " +
+                        "http://10.0.2.2:3000",
                 style = MaterialTheme.typography.bodySmall
             )
 
@@ -392,7 +185,7 @@ fun LaptopConnectionCard() {
                     serverUrl = it
                     savedMessage = ""
                 },
-                label = { Text("Laptop address") },
+                label = { Text("Server address") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -409,51 +202,11 @@ fun LaptopConnectionCard() {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            OutlinedTextField(
-                value = testSender,
-                onValueChange = {
-                    testSender = it
-                    savedMessage = ""
-                },
-                label = { Text("Test sender number") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Test sender only",
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = testSenderOnly,
-                    onCheckedChange = {
-                        testSenderOnly = it
-                        savedMessage = ""
-                    }
-                )
-            }
-
-            if (!testSenderOnly) {
-                Text(
-                    "Real alerts can pass now. Switch this off only " +
-                            "after a clear yes at Mentor Round 1.",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Send events to laptop",
-                    modifier = Modifier.weight(1f)
-                )
+                Text("Send bank SMS to server", modifier = Modifier.weight(1f))
                 Switch(
                     checked = sendingEnabled,
                     onCheckedChange = {
@@ -468,8 +221,7 @@ fun LaptopConnectionCard() {
                     saveAll()
                     savedMessage =
                         if (!EventSender.isAllowedAddress(serverUrl.trim())) {
-                            "Saved. Note: the address must start with " +
-                                    "https:// or http://10.0.2.2"
+                            "Saved. Note: the address must start with https://"
                         } else {
                             "Settings saved"
                         }
@@ -480,10 +232,7 @@ fun LaptopConnectionCard() {
             }
 
             if (savedMessage.isNotEmpty()) {
-                Text(
-                    savedMessage,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Text(savedMessage, style = MaterialTheme.typography.bodySmall)
             }
 
             HorizontalDivider()
@@ -502,30 +251,16 @@ fun LaptopConnectionCard() {
             OutlinedButton(
                 onClick = {
                     saveAll()
-                    CompanionSettings.recordResult(
-                        context,
-                        "Sending test event..."
-                    )
-                    EventSender.sendAndRecord(
-                        context,
-                        PaymentDetails(
-                            merchant = "DEMOFLIX",
-                            amountPaise = 19900,
-                            date = LocalDate.now().toString(),
-                            reference = "TEST0001",
-                            kind = "debit_posted"
-                        )
-                    )
+                    CompanionSettings.recordResult(context, "Checking connection...")
+                    EventSender.checkConnection(context)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Send Test Event")
+                Text("Check Connection")
             }
 
             OutlinedButton(
-                onClick = {
-                    CompanionSettings.resetCounters(context)
-                },
+                onClick = { CompanionSettings.resetCounters(context) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Reset Counters")
