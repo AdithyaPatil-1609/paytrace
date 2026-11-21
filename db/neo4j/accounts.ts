@@ -2,18 +2,19 @@ import { getNeo4jDriver, neo4jDatabase } from "./client";
 import { hash, open, profileFor, randomToken, seal, SESSION_SECONDS } from "@/lib/accounts/security";
 import { AccountError, type AccountErrorCode } from "@/lib/accounts/errors";
 
-export type Account = { sub: string; email: string; name: string; profile: string; linked: boolean; lastSync: string | null; syncStatus: string | null; syncError: string | null };
+export type Account = { sub: string; email: string; name: string; profile: string; linked: boolean; lastSync: string | null; syncStatus: string | null; syncError: string | null; iphone: boolean };
 const ACCOUNT_SCHEMA = [
   "CREATE CONSTRAINT paytrace_user_sub IF NOT EXISTS FOR (u:PaytraceUser) REQUIRE u.sub IS UNIQUE",
-  "CREATE CONSTRAINT paytrace_session_hash IF NOT EXISTS FOR (s:PaytraceSession) REQUIRE s.hash IS UNIQUE"
+  "CREATE CONSTRAINT paytrace_session_hash IF NOT EXISTS FOR (s:PaytraceSession) REQUIRE s.hash IS UNIQUE",
+  "CREATE CONSTRAINT paytrace_user_ios_token IF NOT EXISTS FOR (u:PaytraceUser) REQUIRE u.iosTokenHash IS UNIQUE"
 ];
 let initialized: Promise<void> | undefined;
 async function schema() {
   if (!initialized) initialized = (async () => { const s = getNeo4jDriver().session({ database:neo4jDatabase }); try { for (const q of ACCOUNT_SCHEMA) await s.run(q); } finally { await s.close(); } })().catch(e => { initialized = undefined; throw e; });
   await initialized;
 }
-const projection = `u.sub AS sub, u.email AS email, u.name AS name, u.profile AS profile, u.grantId IS NOT NULL AS linked, u.lastSync AS lastSync, u.syncStatus AS syncStatus, u.syncError AS syncError`;
-function toAccount(r: import("neo4j-driver").Record): Account { return { sub:r.get("sub"),email:r.get("email"),name:r.get("name"),profile:r.get("profile"),linked:r.get("linked"),lastSync:r.get("lastSync")??null,syncStatus:r.get("syncStatus")??null,syncError:r.get("syncError")??null }; }
+const projection = `u.sub AS sub, u.email AS email, u.name AS name, u.profile AS profile, u.grantId IS NOT NULL AS linked, u.lastSync AS lastSync, u.syncStatus AS syncStatus, u.syncError AS syncError, u.iosTokenHash IS NOT NULL AS iphone`;
+function toAccount(r: import("neo4j-driver").Record): Account { return { sub:r.get("sub"),email:r.get("email"),name:r.get("name"),profile:r.get("profile"),linked:r.get("linked"),lastSync:r.get("lastSync")??null,syncStatus:r.get("syncStatus")??null,syncError:r.get("syncError")??null,iphone:r.get("iphone")===true }; }
 
 export async function createSession(identity: { sub: string; email: string; name: string }) {
   await schema();
@@ -75,4 +76,20 @@ export async function renewSyncLease(sub:string,lease:string) {
 export async function finishSync(sub: string, lease: string, status: "ready" | "error" | "reauthorize", errorCode?:AccountErrorCode) {
   const s = getNeo4jDriver().session({database:neo4jDatabase});
   try { await s.run(`MATCH (u:PaytraceUser {sub:$sub,syncLease:$lease}) SET u.syncStatus=$status,u.syncError=$error, u.lastSync=CASE WHEN $status='ready' THEN $now ELSE u.lastSync END REMOVE u.syncLease,u.syncLeaseUntil`,{sub,lease,status,error:errorCode??null,now:new Date().toISOString()}); } finally { await s.close(); }
+}
+
+/** Replaces the account's iPhone token. The caller shows the token once; only its hash is kept. */
+export async function setIosToken(sub: string, token: string) {
+  await schema();
+  const s = getNeo4jDriver().session({database:neo4jDatabase});
+  try { await s.run("MATCH (u:PaytraceUser {sub:$sub}) SET u.iosTokenHash=$hash,u.iosTokenAt=datetime()",{sub,hash:hash(token)}); } finally { await s.close(); }
+}
+export async function removeIosToken(sub: string) {
+  const s = getNeo4jDriver().session({database:neo4jDatabase});
+  try { await s.run("MATCH (u:PaytraceUser {sub:$sub}) REMOVE u.iosTokenHash,u.iosTokenAt",{sub}); } finally { await s.close(); }
+}
+/** The profile an iPhone token belongs to, or null. Never read from the request body. */
+export async function profileForIosToken(token: string): Promise<string | null> {
+  const s = getNeo4jDriver().session({database:neo4jDatabase});
+  try { const r = await s.run("MATCH (u:PaytraceUser {iosTokenHash:$hash}) RETURN u.profile AS profile",{hash:hash(token)}); return (r.records[0]?.get("profile") as string | undefined) ?? null; } finally { await s.close(); }
 }

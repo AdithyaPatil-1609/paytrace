@@ -61,6 +61,12 @@ export default function PrivacyPage() {
         bank and payment senders only. Paytrace reads payment fields from each message and does not store
         the SMS text. Messages containing an OTP, PIN or password are dropped before they are read.
       </p>
+      <p>
+        On iPhone, no app can read SMS. If you choose <strong>Connect iPhone</strong>, you set up a Shortcut
+        automation yourself that sends bank SMS about debits, mandates or autopay to Paytrace with a personal
+        token. Only a fingerprint (hash) of the token is stored; <strong>Disconnect iPhone</strong> stops it at
+        once. The same rules apply: registered senders only, OTP messages dropped, SMS text not stored.
+      </p>
 
       <h2>4. How messages are read</h2>
       <p>

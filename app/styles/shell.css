@@ -64,7 +64,7 @@
 .personal-menu-trigger:focus-visible { outline: 2px solid var(--marigold); outline-offset: 2px; }
 .gmail-status { font-size: 11px; font-weight: 650; white-space: nowrap; color: var(--marigold-deep); }
 .gmail-status.linked { color: var(--sage); }
-.personal-menu-panel { position: absolute; right: 0; top: calc(100% + 10px); width: min(320px, calc(100vw - 32px)); z-index: 50; color: var(--ink); background: var(--paper-lift); }
+.personal-menu-panel { position: absolute; right: 0; top: calc(100% + 10px); width: min(340px, calc(100vw - 32px)); max-height: calc(100vh - 96px); overflow-y: auto; z-index: 50; color: var(--ink); background: var(--paper-lift); }
 .personal-menu-panel .account-eyebrow { font-size: 11px; letter-spacing: 1.4px; color: var(--ink-faint); margin: 0 0 8px; }
 .personal-menu-panel .account-note, .personal-email { font-size: 13px; color: var(--ink-soft); line-height: 1.5; overflow-wrap: anywhere; }
 .personal-menu-panel hr { border: 0; border-top: 1px solid var(--rule); margin: 14px 0; }
@@ -264,3 +264,10 @@
   font: 600 25px var(--serif);
   letter-spacing: -0.025em;
 }
+
+/* Connect iPhone: the one-time token and the Shortcut steps. */
+.iphone-setup .iphone-token { display: block; font-size: 12px; padding: 8px; margin: 8px 0; background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; overflow-wrap: anywhere; user-select: all; }
+.iphone-steps { font-size: 13px; color: var(--ink-soft); line-height: 1.5; padding-left: 18px; margin: 0 0 12px; }
+.iphone-steps li { margin-bottom: 6px; }
+.iphone-steps code { font-size: 12px; overflow-wrap: anywhere; }
+.link-button { background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; cursor: pointer; font: inherit; }

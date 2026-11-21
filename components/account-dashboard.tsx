@@ -10,9 +10,10 @@ import type { Dataset } from "@/lib/payments/types";
 import { formatINR } from "@/lib/presentation/format";
 import { SubscriptionWatchlist } from "@/components/subscription-watchlist";
 import { accountErrorMessage } from "@/lib/accounts/errors";
+import { IphoneConnect } from "@/components/iphone-connect";
 
 type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
-  linked: boolean; lastSync: string | null; syncStatus: string | null; syncError?:string|null;
+  linked: boolean; lastSync: string | null; syncStatus: string | null; syncError?:string|null; iphone?: boolean;
 };
 
 export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeIsError}: {
@@ -77,6 +78,8 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
         {syncResult&&<p className="account-note" role="status">{syncResult}</p>}
       </>}
       {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
+      <hr/>
+      <IphoneConnect connected={snapshot?.iphone===true} onChange={()=>void refresh()}/>
       <hr/>
       <form action="/api/auth/logout" method="post"><button className="account-button" type="submit">Sign out</button></form>
       <Link className="account-demo-link" href="/?demo=1">Explore synthetic demo</Link>
