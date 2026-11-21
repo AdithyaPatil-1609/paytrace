@@ -13,3 +13,9 @@ test("active UPI mandates hand off to NPCI; other rails, missing status and bloc
   assert.equal(render({ ...active, cancelMode: "block" }), "");
   assert.equal(render({ ...active, canCancel: false }), "");
 });
+
+test("iCloud+ opens Apple's guide instead of NPCI", () => {
+  const html = render({ ...active, mechanism: "play_store", merchant: "iCloud+" });
+  assert.match(html, /href="https:\/\/support\.apple\.com\/108318"/);
+  assert.doesNotMatch(html, /npci\.org\.in/);
+});

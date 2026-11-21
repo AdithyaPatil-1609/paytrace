@@ -8,7 +8,7 @@ import { formatDate, formatINR } from "@/lib/presentation/format";
 import type { Commitment } from "@/lib/payments/types";
 import { useState } from "react";
 import { CancellationDrawer } from "@/components/detail/cancellation-drawer";
-import { UpiCancelLink } from "@/components/detail/upi-cancel-link";
+import { cancelDestination, UpiCancelLink } from "@/components/detail/upi-cancel-link";
 
 export function CancelPathsScreen({
   items,
@@ -97,14 +97,14 @@ export function CancelPathsScreen({
                     )}
                     <UpiCancelLink item={item} />
                     <button
-                      className="danger-button"
+                      className={cancelDestination(item) ? "secondary-button" : "danger-button"}
                       id={`cancel-trigger-${item.id}`}
                       aria-haspopup="dialog"
                       aria-expanded={openGuide === item.id}
                       aria-controls={openGuide === item.id ? `cancel-guide-${item.id}` : undefined}
                       onClick={() => setOpenGuide(item.id)}
                     >
-                      Steps to cancel <i>→</i>
+                      {cancelDestination(item) ? "View checklist or record completion" : "View provider cancellation steps"} <i>→</i>
                     </button>
                     <small>
                       {item.cancelMode === "normal"
