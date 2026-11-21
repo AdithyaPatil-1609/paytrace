@@ -89,6 +89,10 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       <IphoneConnect connected={snapshot?.iphone===true} onChange={()=>void refresh()}/>
       <PhonePairing/>
       <hr/>
+      <p className="account-eyebrow">FAMILY ACCESS</p>
+      <p className="account-note">Share a read-only view of your recurring payments with someone you choose, and remove it at any time.</p>
+      <Link className="account-button" href="/family">Family access</Link>
+      <hr/>
       <form action="/api/auth/logout" method="post"><button className="account-button" type="submit">Sign out</button></form>
       <form action="/api/auth/logout" method="post"><input type="hidden" name="scope" value="all"/><button className="account-button" type="submit">Sign out on every device</button></form>
       <form action="/api/account/delete" method="post" onSubmit={event=>{ if(window.prompt("This deletes all of your Paytrace data, unpairs your phones and revokes Gmail access. Type DELETE to confirm.")!=="DELETE") event.preventDefault(); }}><input type="hidden" name="confirm" value="DELETE"/><button className="account-button danger" type="submit">Delete my data</button></form>

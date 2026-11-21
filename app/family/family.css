@@ -1,0 +1,18 @@
+/* Family Access and Family View. Uses the account page's tokens and buttons. */
+.family-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 18px; align-items: start; }
+.family-link { display: flex; gap: 8px; margin-top: 12px; }
+.family-link input { flex: 1; min-width: 0; font: 13px var(--mono, monospace); padding: 10px; border: 1px solid var(--rule-firm); border-radius: 8px; background: var(--paper); color: var(--ink); }
+.family-list { margin-top: 10px; }
+.family-list > div { flex-wrap: wrap; }
+.family-list > div > span { min-width: 0; overflow-wrap: anywhere; }
+.family-view { margin-top: 18px; }
+.family-banner { background: var(--marigold-skin); border: 1px solid var(--marigold); border-radius: 8px; padding: 12px; color: var(--marigold-deep); font-size: 13px; margin-top: 12px; }
+.family-ended { background: var(--paper-sink); border: 1px solid var(--rule-firm); border-radius: 8px; padding: 12px; margin-top: 12px; font-size: 14px; }
+.family-totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.family-totals > div { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 12px; }
+.family-totals span { display: block; font-size: 12px; color: var(--ink-soft); }
+.family-totals strong { font: 400 24px var(--serif); }
+.family-consent { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-size: 14px; color: var(--ink-soft); }
+.family-shares { margin: 12px 0 0; padding-left: 20px; font-size: 14px; color: var(--ink-soft); }
+@media (max-width: 600px) { .family-totals { grid-template-columns: 1fr; } .family-link { flex-direction: column; } }
+.family-link .account-button, .family-list .account-button { width: auto; flex: 0 0 auto; margin-top: 0; }
