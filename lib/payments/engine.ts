@@ -40,15 +40,42 @@ function addDays(date: string, count: number) {
   return new Date(Date.parse(date) + count * DAY).toISOString().slice(0, 10);
 }
 
+/** Calendar months, clamped to the month's last day: 31 Jan + 1 is 28 or 29 Feb. */
+function addMonths(date: string, count: number) {
+  const next = new Date(Date.parse(date));
+  const day = next.getUTCDate();
+  next.setUTCDate(1);
+  next.setUTCMonth(next.getUTCMonth() + count);
+  next.setUTCDate(Math.min(day, new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0)).getUTCDate()));
+  return next.toISOString().slice(0, 10);
+}
+
+/** Gaps with missed records folded back into single cycles (RULES.missedCycleTolerance). */
+export function foldMissedCycles(gaps: number[]) {
+  if (gaps.length < RULES.missedCycleMinGaps) return gaps;
+  const centre = median(gaps);
+  if (centre <= 0) return gaps;
+  return gaps.map((gap) => {
+    const cycles = Math.round(gap / centre);
+    return cycles >= 2 && Math.abs(gap / cycles - centre) <= centre * RULES.missedCycleTolerance ? gap / cycles : gap;
+  });
+}
+
 /**
  * The dictionary is hand written, so the longest matching pattern wins.
  * That keeps PAYPAL *SPOTIFY apart from the Indian SPOTIFY descriptor.
  */
 export function matchDictionary(narration: string, dictionary: DictionaryEntry[]) {
   const haystack = narration.toUpperCase();
-  return [...dictionary]
+  const byPattern = [...dictionary]
     .filter((entry) => entry.pattern && haystack.includes(entry.pattern.toUpperCase()))
     .sort((a, b) => b.pattern.length - a.pattern.length)[0];
+  if (byPattern) return byPattern;
+  // "HDFC MUTUAL FUND" is the brand's own name, not one of its patterns. It
+  // matches the brand only when the brand has a single real entry.
+  const name = haystack.replace(/[^A-Z0-9]/g, "");
+  const byBrand = dictionary.filter((entry) => entry.cancelMode !== "fixture" && entry.brand.toUpperCase().replace(/[^A-Z0-9]/g, "") === name);
+  return byBrand.length === 1 ? byBrand[0] : undefined;
 }
 
 function cadenceFromGaps(gaps: number[], fallback: string | undefined): { cadence: Cadence; irregular: boolean } {
@@ -206,7 +233,7 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
 
     const dates = rows.map((row) => row.date);
     const amounts = rows.map((row) => row.debit ?? 0);
-    const gaps = dates.slice(1).map((date, index) => days(dates[index], date));
+    const gaps = foldMissedCycles(dates.slice(1).map((date, index) => days(dates[index], date)));
     const { cadence } = cadenceFromGaps(gaps, mandate?.frequency);
     const { pattern, previous } = amountShape(amounts);
     const latest = amounts[amounts.length - 1];
@@ -273,7 +300,9 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
         ? addYears(dates[dates.length - 1], 1)
         : cadence === "irregular"
           ? undefined
-          : addDays(dates[dates.length - 1], Math.round(median(gaps.length ? gaps : [RULES.defaultGapDays])));
+          : cadence === "monthly" || cadence === "quarterly"
+            ? addMonths(dates[dates.length - 1], cadence === "monthly" ? 1 : 3)
+            : addDays(dates[dates.length - 1], Math.round(median(gaps.length ? gaps : [RULES.defaultGapDays])));
 
     const sources = new Set(notices.map((notice) => notice.channel));
     const whyRecurring = describeRecurring({

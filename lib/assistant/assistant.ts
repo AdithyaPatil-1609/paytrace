@@ -12,11 +12,12 @@
  */
 import { formatDate, formatINR } from "@/lib/presentation/format";
 import type { Commitment } from "@/lib/payments/types";
-import { factsFor, findPayments, OUT_OF_SCOPE, PRICE_QUESTION, priceChanges, type Facts, type Grounded, type Routed } from "./facts";
+import { ABOUT_PAYMENTS, factsFor, findPayments, findWatch, namedIn, OUT_OF_SCOPE, PRICE_QUESTION, priceChanges, recordsFor, type Facts, type Grounded, type Routed } from "./facts";
 import { ALERT_ALT_MODEL, readAlertWith } from "./alert-reader";
 import { alertChat, ALERT_MODEL, CHAT_MODEL, ollamaChat } from "./models";
 import { ALERT_SCHEMA, ANSWER_PROMPT, INTENT_PROMPT, INTENT_SCHEMA, INTENTS, type Intent } from "./prompts";
 import { hasSecret } from "./secrets";
+import type { WatchItem } from "./watchlist";
 
 export type AssistantReply = {
   reply: string;
@@ -26,7 +27,44 @@ export type AssistantReply = {
   payments: { id: string; name: string }[];
   /** Which model wrote the words, or null when a fixed sentence was used. */
   model: string | null;
+  /** What the answer was about, sent back with the next message so "that's wrong" can be answered. */
+  context?: Routed;
 };
+
+/** Beyond the payment table: subscriptions seen only in emails, and the question before this one. */
+export type AskOptions = { watch?: WatchItem[]; context?: Routed | null; demo?: boolean };
+
+/** "that's wrong", "YouTube is missing", "how did you get that": a challenge to the previous answer. */
+export const CHALLENGE =
+  /\b(?:wrong|incorrect|not (?:right|correct|true)|mistake|missing|left out|forgot|forgotten|explain|breakdown|break (?:it|that) down|how did you (?:get|calculate|work)|show (?:me )?(?:the )?(?:working|maths?|math|calculation|details))\b/i;
+
+export const SOURCES_NOTE =
+  "Paytrace counts only payments found in your synced Gmail and bank SMS. If one is still missing, use Rescan last 12 months in your account menu, then ask again.";
+
+export const DEMO_SOURCES_NOTE = "This demo reads one made-up person's bank statement and notices, so only their payments are counted.";
+
+/** Every line behind an answer, in the app's own words: the reply to a challenge. */
+export function explain(grounded: Grounded, note = SOURCES_NOTE) {
+  const facts = grounded.facts as Record<string, unknown>;
+  if (!("total" in facts)) return `${grounded.fallback} ${note}`;
+  type Line = { name: string; amount: string; date: string };
+  const lines = (value: unknown) => (Array.isArray(value) ? (value as Line[]) : []);
+  const join = (rows: Line[]) => rows.map((row) => `${row.name} ${row.amount} on ${row.date}`).join("; ");
+  const counted = grounded.lines ?? lines(facts.payments).map((row) => `${row.name} ${row.amount} on ${row.date}`);
+  const maybe = lines(facts.seen_only_in_emails_not_confirmed);
+  const parts = [
+    counted.length
+      ? `${facts.total} for ${facts.period} is ${counted.join("; ")}.`
+      : `Nothing confirmed is due in ${facts.period}.`,
+    maybe.length ? `Seen only in emails, so not in that total: ${join(maybe)}${facts.total_if_these_also_go_out ? `. With ${maybe.length === 1 ? "it" : "them"}, ${facts.total_if_these_also_go_out}` : ""}.` : "",
+    Array.isArray(facts.payments_with_no_fixed_date) ? `No fixed date, so not counted: ${(facts.payments_with_no_fixed_date as string[]).join(", ")}.` : "",
+    Array.isArray(facts.older_subscriptions_not_counted) ? `Not counted, no recent email: ${(facts.older_subscriptions_not_counted as string[]).join("; ")}.` : "",
+    note
+  ];
+  return parts.filter(Boolean).join(" ");
+}
+
+const NO_CONTEXT_CHALLENGE = "Tell me which answer looks wrong and what you expected, for example: YouTube is missing from next month.";
 
 export const MAX_MESSAGE = 600;
 
@@ -91,6 +129,22 @@ export function grounded(answer: string, facts: Facts) {
   );
 }
 
+/** Most payments a worded total may cover; above this the app's own sentence is clearer. */
+export const MAX_WORDED_PAYMENTS = 4;
+
+/**
+ * A total is worded by the model only if nothing is dropped: the total, the
+ * total with email-only subscriptions, and every payment by name. "11
+ * payments" with none named fails, and the app's own sentence is used.
+ */
+export function complete(answer: string, facts: Facts) {
+  const text = plain(answer).toLowerCase();
+  const has = (value: unknown) => typeof value !== "string" || text.includes(plain(value).replace(/^about /, "").toLowerCase());
+  const named = (rows: unknown) => (Array.isArray(rows) ? (rows as { name: string }[]) : []).every((row) => text.includes(row.name.toLowerCase().split(/\s+/)[0]));
+  const count = typeof facts.number_of_payments === "number" ? facts.number_of_payments : 0;
+  return has(facts.total) && has(facts.total_if_these_also_go_out) && count <= MAX_WORDED_PAYMENTS && named(facts.payments) && named(facts.seen_only_in_emails_not_confirmed);
+}
+
 async function word(question: string, facts: Facts) {
   return ollamaChat([
     { role: "system", content: ANSWER_PROMPT },
@@ -150,8 +204,9 @@ const named = (ids: string[], items: Commitment[]) =>
     return item ? [{ id, name: item.merchant }] : [];
   });
 
-export async function ask(message: string, items: Commitment[], asOf: string): Promise<AssistantReply> {
+export async function ask(message: string, items: Commitment[], asOf: string, options: AskOptions = {}): Promise<AssistantReply> {
   const text = message.trim().slice(0, MAX_MESSAGE);
+  const watch = options.watch ?? [];
 
   // 1. Never let a secret reach any model.
   if (hasSecret(text)) return { reply: BLOCKED_REPLY, kind: "blocked", payments: [], model: null };
@@ -182,12 +237,22 @@ export async function ask(message: string, items: Commitment[], asOf: string): P
   }
   // Price rises are not one of Job 1's intents, so they are caught by their words.
   const priceQuestion = (!routed || routed.intent === "unknown") && PRICE_QUESTION.test(text);
-  if (!priceQuestion && (!routed || routed.intent === "unknown")) {
+  // "That's wrong": show every line behind the previous answer instead of a canned reply.
+  if (!priceQuestion && (!routed || routed.intent === "unknown") && CHALLENGE.test(text)) {
+    const note = options.demo ? DEMO_SOURCES_NOTE : SOURCES_NOTE;
+    if (!options.context || options.context.intent === "unknown") return { reply: `${NO_CONTEXT_CHALLENGE} ${note}`, kind: "answer", intent: "unknown", payments: [], model: null };
+    const previous = factsFor(options.context, items, asOf, watch);
+    return { reply: explain(previous, note), kind: "answer", intent: options.context.intent, payments: named(previous.ids, items), model: null, context: options.context };
+  }
+  // Any other question about their own payments: answered from the full records, still number-checked.
+  const unrouted = !priceQuestion && (!routed || routed.intent === "unknown");
+  if (unrouted && !(ABOUT_PAYMENTS.test(text) || namedIn(text, items).length || findWatch(text, watch).length)) {
     return { reply: OUT_OF_SCOPE, kind: "out_of_scope", intent: "unknown", payments: [], model: null };
   }
 
   // 4. Work out the facts in code.
-  const { facts, ids, fallback }: Grounded = priceQuestion ? priceChanges(items) : factsFor(routed!, items, asOf);
+  const { facts, ids, fallback }: Grounded = priceQuestion ? priceChanges(items) : unrouted ? recordsFor(text, items, watch, asOf) : factsFor(routed!, items, asOf, watch, text);
+  const context = priceQuestion || unrouted ? undefined : routed!;
 
   // 5. Word them, and keep the wording only if it is faithful to the facts.
   let reply = fallback;
@@ -197,15 +262,16 @@ export async function ask(message: string, items: Commitment[], asOf: string): P
   //   (in testing, Qwen turned "the switch is not inside the app" into "check the app settings");
   // - "nothing is due", which the model tended to blur with the next payment.
   const intent = routed?.intent ?? "unknown";
-  if (intent === "how_to_cancel" || facts.number_of_payments === 0) return { reply, kind: "answer", intent, payments: named(ids, items), model };
+  if (intent === "how_to_cancel" || facts.number_of_payments === 0) return { reply, kind: "answer", intent, payments: named(ids, items), model, context };
   try {
     const answer = await word(text, facts);
-    if (grounded(answer, facts)) {
+    // The completeness rule is for totals; a question about one payment needs only a faithful answer.
+    if (grounded(answer, facts) && (!("total" in facts) || complete(answer, facts))) {
       reply = answer;
       model = CHAT_MODEL;
     }
   } catch {
     // The fixed sentence carries the same facts.
   }
-  return { reply, kind: "answer", intent, payments: named(ids, items), model };
+  return { reply, kind: "answer", intent, payments: named(ids, items), model, context };
 }

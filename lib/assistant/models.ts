@@ -15,6 +15,8 @@ const OLLAMA_URL = process.env.PAYTRACE_OLLAMA_URL ?? "http://127.0.0.1:11434";
 export const CHAT_MODEL = process.env.PAYTRACE_CHAT_MODEL ?? "qwen3:14b";
 const ALERT_URL = process.env.PAYTRACE_ALERT_MODEL_URL ?? "http://127.0.0.1:8080";
 export const ALERT_MODEL = "Qwen3 8B + Paytrace alert adapter";
+const RECURRING_URL = process.env.PAYTRACE_RECURRING_MODEL_URL ?? "http://127.0.0.1:8081";
+export const RECURRING_MODEL = "Qwen3 8B + Paytrace recurring adapter";
 
 const TIMEOUT_MS = 90_000;
 
@@ -58,7 +60,16 @@ export async function ollamaChat(messages: ChatMessage[], format?: object, timeo
  * decoding is greedy, which is how the adapter was trained and scored.
  */
 export async function alertChat(messages: ChatMessage[]): Promise<string> {
-  const response = await fetch(`${local(ALERT_URL)}/v1/chat/completions`, {
+  return mlxChat(ALERT_URL, messages, "Alert");
+}
+
+/** Job 4: the MLX server with the recurring adapter (npm run ai:recurring), trained and scored the same way. */
+export async function recurringChat(messages: ChatMessage[]): Promise<string> {
+  return mlxChat(RECURRING_URL, messages, "Recurring");
+}
+
+async function mlxChat(base: string, messages: ChatMessage[], label: string): Promise<string> {
+  const response = await fetch(`${local(base)}/v1/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -69,7 +80,7 @@ export async function alertChat(messages: ChatMessage[]): Promise<string> {
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS)
   });
-  if (!response.ok) throw new Error(`Alert model answered ${response.status}`);
+  if (!response.ok) throw new Error(`${label} model answered ${response.status}`);
   const body = (await response.json()) as { choices?: { message?: { content?: string } }[] };
   return afterThinking(body.choices?.[0]?.message?.content ?? "");
 }

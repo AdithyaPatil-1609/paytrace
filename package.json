@@ -19,6 +19,7 @@
     "gmail:accounts": "node --import tsx scripts/gmail-accounts.ts",
     "agent:seed": "node --import tsx scripts/seed-agent-knowledge.ts",
     "ai:alerts": "ml/.venv/bin/python -m mlx_lm server --model mlx-community/Qwen3-8B-4bit --adapter-path ml/adapters/qwen3-8b-alerts --host 127.0.0.1 --port 8080",
+    "ai:recurring": "ml/.venv/bin/python -m mlx_lm server --model mlx-community/Qwen3-8B-4bit --adapter-path ml/adapters/qwen3-8b-recurring --host 127.0.0.1 --port 8081",
     "ai:eval": "node --import tsx scripts/eval-assistant.ts",
     "ai:read": "node --import tsx scripts/read-message.ts"
   },
