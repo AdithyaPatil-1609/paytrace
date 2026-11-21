@@ -1,7 +1,11 @@
+"use client";
+
 /**
  * The public landing page: the PayTrace logo, product value proposition,
- * interactive preview cards, and the signature watercolour wave backdrop.
+ * interactive preview cards, the watercolour wave backdrop, and a slide-over
+ * sign-in drawer on the right side.
  */
+import { useEffect, useState } from "react";
 import { PayTraceLogo } from "@/components/paytrace-logo";
 import Link from "next/link";
 
@@ -35,7 +39,29 @@ const mockSubscriptions = [
   { name: "Google One", cadence: "Monthly", cost: "₹130 /mo", action: "Pause" }
 ];
 
-export function Landing() {
+export function Landing({ configured = true }: { configured?: boolean }) {
+  const [signInOpen, setSignInOpen] = useState(false);
+
+  // Close drawer on Escape key
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setSignInOpen(false);
+    }
+    if (signInOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [signInOpen]);
+
+  function openSignIn(e: React.MouseEvent) {
+    e.preventDefault();
+    setSignInOpen(true);
+  }
+
   return (
     <main className="landing-shell">
       {/* ── Background Watercolour & Evidence Arc ── */}
@@ -107,7 +133,6 @@ export function Landing() {
             stroke="rgba(44,74,110,0.38)"
             strokeWidth="1.8"
             strokeDasharray="5 7"
-            markerEnd="url(#arrow)"
           />
           {/* Tracking node dots */}
           <circle cx="730" cy="225" r="4.5" fill="#3d828a" />
@@ -136,8 +161,8 @@ export function Landing() {
           <span className="dot-sep">·</span>
           <span>CONTROL</span>
         </nav>
-        <Link className="landing-signin-link" href={AUTH_PATH}>
-          Sign in <span aria-hidden="true">→</span>
+        <Link className="landing-signin-link" href={AUTH_PATH} onClick={openSignIn}>
+          Sign in / Sign up <span aria-hidden="true">→</span>
         </Link>
       </header>
 
@@ -195,8 +220,8 @@ export function Landing() {
           </div>
 
           <div className="landing-actions">
-            <Link className="action-btn action-primary" href={AUTH_PATH}>
-              Sign in
+            <Link className="action-btn action-primary" href={AUTH_PATH} onClick={openSignIn}>
+              Sign in / Sign up
             </Link>
             <Link className="action-btn action-outline" href={DEMO_PATH}>
               Try the demo <span aria-hidden="true">→</span>
@@ -288,6 +313,75 @@ export function Landing() {
           </div>
         </div>
       </section>
+
+      {/* ── Slide-in Sign-in Drawer (Right Side) ── */}
+      <div
+        className={`signin-drawer-backdrop ${signInOpen ? "open" : ""}`}
+        onClick={() => setSignInOpen(false)}
+        aria-hidden={!signInOpen}
+      />
+
+      {signInOpen && (
+        <aside
+          className={`signin-drawer ${signInOpen ? "open" : ""}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="drawer-title"
+        >
+          <header className="drawer-header">
+            <span className="drawer-eyebrow">YOUR PERSONAL ACCOUNT</span>
+            <button
+              className="drawer-close-btn"
+              onClick={() => setSignInOpen(false)}
+              aria-label="Close sign in dialog"
+            >
+              ✕
+            </button>
+          </header>
+
+          <div className="drawer-body">
+            <h2 id="drawer-title">Sign in to Paytrace</h2>
+            <p className="drawer-subtitle">
+              See your own recurring payments. After signing in, you choose whether
+              to connect Gmail (read-only) and your phone.
+            </p>
+
+            {configured ? (
+              <form action="/api/auth/google/start" method="post" className="drawer-form">
+                <input type="hidden" name="mode" value="login" />
+                <button className="account-button primary google-button drawer-google-btn" type="submit">
+                  <span className="google-icon" aria-hidden="true">G</span>
+                  Continue with Google
+                </button>
+              </form>
+            ) : (
+              <p className="account-warning">
+                Google sign-in is not configured on this server. You can still explore the demo.
+              </p>
+            )}
+
+            <div className="signin-limit drawer-limit">
+              <strong>Approved test accounts only.</strong> Until Google completes its
+              security review, only Google accounts we have approved can sign in. Evaluators:
+              please use the demo.
+            </div>
+
+            <Link
+              className="account-button demo-button drawer-demo-btn"
+              href={DEMO_PATH}
+              onClick={() => setSignInOpen(false)}
+            >
+              Try the demo instead <span aria-hidden="true">→</span>
+            </Link>
+
+            <footer className="drawer-footer">
+              <p className="login-footnote">
+                By signing in you agree to our <Link href="/privacy">privacy notice</Link>.
+              </p>
+            </footer>
+          </div>
+        </aside>
+      )}
     </main>
   );
 }
