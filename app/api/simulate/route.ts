@@ -3,14 +3,14 @@
  * transaction (db/neo4j/simulate.ts), so the TypeScript engine never decides
  * a row while Neo4j is up. 503 tells the client to fall back to the fixture.
  */
-import { hasNeo4jConfig } from "@/db/neo4j/client";
+import { hasDemoNeo4jConfig } from "@/db/neo4j/client";
 import { analyzeWithSimulatedAutopay } from "@/db/neo4j/simulate";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
 
 export async function POST(request: Request) {
   const hit = takeHit("simulate", clientKey(request), LIMITS.graph);
   if (!hit.ok) return tooMany(hit.retryAfter);
-  if (!hasNeo4jConfig()) {
+  if (!hasDemoNeo4jConfig()) {
     return Response.json({ error: "Neo4j is not configured." }, { status: 503 });
   }
   try {

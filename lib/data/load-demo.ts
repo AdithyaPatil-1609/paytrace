@@ -3,7 +3,7 @@
  * 1. Prefer the live Neo4j dataset, Cypher commitments and evidence graph findings.
  * 2. Else the offline CSV fixture.
  */
-import { hasNeo4jConfig, loadDatasetFromNeo4j, type LoadedDataset, type SourceInfo } from "@/db/neo4j/dataset";
+import { hasDemoNeo4jConfig, loadDatasetFromNeo4j, type LoadedDataset, type SourceInfo } from "@/db/neo4j/dataset";
 import { loadFixtures } from "@/data/fixtures";
 import { detectCommitments } from "@/lib/payments/engine";
 
@@ -22,7 +22,7 @@ function fixtureFallback(note: string): SourceInfo {
 }
 
 export async function loadDemo(staticOnly = false): Promise<LoadedDataset> {
-  if (!staticOnly && hasNeo4jConfig()) {
+  if (!staticOnly && hasDemoNeo4jConfig()) {
     try {
       const live = await loadDatasetFromNeo4j();
       if (live.dataset.statement.length > 0) return live;

@@ -1,4 +1,4 @@
-import { hasNeo4jConfig } from "@/db/neo4j/client";
+import { hasDemoNeo4jConfig } from "@/db/neo4j/client";
 import { challengeInNeo4j } from "@/db/neo4j/challenge";
 import { ChallengeInputError, challengeActions, type ChallengeAction } from "@/lib/scenarios/challenge";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       (input.merchantName !== undefined && (typeof input.merchantName !== "string" || input.merchantName.length > 60))) {
     return Response.json({ error: "Choose a supported challenge and payment." }, { status: 400 });
   }
-  if (!hasNeo4jConfig()) return Response.json({ error: "Neo4j is not configured. Reload the offline demo to use local challenges." }, { status: 503 });
+  if (!hasDemoNeo4jConfig()) return Response.json({ error: "Neo4j is not configured. Reload the offline demo to use local challenges." }, { status: 503 });
   try {
     return Response.json(await challengeInNeo4j({ commitmentId: input.commitmentId, action: input.action as ChallengeAction, merchantName: input.merchantName as string | undefined }));
   } catch (error) {
