@@ -109,12 +109,14 @@ export const LIVE_QUERIES = {
 export async function readLiveDashboard(profile: string) {
   const session = getNeo4jDriver().session({ database: neo4jDatabase });
   try {
-    const { payments, events, revision } = await session.executeRead(async tx => {
+    const { payments, events: allEvents, revision } = await session.executeRead(async tx => {
       const payments = await tx.run(LIVE_QUERIES.payments, { profile });
       const events = await tx.run(LIVE_QUERIES.events, { profile });
       const version = await tx.run("MATCH (u:LiveProfile {id:$profile}) RETURN u.revision AS revision", { profile });
       return { payments: payments.records.map(r => r.get("item")), events: events.records.map(r => r.get("item")), revision: Number(version.records[0]?.get("revision") ?? 0) };
     });
+    // Bank statement lines are payments, not messages: they feed the payments, never the notice list.
+    const events = allEvents.filter(e => e.source !== "statement");
     const dictionary = readDictionary();
     const asOf = new Date().toISOString().slice(0, 10);
     const statement: StatementRow[] = payments.filter(p => p.date <= asOf).map(p => ({ txnId: p.id, persona: profile, date: p.date, accountId: p.accountHint || "unidentified", accountType: "unknown", narration: p.merchant, debit: Number(p.amountPaise)/100, reference: p.reference ?? "", channel: p.sources.join("+"), txnKind: "debit_purchase" }));
@@ -163,7 +165,7 @@ export async function readLiveDashboard(profile: string) {
     statement.push(...noticeRows(statement, events, profile, asOf));
     const dataset: Dataset = { asOf, statement, notifications, mandates, dictionary, usage: [] };
     const commitments = detectCommitments(dataset);
-    const summary = { revision, asOf, counts: { payments: paidRows, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, review:events.filter(e=>e.status==="review").length }, commitments, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, scheduledDebits, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
+    const summary = { revision, asOf, counts: { payments: paidRows, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, statement:allEvents.filter(e=>e.source==="statement").length, review:allEvents.filter(e=>e.status==="review").length }, commitments, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, scheduledDebits, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
     return { dataset, summary };
   } finally { await session.close(); }
 }
