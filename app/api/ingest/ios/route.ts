@@ -9,7 +9,7 @@ import { after } from "next/server";
 import { createHash } from "node:crypto";
 import { profileForIosToken } from "@/db/neo4j/accounts";
 import { ingestLiveEvent } from "@/db/neo4j/live";
-import { bearerToken, checkShortcutBody } from "@/lib/ingestion/ios-token";
+import { bearerToken, checkShortcutBody, describeHeader } from "@/lib/ingestion/ios-token";
 import { processSmsWithRetry } from "@/lib/ingestion/sms-message";
 import { SMS_INGEST_LIMITS } from "@/lib/payments/rules";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
@@ -47,8 +47,14 @@ export async function POST(request: Request) {
   const declared = Number(request.headers.get("content-length") ?? 0);
   if (declared > SMS_INGEST_LIMITS.maxBodyBytes) return fail(413, "Message too large");
 
+  if (!request.headers.get("authorization")?.trim()) {
+    return fail(401, "No Authorization header. Under Headers add Key Authorization, Text Bearer <your token>.");
+  }
   const token = bearerToken(request);
-  if (!token) return fail(401, "Missing or malformed token");
+  if (!token) {
+    // The description names only length, prefix and odd characters, never the header itself.
+    return fail(401, `The Authorization header is not a Paytrace token. ${describeHeader(request)} Copy it again from Connect iPhone.`);
+  }
   let profile: string | null;
   try {
     profile = await profileForIosToken(token);

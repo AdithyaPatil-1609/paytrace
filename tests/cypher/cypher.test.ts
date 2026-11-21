@@ -15,7 +15,7 @@ import { after, before, describe, test } from "node:test";
 import type { Driver, Session } from "neo4j-driver";
 import { withSimulatedAutopay } from "../../data/simulation";
 import { analyzeCommitments } from "../../db/neo4j/analyze";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
+import { demoDatabase, getDemoDriver, hasDemoNeo4jConfig } from "../../db/neo4j/client";
 import { loadGraphFacts } from "../../db/neo4j/graph";
 import { analyzeWithSimulatedAutopay } from "../../db/neo4j/simulate";
 import { writePayments } from "../../db/neo4j/write";
@@ -25,7 +25,7 @@ import { AS_OF, loadFixtures, loadParserFixtures } from "@/data/fixtures";
 import { RULES } from "@/lib/payments/rules";
 import type { Commitment } from "@/lib/payments/types";
 
-const skip = hasNeo4jConfig() ? false : "Neo4j is not configured. Set NEO4J_* and run npm run seed.";
+const skip = hasDemoNeo4jConfig() ? false : "The demo database is not configured. Set NEO4J_DEMO_* and run npm run seed.";
 
 const byId = (list: Commitment[]) => [...list].sort((a, b) => a.id.localeCompare(b.id));
 
@@ -38,8 +38,8 @@ describe("Cypher engine on the live graph", { skip }, () => {
   const find = (merchant: string) => cypher.find((item) => item.merchant === merchant)!;
 
   before(async () => {
-    driver = getNeo4jDriver();
-    session = driver.session({ database: neo4jDatabase });
+    driver = getDemoDriver();
+    session = driver.session({ database: demoDatabase() });
     const seeded = await session.run("MATCH (p:Payment) RETURN count(p) AS n");
     assert.ok(seeded.records[0].get("n").toNumber() > 0, "The graph is empty. Run npm run seed first.");
     cypher = await analyzeCommitments(session, AS_OF);

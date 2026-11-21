@@ -1,5 +1,5 @@
 import { analyzeCommitments } from "@/db/neo4j/analyze";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "@/db/neo4j/client";
+import { demoDatabase, demoHost, getDemoDriver, hasDemoNeo4jConfig } from "@/db/neo4j/client";
 import { loadGraphFacts, type GraphFacts } from "@/db/neo4j/graph";
 import { AS_OF } from "@/data/fixtures";
 import type {
@@ -65,8 +65,8 @@ function text(value: unknown): string {
  * holds the two engines to the same answer.
  */
 export async function loadDatasetFromNeo4j(): Promise<LoadedDataset> {
-  const driver = getNeo4jDriver();
-  const session = driver.session({ database: neo4jDatabase });
+  const driver = getDemoDriver();
+  const session = driver.session({ database: demoDatabase() });
 
   try {
     // One session can run one query at a time. Parallel runs make Aura refuse the read.
@@ -166,18 +166,12 @@ export async function loadDatasetFromNeo4j(): Promise<LoadedDataset> {
     });
 
     const countRow = counts.records[0];
-    const host = (() => {
-      try {
-        return new URL(process.env.NEO4J_URI ?? "").host;
-      } catch {
-        return undefined;
-      }
-    })();
+    const host = demoHost();
 
     const source: SourceInfo = {
       kind: "neo4j",
       host,
-      database: neo4jDatabase,
+      database: demoDatabase(),
       counts: {
         payments: num(countRow?.get("payments")) ?? 0,
         messages: num(countRow?.get("messages")) ?? 0,
@@ -224,4 +218,5 @@ export async function loadDatasetFromNeo4j(): Promise<LoadedDataset> {
   }
 }
 
-export { hasNeo4jConfig };
+/** Demo pages read the demo database only; see db/neo4j/client.ts. */
+export { hasDemoNeo4jConfig };

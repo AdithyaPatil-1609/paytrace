@@ -148,3 +148,25 @@ export const GMAIL_SYNC_LIMITS = {
   /** Longest single wait we accept inside one sync; a longer "retry after" stops the sync with a clear error. */
   maxWaitMs: 120_000
 } as const;
+
+/** Limits for the live graph warnings (db/neo4j/warnings.ts). Cypher reads these as parameters. */
+export const GRAPH_WARNING_LIMITS = {
+  /** A rise between two consecutive payments of at least this percent is a price increase. */
+  priceRisePct: 2,
+  /** Consecutive payments closer or further apart than this are not one subscription's cycle. */
+  minCycleDays: 5,
+  maxCycleDays: 400,
+  /** How far before the higher charge a price notice still counts as announcing it. */
+  noticeLeadDays: 60,
+  /** Emails about a merchant needed before a missing notice suggests a silent rise. */
+  emailsForSilent: 2,
+  /** Verified days without use before a subscription counts as unused. */
+  unusedDays: 90,
+  /** Days ahead an upcoming debit is warned about. */
+  upcomingWindowDays: 7,
+  /** A mandate limit this many times the usual charge is a risk worth showing. */
+  highMandateRatio: 3,
+  /** Severity steps for a price rise, in percent. */
+  severityMediumPct: 10,
+  severityHighPct: 20
+} as const;

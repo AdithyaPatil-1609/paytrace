@@ -12,3 +12,9 @@ The seed reads synthetic CSVs through the Bolt driver. The current schema constr
 | `graph.ts` | Evidence graph counts, relationship queries and findings |
 | `write.ts` | Write records and connect them to merchants, accounts and mandates |
 | `simulate.ts` and `challenge.ts` | Run hypothetical changes inside temporary transactions |
+| `chains.ts` | FIRST / NEXT / LATEST payment chains per person and merchant, with gapDays and deltaPaise |
+| `warnings.ts` | Live, profile-scoped warning queries (price, mandate, unused, upcoming, after cancellation) |
+| `verify-warnings.cypher` | Read-only checks to paste into Neo4j Query Workspace |
+| `remove-demo-from-personal.cypher` | Moves synthetic data out of the personal database (manual, team decision) |
+
+`client.ts` holds two drivers: personal (`NEO4J_*`) and demo (`NEO4J_DEMO_*`). See `WARNINGS.md` for setup, schema and test coverage.

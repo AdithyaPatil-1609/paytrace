@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import test, { beforeEach } from "node:test";
 import { GET, POST } from "../app/api/ingest/ios/route";
-import { bearerToken, checkShortcutBody, IOS_TOKEN, newIosToken } from "../lib/ingestion/ios-token";
+import { bearerToken, checkShortcutBody, describeHeader, IOS_TOKEN, newIosToken } from "../lib/ingestion/ios-token";
 import { resetRateLimits } from "../lib/security/rate-limit";
 
 const URL = "http://localhost/api/ingest/ios";
@@ -24,19 +24,24 @@ test("a new iPhone token has the fixed shape and is never repeated", () => {
   assert.notEqual(a, b);
 });
 
-test("only a well-formed Bearer token is read from the request", () => {
+test("the token is read despite small typing slips, but must itself be exact", () => {
   const token = newIosToken();
   const read = (value?: string) => bearerToken(new Request(URL, { headers: value ? { authorization: value } : {} }));
-  assert.equal(read(`Bearer ${token}`), token);
-  assert.equal(read(`bearer ${token}`), token);
-  assert.equal(read(token), null);
+  for (const value of [`Bearer ${token}`, `bearer ${token}`, `Bearer${token}`, `  Bearer   ${token}  `, token, `"Bearer ${token}"`, `Bearer Bearer ${token}`, `BearerBearer ${token}`]) {
+    assert.equal(read(value), token, JSON.stringify(value));
+  }
   assert.equal(read("Bearer pt_ios_short"), null);
+  assert.equal(read(`Bearer ${token}x`), null);
+  assert.equal(read(`Bearer ${token.slice(0, -1)}`), null);
+  assert.equal(read(`Bearer ${"pt_and_" + token.slice(7)}`), null);
   assert.equal(read(undefined), null);
 });
 
 test("ingest/ios refuses a missing or malformed token before touching storage", async () => {
   const body = JSON.stringify({ sender: "VM-HDFCBK", text: TEXT });
-  assert.equal((await send(body)).status, 401);
+  const missing = await send(body);
+  assert.equal(missing.status, 401);
+  assert.match((await missing.json()).error, /No Authorization header/);
   assert.equal((await send(body, { authorization: "Bearer not-a-token" })).status, 401);
   assert.equal((await send(body, { "x-paytrace-device": "anything" })).status, 401);
 });
@@ -92,4 +97,16 @@ test("the account menu offers Connect iPhone, and Disconnect once connected", as
   assert.ok(connected.includes("Disconnect iPhone"));
   assert.ok(connected.includes("Make a new token"));
   assert.ok(!connected.includes("pt_ios_"), "a stored token is never shown again");
+});
+
+test("a refused header is described by length, prefix and odd characters, never echoed", () => {
+  const token = newIosToken();
+  const describe = (value: string) => describeHeader(new Request(URL, { headers: { authorization: value } }));
+  const cut = describe(`Bearer ${token.slice(0, 30)}`);
+  assert.match(cut, /has 30 characters; a token has 50/);
+  assert.match(cut, /starts with pt_ios_ \(good\)/);
+  assert.ok(!cut.includes(token.slice(7, 30)), "the token is never repeated back");
+  assert.match(describe("Bearer <your token>"), /does not start with pt_ios_.*"<" \(U\+003C\).*a space or line break/);
+  // An em dash typed on a phone arrives as its UTF-8 bytes, read one per character.
+  assert.match(describe(`Bearer ${token.slice(0, 20)}\u00e2\u0080\u0094${token.slice(21)}`), /U\+00E2/);
 });

@@ -23,18 +23,23 @@ import {
 } from "@/data/fixtures";
 
 async function main() {
-  const { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } = await import("../db/neo4j/client");
+  const { demoDatabase, demoSharesPersonalDatabase, getDemoDriver, hasDemoNeo4jConfig } = await import("../db/neo4j/client");
   const writers = await import("../db/neo4j/write");
 
-  if (!hasNeo4jConfig()) {
+  // Synthetic data goes to the demo database only, never the personal one.
+  if (!hasDemoNeo4jConfig()) {
     console.error(
-      "No Neo4j connection found. Copy .env.example to .env.local and fill in NEO4J_URI, NEO4J_USERNAME and NEO4J_PASSWORD."
+      "No demo database found. Fill in NEO4J_DEMO_URI, NEO4J_DEMO_USERNAME and NEO4J_DEMO_PASSWORD in .env.local (see .env.example)."
     );
     process.exit(1);
   }
+  if (demoSharesPersonalDatabase()) {
+    console.error("NEO4J_DEMO_* points at the personal database. Refusing to seed synthetic data there.");
+    process.exit(1);
+  }
 
-  const driver = getNeo4jDriver();
-  const session = driver.session({ database: neo4jDatabase });
+  const driver = getDemoDriver();
+  const session = driver.session({ database: demoDatabase() });
 
   try {
     console.log("Clearing anything this seed wrote before...");

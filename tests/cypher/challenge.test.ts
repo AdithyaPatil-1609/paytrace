@@ -1,15 +1,15 @@
 import "../../scripts/load-env-local";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
+import { demoDatabase, getDemoDriver, hasDemoNeo4jConfig } from "../../db/neo4j/client";
 import { challengeInNeo4j } from "../../db/neo4j/challenge";
 import { detectCommitments } from "@/lib/payments/engine";
 import { loadFixtures } from "@/data/fixtures";
 import { runOfflineChallenge, type ChallengeAction } from "@/lib/scenarios/challenge";
 
-test("live challenges match offline results and roll back all node properties and relationships", { skip: !hasNeo4jConfig() }, async () => {
-  const driver = getNeo4jDriver();
-  const session = driver.session({ database: neo4jDatabase });
+test("live challenges match offline results and roll back all node properties and relationships", { skip: !hasDemoNeo4jConfig() }, async () => {
+  const driver = getDemoDriver();
+  const session = driver.session({ database: demoDatabase() });
   const dataset = loadFixtures();
   const items = detectCommitments(dataset);
   const snapshot = async () => ({

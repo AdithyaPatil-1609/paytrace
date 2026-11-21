@@ -1,5 +1,5 @@
 import { analyzeCommitments } from "./analyze";
-import { getNeo4jDriver, neo4jDatabase } from "./client";
+import { demoDatabase, getDemoDriver } from "./client";
 import { loadDatasetFromNeo4j } from "./dataset";
 import { linkEvidence, writeMessages, writePatterns, writePayments, writeUsage } from "./write";
 import { ChallengeInputError, challengeMatches, prepareChallenge, type ChallengeRequest, type ChallengeResult } from "@/lib/scenarios/challenge";
@@ -9,7 +9,7 @@ export async function challengeInNeo4j(request: ChallengeRequest): Promise<Chall
   const before = loaded.commitments?.find((item) => item.id === request.commitmentId);
   if (!before) throw new ChallengeInputError("This payment is not in the stored graph. Try a payment from the original dataset.");
   const prepared = prepareChallenge(loaded.dataset, before, request.action, request.merchantName);
-  const session = getNeo4jDriver().session({ database: neo4jDatabase });
+  const session = getDemoDriver().session({ database: demoDatabase() });
   const transaction = session.beginTransaction();
   try {
     if (prepared.patch.statement.length) await writePayments(transaction, prepared.patch.statement);

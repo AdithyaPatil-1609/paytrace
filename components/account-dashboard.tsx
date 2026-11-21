@@ -11,6 +11,7 @@ import { formatINR } from "@/lib/presentation/format";
 import { SubscriptionWatchlist } from "@/components/subscription-watchlist";
 import { accountErrorMessage } from "@/lib/accounts/errors";
 import { IphoneConnect } from "@/components/iphone-connect";
+import { GraphWarningsPanel } from "@/components/graph-warnings";
 
 type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
   linked: boolean; lastSync: string | null; syncStatus: string | null; syncError?:string|null; iphone?: boolean;
@@ -95,5 +96,5 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
     {data?.recentEvents.length?<div className="account-table">{data.recentEvents.map(event=><div key={event.noticeId}><span><strong>{event.brand}</strong><small>{event.channel.toUpperCase()} · {event.eventType.replaceAll("_"," ")} · {event.sentOn}</small></span><strong>{event.amount===undefined?(event.planPrice===undefined?"Amount unknown":`${formatINR(event.planPrice)} reported`):formatINR(event.amount)}{["subscription_renewal","debit_scheduled"].includes(event.eventType)?" scheduled":""}</strong></div>)}</div>:<p>No imported financial messages yet.</p>}
   </details>;
 
-  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity,subscriptionAlerts:watchlist}}/>;
+  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity,subscriptionAlerts:watchlist,graphWarnings:<GraphWarningsPanel/>}}/>;
 }

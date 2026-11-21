@@ -39,6 +39,11 @@ jobs:
       NEO4J_USERNAME: neo4j
       NEO4J_PASSWORD: paytrace-local
       NEO4J_DATABASE: neo4j
+      # CI's throwaway container stands in for both databases.
+      NEO4J_DEMO_URI: bolt://localhost:7687
+      NEO4J_DEMO_USERNAME: neo4j
+      NEO4J_DEMO_PASSWORD: paytrace-local
+      NEO4J_DEMO_DATABASE: neo4j
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
