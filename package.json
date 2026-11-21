@@ -17,7 +17,7 @@
     "gmail:authorize": "node --import tsx scripts/gmail.ts --authorize",
     "gmail:sync": "node --import tsx scripts/gmail.ts",
     "gmail:accounts": "node --import tsx scripts/gmail-accounts.ts",
-    "agent:sync": "node --import tsx scripts/sync-agent.ts",
+    "agent:seed": "node --import tsx scripts/seed-agent-knowledge.ts",
     "ai:alerts": "ml/.venv/bin/python -m mlx_lm server --model mlx-community/Qwen3-8B-4bit --adapter-path ml/adapters/qwen3-8b-alerts --host 127.0.0.1 --port 8080",
     "ai:eval": "node --import tsx scripts/eval-assistant.ts",
     "ai:read": "node --import tsx scripts/read-message.ts"
