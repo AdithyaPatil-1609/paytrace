@@ -1,4 +1,5 @@
 "use client";
+import type { GmailHistoryDays } from "@/lib/accounts/gmail-history";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -38,7 +39,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       setSnapshot(await response.json());setLoadError("");
     } catch {setLoadError("Your records could not be loaded. Check the Neo4j connection.");}
   },[]);
-  const sync=useCallback(async(history=false,days:90|365=365)=>{
+  const sync=useCallback(async(history=false,days:GmailHistoryDays=365)=>{
     setSyncing(true);setError("");setSyncResult("");
     try {
       const response=await fetch(`/api/account/gmail/sync${history?`?history=1&days=${days}`:""}`,{method:"POST"});
@@ -80,6 +81,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
         <button className="account-button primary" disabled={syncingNow} onClick={()=>void sync()}>{syncingNow?"Synchronizing…":"Sync now"}</button>
         <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,90)}>Rescan last 90 days</button>
         <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,365)}>Rescan last 12 months</button>
+        <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,730)}>Rescan last 2 years</button>
         {syncResult&&<p className="account-note" role="status">{syncResult}</p>}
       </>}
       {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}

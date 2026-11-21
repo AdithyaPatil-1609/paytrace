@@ -1,3 +1,4 @@
+import { gmailDateFilter, type GmailHistoryDays } from "./gmail-history";
 import { claimSync, finishSync, renewSyncLease } from "@/db/neo4j/accounts";
 import { ingestLiveEvent, ignoreSubscriptionCandidates } from "@/db/neo4j/live";
 import { isSensitiveFinancialEmail, normalizeReceiptText, parseFinancialEmail } from "@/lib/ingestion/email";
@@ -124,7 +125,7 @@ async function gmailGet(access:string,path:string) {
   }
 }
 
-export async function syncAccount(sub: string, history=false,historyDays:90|365=365) {
+export async function syncAccount(sub: string, history=false,historyDays:GmailHistoryDays=365) {
   let domains:string[];
   try { domains=parseAllowedDomains(process.env.GMAIL_ALLOWED_DOMAINS); }
   catch { throw new AccountError("domain-config"); }
@@ -138,7 +139,7 @@ export async function syncAccount(sub: string, history=false,historyDays:90|365=
   try {
     const access=(await exchangeToken({grant_type:"refresh_token",refresh_token:grant.refreshToken})).access_token;
     if (!access) throw new Error("Missing access token");
-    const after=history?`newer_than:${historyDays}d`:grant.lastSync?`after:${Math.floor((Date.parse(grant.lastSync)-2*86400000)/1000)}`:"newer_than:90d";
+    const after=gmailDateFilter(history,historyDays,grant.lastSync);
     // Explicit history scans always use current broad discovery, even if an old custom query omitted memberships.
     const query=gmailPaymentQuery(after,domains,history?undefined:process.env.GMAIL_ACCOUNT_QUERY);
     let accepted=0,skipped=0,scanned=0,duplicates=0,registrations=0,renewals=0,candidates=0,subscriptionSkipped=0,senderSkipped=0,marketingSkipped=0,ignored=0,page:string|undefined;
