@@ -256,3 +256,20 @@ export const MERCHANT_MATCH = {
   /** Bumped when the scoring changes; stored on every SIMILAR link. */
   algorithmVersion: "merchant-match-v1"
 } as const;
+
+/**
+ * Family View (db/neo4j/family.ts): a read-only share of recurring payments
+ * that the owner starts with a one-time link and can revoke at any time.
+ */
+export const FAMILY_LIMITS = {
+  /** An invite link works once, for this long. */
+  inviteHours: 48,
+  /** Access ends after this many days unless the owner shares again. */
+  grantDays: 90,
+  /** Unused invite links one owner may have open at once. */
+  maxPendingInvites: 5,
+  /** People who may view one owner's payments at once. */
+  maxViewers: 10,
+  /** The Family View screen re-checks access this often, so a revoke shows within seconds. */
+  recheckMs: 20_000
+} as const;

@@ -2,7 +2,8 @@
  * "Delete my data" (plan card G8, privacy notice): removes everything Paytrace
  * holds about one person, in one transaction: their payments, events,
  * merchants and subscriptions, paired phones, pairing codes, sessions, iPhone
- * token, Gmail token and the account itself.
+ * token, Gmail token, family invites, family access both ways (CAN_VIEW goes
+ * with DETACH DELETE) and the account itself.
  * Returns the encrypted Gmail token (if any) so the caller can revoke it at
  * Google. Every match starts from the person's own nodes.
  */
@@ -32,7 +33,7 @@ export async function deleteAllUserData(sub: string, profile: string) {
       await tx.run("MATCH (n:LivePayment {profile:$profile}) DETACH DELETE n", { profile });
       await tx.run("MATCH (n:LiveSubscription) WHERE n.id STARTS WITH $prefix DETACH DELETE n", { prefix: `${profile}|` });
       await tx.run(`MATCH (u:PaytraceUser {sub:$sub})
-        OPTIONAL MATCH (u)-[:HAS_SESSION|HAS_DEVICE|HAS_PAIRING]->(n)
+        OPTIONAL MATCH (u)-[:HAS_SESSION|HAS_DEVICE|HAS_PAIRING|CREATED_INVITE]->(n)
         WITH u, collect(n) AS owned
         FOREACH (n IN owned | DETACH DELETE n)
         DETACH DELETE u`, { sub });
