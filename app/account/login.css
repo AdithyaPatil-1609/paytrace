@@ -19,3 +19,16 @@
 .login-ledger .demo-button:hover { background: var(--marigold-skin); }
 .login-ledger .login-footnote { font-size: 12px; text-align: center; margin-top: 16px; }
 @media (max-width:850px) { .login-ledger .account-welcome { padding: 30px 20px; gap: 30px; } .login-ledger .login-intro { padding-top: 0; } .login-proof { margin-top: 24px; } }
+.landing-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.landing-actions .account-button { width: auto; margin-top: 0; min-height: 46px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+.login-ledger .landing-note { text-align: left; max-width: 440px; }
+.landing-link { display: inline-block; margin-top: 14px; color: var(--marigold); font-weight: 600; }
+.signin-wrap { max-width: 520px; margin: 0 auto; padding: clamp(32px,6vw,72px) 20px; }
+.signin-card h1 { font: 600 30px/1.15 var(--serif); color: var(--ink); margin: 10px 0 8px; }
+.signin-card form { margin-top: 6px; }
+.signin-limit { font-size: 13px; line-height: 1.5; margin: 18px 0 4px; padding: 10px 12px; border-left: 3px solid var(--marigold); background: var(--paper-lift); }
+.login-ledger .signin-card .demo-button { margin-top: 12px; }
+.account-banner-error { border-color: #a3262a; }
+.privacy-wrap { max-width: 760px; margin: 0 auto; padding: clamp(28px,5vw,64px) 22px; }
+.privacy-section h2 { margin-top: 28px; }
+.privacy-section ul { margin: 10px 0; }

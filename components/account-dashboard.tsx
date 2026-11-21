@@ -79,7 +79,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
       <hr/>
       <form action="/api/auth/logout" method="post"><button className="account-button" type="submit">Sign out</button></form>
-      <Link className="account-demo-link" href="/?demo=1">Explore synthetic demo</Link>
+      <Link className="account-demo-link" href="/demo">Explore synthetic demo</Link>
     </div>
   </details>;
   const persistedError=accountErrorMessage(snapshot?.syncError);
