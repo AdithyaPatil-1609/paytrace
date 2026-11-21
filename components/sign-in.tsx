@@ -26,7 +26,6 @@ export function SignIn({ configured, notice, noticeIsError }: { configured: bool
           : <p className="account-warning">Google sign-in is not configured on this server. You can still explore the demo.</p>}
         <p className="signin-limit"><strong>Approved test accounts only.</strong> Until Google completes its security review, only Google accounts we have approved can sign in. Evaluators: please use the demo.</p>
         <Link className="account-button demo-button" href="/demo">Try the demo instead <span aria-hidden="true">→</span></Link>
-        <Link className="account-button demo-button" href="/sandbox">Or open the sandbox <span aria-hidden="true">→</span></Link>
         <p className="login-footnote">By signing in you agree to our <Link href="/privacy">privacy notice</Link>. <Link href="/">Back to home</Link></p>
       </article>
     </section>
