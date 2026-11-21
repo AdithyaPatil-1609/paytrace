@@ -7,7 +7,8 @@ export async function GET(request: NextRequest) {
   let origin: string;
   try { origin=accountConfig().origin; } catch { return new Response("Google sign-in is not configured",{status:503}); }
   function finish(notice: string, session?: string) {
-    const response=NextResponse.redirect(`${origin}/account?notice=${notice}`,303);
+    const destination=notice==="signed-in"?"/welcome":`/account?notice=${notice}`;
+    const response=NextResponse.redirect(`${origin}${destination}`,303);
     response.cookies.set(FLOW,"",cookieOptions(0));
     if (session) response.cookies.set(SESSION,session,cookieOptions(SESSION_SECONDS));
     response.headers.set("Cache-Control","no-store"); return response;

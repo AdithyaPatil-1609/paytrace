@@ -6,6 +6,7 @@ import { authorizationUrl, createFlow } from "../lib/accounts/google";
 import { emailText } from "../lib/accounts/sync";
 import { GET as getSummary } from "../app/api/account/summary/route";
 import { POST as startAuth } from "../app/api/auth/google/start/route";
+import { GET as finishAuth } from "../app/api/auth/google/callback/route";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AccountDashboard } from "../components/account-dashboard";
@@ -49,6 +50,23 @@ test("account endpoints reject anonymous reads and cross-origin authorization",a
   assert.equal(sameOrigin(new Request("http://localhost:3000",{headers:{origin:"https://other.example"}})),false);
   const response=await startAuth(new NextRequest("http://localhost:3000/api/auth/google/start",{method:"POST",headers:{origin:"https://other.example","content-type":"application/x-www-form-urlencoded"},body:"mode=login"}));
   assert.equal(response.status,403);
+});
+
+test("same-origin sign-in starts real Google verification without Gmail permission",async()=>{
+  const response=await startAuth(new NextRequest("http://localhost:3000/api/auth/google/start",{method:"POST",headers:{origin:"http://localhost:3000","content-type":"application/x-www-form-urlencoded"},body:"mode=login"}));
+  assert.equal(response.status,303);
+  const destination=new URL(response.headers.get("location")!);
+  assert.equal(destination.origin,"https://accounts.google.com");
+  assert.equal(destination.searchParams.get("scope"),"openid email profile");
+  assert.equal(destination.searchParams.get("code_challenge_method"),"S256");
+  assert.ok(response.headers.get("set-cookie")?.includes("HttpOnly"));
+});
+
+test("unverified callbacks never reach the verified welcome screen",async()=>{
+  const response=await finishAuth(new NextRequest("http://localhost:3000/api/auth/google/callback?code=fake&state=fake"));
+  assert.equal(response.status,303);
+  assert.equal(response.headers.get("location"),"http://localhost:3000/account?notice=authorization-error");
+  assert.ok(!response.headers.get("set-cookie")?.includes("paytrace_session="));
 });
 
 test("mail bodies are extracted as bounded text and never rendered",()=>{

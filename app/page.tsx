@@ -1,19 +1,16 @@
 /**
- * App entry (server).
- * 1. Prefer the live Neo4j dataset, Cypher commitments and evidence graph findings.
- * 2. Else offline CSV fixture.
- * 3. Hand the result to the client shell (components/dashboard.tsx).
+ * Public landing by default. The explicit demo keeps the existing sample
+ * dashboard; personal records remain behind the /account session check.
  */
 import { Dashboard } from "@/components/dashboard";
 import { loadDemo } from "@/lib/data/load-demo";
-import { accountConfigured } from "@/lib/accounts/security";
-import { redirect } from "next/navigation";
+import { Landing } from "@/components/marketing/landing";
 
 // Read per request, so a change in the graph or in data/raw shows on reload.
 export const dynamic = "force-dynamic";
 
 export default async function Home({searchParams}:{searchParams:Promise<{demo?:string}>}) {
-  if (accountConfigured() && (await searchParams).demo!=="1") redirect("/account");
+  if ((await searchParams).demo !== "1") return <Landing />;
   const { dataset, source, commitments, graph } = await loadDemo();
   return <Dashboard dataset={dataset} source={source} commitments={commitments} graph={graph} />;
 }
