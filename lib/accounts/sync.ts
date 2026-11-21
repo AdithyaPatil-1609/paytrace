@@ -7,6 +7,7 @@ import { merchantKey, type PaymentEvent } from "@/lib/ingestion/event";
 import { semanticEmailCandidate } from "@/lib/ingestion/semantic-email";
 import { exchangeToken, GoogleTokenError } from "./google";
 import { AccountError, type AccountErrorCode } from "./errors";
+import { GMAIL_SYNC_LIMITS } from "@/lib/payments/rules";
 
 type Part = { mimeType?:string; filename?:string; headers?:{name:string;value:string}[]; body?:{data?:string}; parts?:Part[] };
 function htmlReceiptText(html:string) {
@@ -88,17 +89,33 @@ export function gmailResponseError(status:number,body:unknown) {
   return new GoogleTokenError(status,reasons[0]??(typeof error?.status==="string"?error.status:"gmail_error"));
 }
 
+/**
+ * How long to wait before retrying a Gmail request that was limited. Gmail
+ * says how long in a Retry-After header or in the error text ("Retry after
+ * <time>"); without either, back off 2, 4, 8, 16, 32 seconds with jitter.
+ * Returns null when Gmail asks for longer than one sync should wait.
+ */
+export function gmailRetryDelayMs(attempt:number,retryAfterHeader:string|null,body:unknown,now=Date.now(),jitter=Math.random()):number|null {
+  let asked:number|undefined;
+  if(retryAfterHeader!==null){asked=/^\d+$/.test(retryAfterHeader.trim())?Number(retryAfterHeader)*1000:Date.parse(retryAfterHeader)-now;}
+  const message=(body as {error?:{message?:unknown}}|null)?.error?.message;
+  const stated=typeof message==="string"?message.match(/retry after\s+(\S+)/i)?.[1]:undefined;
+  if(stated&&Number.isFinite(Date.parse(stated)))asked=Math.max(asked??0,Date.parse(stated)-now);
+  const backoff=2000*2**attempt*(0.75+jitter*0.5);
+  const wait=Math.max(Number.isFinite(asked)?asked!:0,backoff);
+  return wait>GMAIL_SYNC_LIMITS.maxWaitMs?null:Math.ceil(wait);
+}
+
 async function gmailGet(access:string,path:string) {
   for (let attempt=0;;attempt++) {
     const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/${path}`,{headers:{Authorization:`Bearer ${access}`},signal:AbortSignal.timeout(15000)});
     if (r.ok) return await r.json();
     const body=await r.json().catch(()=>({}));
     const error=gmailResponseError(r.status,body);
-    if (attempt<2 && (syncFailureCode(error,"google")==="gmail-rate-limit" || r.status>=500)) {
-      const retryAfter=r.headers.get("retry-after");
-      const retryMs=retryAfter===null?0:/^\d+$/.test(retryAfter)?Number(retryAfter)*1000:Date.parse(retryAfter)-Date.now();
-      if(retryMs>30_000)throw error;
-      await new Promise(resolve=>setTimeout(resolve,Math.max(1000*2**attempt,Number.isFinite(retryMs)?retryMs:0)));
+    if (attempt<GMAIL_SYNC_LIMITS.maxAttempts-1 && (syncFailureCode(error,"google")==="gmail-rate-limit" || r.status>=500)) {
+      const wait=gmailRetryDelayMs(attempt,r.headers.get("retry-after"),body);
+      if(wait===null)throw error;
+      await new Promise(resolve=>setTimeout(resolve,wait));
       continue;
     }
     throw error;
@@ -135,6 +152,8 @@ export async function syncAccount(sub: string, history=false,historyDays:90|365=
         scanned++;
         stage="google";
         let mail:{payload?:Part;internalDate?:string;labelIds?:string[]};
+        // Pace reads: the per-user Gmail limit is shared with every other device reading this mailbox.
+        if(scanned>1)await new Promise(resolve=>setTimeout(resolve,GMAIL_SYNC_LIMITS.pauseBetweenReadsMs));
         try { mail=await gmailGet(access,`messages/${encodeURIComponent(id)}?format=full`); }
         catch(error) { if(error instanceof GoogleTokenError && error.status===404){skipped++;continue;} throw error; }
         const timestamp=new Date(Number(mail.internalDate));
