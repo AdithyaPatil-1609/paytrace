@@ -32,3 +32,11 @@
 .privacy-wrap { max-width: 760px; margin: 0 auto; padding: clamp(28px,5vw,64px) 22px; }
 .privacy-section h2 { margin-top: 28px; }
 .privacy-section ul { margin: 10px 0; }
+.pairing-code { font-family: var(--mono); font-size: 18px; letter-spacing: 2px; color: var(--ink); }
+.consent-points { display: grid; gap: 14px; margin: 26px 0; }
+.consent-points dt { font-weight: 700; color: var(--ink); font-size: 14px; }
+.consent-points dd { margin: 4px 0 0; color: var(--ink-soft); font-size: 14px; line-height: 1.55; }
+.consent-form { border-top: 1px solid var(--rule-firm); padding-top: 18px; }
+.consent-check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: var(--ink); }
+.consent-check input { margin-top: 4px; width: 18px; height: 18px; flex-shrink: 0; }
+a.account-button { text-decoration: none; }

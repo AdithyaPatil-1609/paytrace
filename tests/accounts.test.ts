@@ -209,10 +209,10 @@ test("signed-in dashboard retains all original tabs without demo payments",()=>{
 test("login offers a no-account static demo even when Google sign-in is unavailable",async()=>{
   const html=renderToStaticMarkup(createElement(AccountLogin,{configured:true}));
   assert.ok(html.includes("Continue with Google"));
-  assert.ok(html.includes("View static demo (Priya)"));
+  assert.ok(html.includes("View static demo"));
   assert.ok(html.includes('href="/demo"'));
   const offline=renderToStaticMarkup(createElement(AccountLogin,{configured:false}));
-  assert.ok(offline.includes("View static demo (Priya)"));
+  assert.ok(offline.includes("View static demo"));
   const {dataset,source}=await loadDemo(true);
   assert.equal(source.kind,"fixture");
   assert.ok(dataset.statement.length>0);

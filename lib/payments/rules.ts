@@ -170,3 +170,48 @@ export const GRAPH_WARNING_LIMITS = {
   severityMediumPct: 10,
   severityHighPct: 20
 } as const;
+
+/** Body limits for the browser POST routes (Ask AI, Challenge), read before parsing. */
+export const BROWSER_BODY_LIMITS = {
+  assistantBytes: 4 * 1024,
+  challengeBytes: 2 * 1024
+} as const;
+
+/**
+ * Signed requests from paired phones (plan cards S5 and M2). Each phone keeps a
+ * P-256 key in the Android Keystore; the server keeps only the public key.
+ */
+export const DEVICE_LIMITS = {
+  /** A signed request whose time is further off than this is refused. */
+  maxClockSkewMs: 5 * 60_000,
+  /** A one-use number is remembered this long; longer than the skew, so a replay can never slip through. */
+  nonceMemoryMs: 10 * 60_000,
+  /** Distinct one-use numbers remembered at once before the oldest are dropped. */
+  maxRememberedNonces: 50_000,
+  /** The code shown on the account page to pair a phone. */
+  pairingCodeMs: 10 * 60_000,
+  pairingCodeLength: 8,
+  /** A P-256 public key in X.509 form is 91 bytes; allow some room, nothing more. */
+  maxPublicKeyBytes: 200,
+  /** Phones one person may pair. */
+  maxDevicesPerUser: 5,
+  /** How long a device lookup is cached in memory. */
+  deviceCacheMs: 60_000
+} as const;
+
+/**
+ * The public sandbox (/sandbox): each visitor gets a private, temporary copy of
+ * the synthetic demo person, kept in this server's memory only.
+ */
+export const SANDBOX_LIMITS = {
+  /** A sandbox not used for this long is forgotten. */
+  idleMs: 2 * 60 * 60_000,
+  /** Sandboxes kept at once; the least recently used is dropped first. */
+  maxSandboxes: 300,
+  /** Messages one sandbox may hold before it must be reset. */
+  maxMessages: 60,
+  /** Request body limit for the sandbox routes. */
+  maxBodyBytes: 6 * 1024,
+  /** Messages waiting for the AI reader before new ones get "busy". */
+  maxWaitingForReader: 4
+} as const;

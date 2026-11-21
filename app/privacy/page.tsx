@@ -8,7 +8,8 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy policy | Paytrace",
-  description: "What Paytrace reads, what it keeps, and how to stop it."
+  description: "What Paytrace reads, what it keeps, and how to stop it.",
+  alternates: { canonical: "/privacy" }
 };
 
 const UPDATED = "21 November 2026";
@@ -111,8 +112,13 @@ export default function PrivacyPage() {
           .
         </li>
         <li>
-          <strong>Delete your data:</strong> ask through the support email shown on Paytrace&apos;s Google
-          sign-in screen, and your account and every stored payment field will be deleted.
+          <strong>Delete your data:</strong> use Delete my data in your account menu. Your account, every
+          stored payment field, your paired phones and your sessions are deleted at once, and Gmail access is
+          revoked at Google.
+        </li>
+        <li>
+          <strong>Sign out everywhere, or unpair phones:</strong> both are in your account menu. Unpaired phones
+          can no longer send messages.
         </li>
       </ul>
 

@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import "./account.css";
 import "./login.css";
 
+export const metadata = { title: "Your account · Paytrace", robots: { index: false, follow: false } };
 export const dynamic="force-dynamic";
 export default async function AccountPage({searchParams}:{searchParams:Promise<{notice?:string}>}) {
   const configured=accountConfigured();
@@ -19,6 +20,7 @@ export default async function AccountPage({searchParams}:{searchParams:Promise<{
   if(account) return <AccountDashboard name={account.name} email={account.email} linked={account.linked} lastSync={account.lastSync} asOf={new Date().toISOString().slice(0,10)} notice={text} noticeIsError={noticeIsError(notice)}/>;
   // The sign-in page is separate from the landing page. Only a database outage
   // keeps the old combined page, because it explains what is wrong.
-  if(!unavailable) redirect(notice?`/signin?notice=${encodeURIComponent(notice)}`:"/signin");
+  // A cookie that no longer opens a session means it timed out: say so on the sign-in page.
+  if(!unavailable) redirect(notice?`/signin?notice=${encodeURIComponent(notice)}`:raw?"/signin?notice=session-expired":"/signin");
   return <AccountLogin configured={configured} unavailable={unavailable} notice={text}/>;
 }

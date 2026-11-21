@@ -10,9 +10,9 @@ export function AccountLogin({configured, unavailable=false, notice}: {configure
       </div>
       <div className="login-options"><p className="account-eyebrow">WELCOME TO PAYTRACE</p><h2>Choose how to explore.</h2>
         <article className="account-card login-choice"><p className="account-eyebrow">01 · YOUR PERSONAL ACCOUNT</p><h3>Sign in with Google</h3><p>See your own recurring payments. Choose whether to connect Gmail after signing in.</p>
-          {configured&&!unavailable?<form action="/api/auth/google/start" method="post"><input type="hidden" name="mode" value="login"/><button className="account-button primary google-button" type="submit"><span aria-hidden="true">G</span> Continue with Google</button></form>:<p className="account-warning">{unavailable?"Neo4j unavailable. Start the database and reload.":"Google sign-in is not configured. You can still explore Priya's demo."}</p>}
+          {configured&&!unavailable?<form action="/api/auth/google/start" method="post"><input type="hidden" name="mode" value="login"/><button className="account-button primary google-button" type="submit"><span aria-hidden="true">G</span> Continue with Google</button></form>:<p className="account-warning">{unavailable?"Neo4j unavailable. Start the database and reload.":"Google sign-in is not configured. You can still explore the demo."}</p>}
         </article>
-        <article className="account-card login-choice demo-choice"><p className="account-eyebrow">02 · SAMPLE DATA · NO LOGIN</p><h3>Explore Priya&apos;s demo</h3><p>Try all five screens using Priya Desai&apos;s preloaded synthetic payments. No sign-in or email access needed.</p><Link className="account-button demo-button" href="/demo">View static demo (Priya) <span aria-hidden="true">→</span></Link></article>
+        <article className="account-card login-choice demo-choice"><p className="account-eyebrow">02 · SAMPLE DATA · NO LOGIN</p><h3>Explore the demo</h3><p>Try all five screens using preloaded synthetic payments. No sign-in or email access needed.</p><Link className="account-button demo-button" href="/demo">View static demo <span aria-hidden="true">→</span></Link></article>
         <p className="login-footnote">Personal and demo data are kept separate.</p>
       </div>
     </section>

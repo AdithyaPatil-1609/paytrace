@@ -10,6 +10,10 @@ import { accountConfigured, SESSION } from "@/lib/accounts/security";
 import { noticeIsError, noticeText } from "@/lib/accounts/notices";
 import "../account/account.css";
 import "../account/login.css";
+import type { Metadata } from "next";
+
+
+export const metadata: Metadata = { title: "Sign in · Paytrace", alternates: { canonical: "/signin" } };
 
 export const dynamic = "force-dynamic";
 
