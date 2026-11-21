@@ -12,6 +12,7 @@ import { SubscriptionWatchlist } from "@/components/subscription-watchlist";
 import { accountErrorMessage } from "@/lib/accounts/errors";
 import { IphoneConnect } from "@/components/iphone-connect";
 import { GraphWarningsPanel } from "@/components/graph-warnings";
+import { PhonePairing } from "@/components/phone-pairing";
 
 type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
   linked: boolean; lastSync: string | null; syncStatus: string | null; syncError?:string|null; iphone?: boolean;
@@ -26,9 +27,10 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
   const [syncing,setSyncing]=useState(false);
   const [syncResult,setSyncResult]=useState("");
   const started=useRef(false);
-  const refresh=useCallback(async()=>{
+  const refresh=useCallback(async(background=false)=>{
     try {
-      const response=await fetch("/api/account/summary",{cache:"no-store"});
+      // Background refreshes do not count as use, so an unattended page still signs out after 30 idle minutes.
+      const response=await fetch(`/api/account/summary${background?"?background=1":""}`,{cache:"no-store"});
       if(response.status===401){window.location.replace("/account?notice=session-expired");return;}
       if(!response.ok)throw Error();
       setSnapshot(await response.json());setLoadError("");
@@ -50,7 +52,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
     } catch {setError("Sync could not finish. Check Gmail connection and retry.");}
     finally {setSyncing(false);await refresh();}
   },[refresh]);
-  useEffect(()=>{const initial=setTimeout(()=>void refresh(),0);const timer=setInterval(()=>void refresh(),10000);return()=>{clearTimeout(initial);clearInterval(timer);};},[refresh]);
+  useEffect(()=>{const initial=setTimeout(()=>void refresh(),0);const timer=setInterval(()=>void refresh(true),10000);return()=>{clearTimeout(initial);clearInterval(timer);};},[refresh]);
   useEffect(()=>{const initial=setTimeout(()=>{if(linked&&!lastSync&&!started.current){started.current=true;void sync();}},0);return()=>clearTimeout(initial);},[linked,lastSync,sync]);
 
   const connected=snapshot?.linked??linked;
@@ -71,7 +73,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       <hr/>
       <p className="account-eyebrow">DATA CONNECTION · GMAIL</p>
       <p className="account-note">{needsReconnect?"Permission expired. Reconnect to resume sync.":connected?"Connected · read-only":"Optional: read financial messages from the Gmail account you signed in with. Google will ask for permission; Paytrace never sends or deletes emails."}</p>
-      {!connected||needsReconnect?<form action="/api/auth/google/start" method="post"><input type="hidden" name="mode" value="link"/><button className="account-button primary" type="submit">{needsReconnect?"Reconnect Gmail":"Connect Gmail securely"}</button></form>:<>
+      {!connected||needsReconnect?<Link className="account-button primary" href="/consent/gmail">{needsReconnect?"Reconnect Gmail":"Connect Gmail securely"}</Link>:<>
         <p className="account-note">Last successful sync: {snapshot?.lastSync?new Date(snapshot.lastSync).toLocaleString():lastSync?new Date(lastSync).toLocaleString():"Waiting for first sync"}</p>
         <button className="account-button primary" disabled={syncingNow} onClick={()=>void sync()}>{syncingNow?"Synchronizing…":"Sync now"}</button>
         <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,90)}>Rescan last 90 days</button>
@@ -81,9 +83,13 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
       <hr/>
       <IphoneConnect connected={snapshot?.iphone===true} onChange={()=>void refresh()}/>
+      <PhonePairing/>
       <hr/>
       <form action="/api/auth/logout" method="post"><button className="account-button" type="submit">Sign out</button></form>
-      <Link className="account-demo-link" href="/?demo=1">Explore synthetic demo</Link>
+      <form action="/api/auth/logout" method="post"><input type="hidden" name="scope" value="all"/><button className="account-button" type="submit">Sign out on every device</button></form>
+      <form action="/api/account/delete" method="post" onSubmit={event=>{ if(window.prompt("This deletes all of your Paytrace data, unpairs your phones and revokes Gmail access. Type DELETE to confirm.")!=="DELETE") event.preventDefault(); }}><input type="hidden" name="confirm" value="DELETE"/><button className="account-button danger" type="submit">Delete my data</button></form>
+      <Link className="account-demo-link" href="/privacy">Privacy notice</Link>
+      <Link className="account-demo-link" href="/demo">Explore synthetic demo</Link>
     </div>
   </details>;
   const persistedError=accountErrorMessage(snapshot?.syncError);

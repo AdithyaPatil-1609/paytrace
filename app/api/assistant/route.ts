@@ -11,6 +11,9 @@ import { SESSION } from "@/lib/accounts/security";
 import { ask, MAX_MESSAGE } from "@/lib/assistant/assistant";
 import { demoCommitments } from "@/lib/data/load-demo";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
+import { forbidden, fromOurSite } from "@/lib/security/origin";
+import { readJsonBody } from "@/lib/security/body";
+import { BROWSER_BODY_LIMITS } from "@/lib/payments/rules";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +36,7 @@ function inTurn<T>(work: () => Promise<T>) {
 export async function POST(request: NextRequest) {
   const hit = takeHit("assistant", clientKey(request), LIMITS.assistant);
   if (!hit.ok) return tooMany(hit.retryAfter);
+  if (!fromOurSite(request)) return forbidden();
   if (waiting >= MAX_WAITING) {
     return Response.json(
       { error: "Ask AI is busy answering other people. Try again in a minute." },
@@ -40,12 +44,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: { message?: unknown; scope?: unknown };
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "Send JSON with a message." }, { status: 400, headers });
-  }
+  const read = await readJsonBody(request, BROWSER_BODY_LIMITS.assistantBytes);
+  if (!read.ok) return Response.json({ error: read.status === 413 ? "Message too large." : "Send JSON with a message." }, { status: read.status, headers });
+  if (!read.value || typeof read.value !== "object") return Response.json({ error: "Send JSON with a message." }, { status: 400, headers });
+  const body = read.value as { message?: unknown; scope?: unknown };
   const message = typeof body.message === "string" ? body.message.trim() : "";
   if (!message) return Response.json({ error: "Type a question first." }, { status: 400, headers });
   if (message.length > MAX_MESSAGE) {

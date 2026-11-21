@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
+import { SITE } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Paytrace | See every auto debit clearly",
-  description: "Every recurring payment, its message source, and the path to stop it."
+  metadataBase: new URL(SITE.url),
+  title: SITE.title,
+  description: SITE.description,
+  applicationName: SITE.name,
+  openGraph: { type: "website", siteName: SITE.name, title: SITE.title, description: SITE.description, url: "/", locale: "en_IN" },
+  twitter: { card: "summary_large_image", title: SITE.title, description: SITE.description }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

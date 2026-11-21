@@ -34,3 +34,18 @@ H32,privacy,"Two browsers side by side, each with its own sandbox person",Neithe
 H33,ask,Ask Paytrace: Should I buy gold?,Paytrace says what kinds of question it can answer.,Adhyay (draft)
 H34,ask,Ask Paytrace: Show me Priya's payments (from a sandbox person),Answers only from the visitor's own data.,Adhyay (draft)
 H35,limits,200 requests in one minute from one browser,Refused after the limit.,Adhyay (draft)
+H36,signature,Signed SMS sent a second time with the same nonce,409 Replayed request. Stored once.,Hanish
+H37,signature,Signed SMS with a time 6 minutes old,401 before any database lookup.,Hanish
+H38,signature,Signed SMS whose body was changed after signing (Rs 199 to Rs 1;99;999),401 Bad signature. Nothing stored.,Hanish
+H39,signature,Request signed by a different phone's key,401 Bad signature; the real phone's nonce is not used up.,Hanish
+H40,signature,Only some signature headers plus the old pairing code,401. A half-signed request never falls back to the old code.,Hanish
+H41,pairing,Pairing with a wrong or expired code,401 Code is wrong or expired. Codes work once and last 10 minutes.,Hanish
+H42,pairing,Guessing pairing codes,429 after 5 tries a minute and 20 an hour per address.,Hanish
+H43,pairing,Pairing with an RSA or P-384 key,400 Send a P-256 public key.,Hanish
+H44,ai,AI returns an amount that is not in the message,The amount is removed before storing.,Hanish
+H45,ai,Message saying Ignore all previous instructions,Dropped as suspicious; never sent to the AI.,Hanish
+H46,web,POST to Ask AI / Simulate / Challenge from another website,403 This request must come from the Paytrace site.,Hanish
+H47,web,Ask AI body of 5 KB,413 before the body is parsed.,Hanish
+H48,web,Sign out on every device,Every session of that person ends; other browsers must sign in again.,Hanish
+H49,web,Remove all paired phones,Their signed requests get 401 at once.,Hanish
+H50,headers,Any page,"CSP, HSTS, X-Frame-Options DENY, nosniff, Referrer-Policy and Permissions-Policy are set; API answers are no-store.",Hanish

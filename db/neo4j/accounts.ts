@@ -1,11 +1,13 @@
 import { getNeo4jDriver, neo4jDatabase } from "./client";
-import { hash, open, profileFor, randomToken, seal, SESSION_SECONDS } from "@/lib/accounts/security";
+import { hash, open, profileFor, randomToken, seal, SESSION_IDLE_SECONDS, SESSION_ROTATE_SECONDS, SESSION_SECONDS } from "@/lib/accounts/security";
 import { AccountError, type AccountErrorCode } from "@/lib/accounts/errors";
 
 export type Account = { sub: string; email: string; name: string; profile: string; linked: boolean; lastSync: string | null; syncStatus: string | null; syncError: string | null; iphone: boolean };
 const ACCOUNT_SCHEMA = [
   "CREATE CONSTRAINT paytrace_user_sub IF NOT EXISTS FOR (u:PaytraceUser) REQUIRE u.sub IS UNIQUE",
   "CREATE CONSTRAINT paytrace_session_hash IF NOT EXISTS FOR (s:PaytraceSession) REQUIRE s.hash IS UNIQUE",
+  // iPhone Shortcut requests look the account up by token hash; an index keeps that a direct lookup.
+  "CREATE INDEX paytrace_user_ios_token IF NOT EXISTS FOR (u:PaytraceUser) ON (u.iosTokenHash)",
   "CREATE CONSTRAINT paytrace_user_ios_token IF NOT EXISTS FOR (u:PaytraceUser) REQUIRE u.iosTokenHash IS UNIQUE"
 ];
 let initialized: Promise<void> | undefined;
@@ -21,13 +23,22 @@ export async function createSession(identity: { sub: string; email: string; name
   const raw = randomToken();
   const s = getNeo4jDriver().session({database:neo4jDatabase});
   try { await s.run(`MERGE (u:PaytraceUser {sub:$sub}) SET u.email=$email,u.name=$name,u.profile=$profile
-    CREATE (session:PaytraceSession {hash:$hash,expires:datetime($expires)}) MERGE (u)-[:HAS_SESSION]->(session)`,{...identity,profile:profileFor(identity.sub),hash:hash(raw),expires:new Date(Date.now()+SESSION_SECONDS*1000).toISOString()}); return raw; }
+    CREATE (session:PaytraceSession {hash:$hash,expires:datetime($expires),created:datetime(),lastSeen:datetime()}) MERGE (u)-[:HAS_SESSION]->(session)`,{...identity,profile:profileFor(identity.sub),hash:hash(raw),expires:new Date(Date.now()+SESSION_SECONDS*1000).toISOString()}); return raw; }
   finally { await s.close(); }
 }
-export async function accountForSession(raw?: string): Promise<Account | null> {
+/** touch=false is for background refreshes: they read the session without counting as use. */
+export async function accountForSession(raw?: string, touch = true): Promise<Account | null> {
   if (!raw || !/^[A-Za-z0-9_-]{43}$/.test(raw)) return null;
   const s = getNeo4jDriver().session({database:neo4jDatabase});
-  try { const r = await s.run(`MATCH (u:PaytraceUser)-[:HAS_SESSION]->(sess:PaytraceSession {hash:$hash}) WHERE sess.expires > datetime() RETURN ${projection}`,{hash:hash(raw)}); return r.records.length ? toAccount(r.records[0]) : null; } finally { await s.close(); }
+  // Valid only before its absolute expiry (12 hours) and while used in the last 30 minutes.
+  // lastSeen is written at most every 2 minutes, so reads stay cheap.
+  try { const r = await s.run(`MATCH (u:PaytraceUser)-[:HAS_SESSION]->(sess:PaytraceSession {hash:$hash})
+      WHERE sess.expires > datetime()
+        // Sessions made before this rule (7-day cookies) are also held to 12 hours from sign-in.
+        AND coalesce(sess.created, sess.expires - duration({days:7})) > datetime() - duration({seconds:$absolute})
+        AND coalesce(sess.lastSeen, sess.created, sess.expires - duration({days:7})) > datetime() - duration({seconds:$idle})
+      FOREACH (due IN CASE WHEN $touch AND coalesce(sess.lastSeen, datetime('1970-01-01T00:00:00Z')) < datetime() - duration({minutes:2}) THEN [1] ELSE [] END | SET sess.lastSeen = datetime())
+      RETURN ${projection}`,{hash:hash(raw),idle:SESSION_IDLE_SECONDS,absolute:SESSION_SECONDS,touch}); return r.records.length ? toAccount(r.records[0]) : null; } finally { await s.close(); }
 }
 export async function endSession(raw?: string) {
   if (!raw) return;
@@ -92,4 +103,37 @@ export async function removeIosToken(sub: string) {
 export async function profileForIosToken(token: string): Promise<string | null> {
   const s = getNeo4jDriver().session({database:neo4jDatabase});
   try { const r = await s.run("MATCH (u:PaytraceUser {iosTokenHash:$hash}) RETURN u.profile AS profile",{hash:hash(token)}); return (r.records[0]?.get("profile") as string | undefined) ?? null; } finally { await s.close(); }
+}
+/** Ends every session of this person, on every device (plan card S3, "sign out everywhere"). */
+export async function endAllSessions(sub: string) {
+  const s = getNeo4jDriver().session({database:neo4jDatabase});
+  try { await s.run("MATCH (:PaytraceUser {sub:$sub})-[:HAS_SESSION]->(sess:PaytraceSession) DETACH DELETE sess",{sub}); } finally { await s.close(); }
+}
+/** Records which consent text the person agreed to, and when (DPDP evidence of consent). */
+export async function recordGmailConsent(sub: string, version: string) {
+  const s = getNeo4jDriver().session({database:neo4jDatabase});
+  try { await s.run("MATCH (u:PaytraceUser {sub:$sub}) SET u.gmailConsentVersion=$version,u.gmailConsentAt=datetime()",{sub,version}); } finally { await s.close(); }
+}
+
+/**
+ * Session rotation (plan card S3): a session older than 2 hours gets a new
+ * random token with the same absolute expiry. The old token keeps working for
+ * one more minute, so requests already in flight do not sign the person out.
+ * Returns the new token and its expiry, or null when no rotation is due.
+ */
+export async function rotateSession(raw?: string): Promise<{ raw: string; expires: string } | null> {
+  if (!raw || !/^[A-Za-z0-9_-]{43}$/.test(raw)) return null;
+  const fresh = randomToken();
+  const s = getNeo4jDriver().session({database:neo4jDatabase});
+  try {
+    const r = await s.run(`MATCH (u:PaytraceUser)-[:HAS_SESSION]->(old:PaytraceSession {hash:$hash})
+      WHERE old.expires > datetime() + duration({minutes:1}) AND coalesce(old.created, datetime('1970-01-01T00:00:00Z')) < datetime() - duration({seconds:$rotate})
+      WITH u, old, old.expires AS keep
+      CREATE (u)-[:HAS_SESSION]->(:PaytraceSession {hash:$fresh, expires:keep, created:datetime(), lastSeen:datetime()})
+      SET old.expires = datetime() + duration({minutes:1})
+      RETURN toString(keep) AS expires`,
+      {hash:hash(raw),fresh:hash(fresh),rotate:SESSION_ROTATE_SECONDS});
+    const expires = r.records[0]?.get("expires") as string | undefined;
+    return expires ? { raw: fresh, expires } : null;
+  } finally { await s.close(); }
 }

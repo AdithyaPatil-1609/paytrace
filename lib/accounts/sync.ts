@@ -8,6 +8,7 @@ import { semanticEmailCandidate } from "@/lib/ingestion/semantic-email";
 import { exchangeToken, GoogleTokenError } from "./google";
 import { AccountError, type AccountErrorCode } from "./errors";
 import { GMAIL_SYNC_LIMITS } from "@/lib/payments/rules";
+import { senderAuthentication } from "@/lib/ingestion/dkim";
 
 type Part = { mimeType?:string; filename?:string; headers?:{name:string;value:string}[]; body?:{data?:string}; parts?:Part[] };
 function htmlReceiptText(html:string) {
@@ -160,6 +161,8 @@ export async function syncAccount(sub: string, history=false,historyDays:90|365=
         if(!mail.payload || !mail.internalDate || !Number.isFinite(timestamp.valueOf())){skipped++;continue;}
         const payload=mail.payload;
         const header=(name:string)=>payload.headers?.find(h=>h.name.toLowerCase()===name)?.value??"";
+        // An email Gmail says the From domain did not send (DKIM/DMARC) is never read for payments.
+        if(senderAuthentication(payload.headers,header("from"))==="fail"){skipped++;senderSkipped++;continue;}
         const date=timestamp.toISOString().slice(0,10),subject=header("subject");
         let {event,reason}=parseGmailReceipt({id,from:header("from"),subject,payload,labelIds:mail.labelIds,date},domains);
         if(semanticBudget>0&&!mail.labelIds?.includes("CATEGORY_PROMOTIONS")&&["subscription","unsupported","parsed"].includes(reason)&&(!event||event.kind==="subscription_candidate"&&event.planPricePaise===undefined)){

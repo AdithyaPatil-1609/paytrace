@@ -5,6 +5,7 @@
  */
 "use client";
 
+import { PayTraceLogo } from "@/components/paytrace-logo";
 import { useState, type ReactNode } from "react";
 import { MobileNavigation } from "@/components/chrome/mobile-navigation";
 import { ChromeHeight } from "@/components/chrome/chrome-height";
@@ -78,7 +79,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
         <header className="product-bar">
           <MobileNavigation screens={screens} current={screen} onSelect={setScreen} />
           <div className="wordmark">
-            <span>p</span>paytrace
+            <PayTraceLogo />
           </div>
           <span
             className={source.kind === "neo4j" ? "source-badge live" : "source-badge"}

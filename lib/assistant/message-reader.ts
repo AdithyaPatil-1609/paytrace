@@ -9,6 +9,7 @@ import { CHAT_MODEL, ollamaChat, type ChatMessage } from "./models";
 import { READER_PROMPT } from "./prompts";
 import { READER_JSON_SCHEMA, ReaderFieldsSchema, type ReaderFields } from "./reader-shape";
 import { hasSecret } from "./secrets";
+import { keepGroundedFields, looksLikeInstructions } from "./verify-fields";
 
 export type IncomingMessage = {
   text: string;
@@ -19,8 +20,8 @@ export type IncomingMessage = {
 };
 
 export type ReadResult =
-  | { status: "read"; fields: ReaderFields; model: string }
-  | { status: "dropped"; reason: "empty" | "too_long" | "secret" }
+  | { status: "read"; fields: ReaderFields; model: string; removed?: string[] }
+  | { status: "dropped"; reason: "empty" | "too_long" | "secret" | "suspicious" }
   | { status: "unreadable"; reason: "model_down" | "bad_reply"; model: string };
 
 type Ask = (messages: ChatMessage[], format: object) => Promise<string>;
@@ -74,6 +75,8 @@ export async function readMessage(message: IncomingMessage, ask: Ask = ollamaCha
     return { status: "dropped", reason: "too_long" };
   }
   if (hasSecret(text)) return { status: "dropped", reason: "secret" };
+  // Prompt injection: a message that gives orders to an AI is never read by one.
+  if (looksLikeInstructions(text)) return { status: "dropped", reason: "suspicious" };
 
   const messages: ChatMessage[] = [
     { role: "system", content: READER_PROMPT },
@@ -88,7 +91,8 @@ export async function readMessage(message: IncomingMessage, ask: Ask = ollamaCha
     return { status: "unreadable", reason: "model_down", model: CHAT_MODEL };
   }
   const fields = checkReply(raw);
-  return fields
-    ? { status: "read", fields, model: CHAT_MODEL }
-    : { status: "unreadable", reason: "bad_reply", model: CHAT_MODEL };
+  if (!fields) return { status: "unreadable", reason: "bad_reply", model: CHAT_MODEL };
+  // Every value must appear word for word in the message; anything else is removed.
+  const grounded = keepGroundedFields(fields, text);
+  return { status: "read", fields: grounded.fields, model: CHAT_MODEL, ...(grounded.removed.length ? { removed: grounded.removed } : {}) };
 }
