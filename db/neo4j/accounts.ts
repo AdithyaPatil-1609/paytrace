@@ -6,8 +6,8 @@ export type Account = { sub: string; email: string; name: string; profile: strin
 const ACCOUNT_SCHEMA = [
   "CREATE CONSTRAINT paytrace_user_sub IF NOT EXISTS FOR (u:PaytraceUser) REQUIRE u.sub IS UNIQUE",
   "CREATE CONSTRAINT paytrace_session_hash IF NOT EXISTS FOR (s:PaytraceSession) REQUIRE s.hash IS UNIQUE",
-  // iPhone Shortcut requests look the account up by token hash; an index keeps that a direct lookup.
-  "CREATE INDEX paytrace_user_ios_token IF NOT EXISTS FOR (u:PaytraceUser) ON (u.iosTokenHash)",
+  // iPhone Shortcut requests look the account up by token hash. The unique constraint brings its own index;
+  // a separate CREATE INDEX with the same name made this constraint fail on every fresh database.
   "CREATE CONSTRAINT paytrace_user_ios_token IF NOT EXISTS FOR (u:PaytraceUser) REQUIRE u.iosTokenHash IS UNIQUE"
 ];
 let initialized: Promise<void> | undefined;

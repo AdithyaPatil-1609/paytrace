@@ -9,6 +9,7 @@ import { after } from "next/server";
 import { createHash } from "node:crypto";
 import { profileForIosToken } from "@/db/neo4j/accounts";
 import { ingestLiveEvent } from "@/db/neo4j/live";
+import { smsProvenance } from "@/lib/ingestion/trust";
 import { bearerToken, checkShortcutBody, describeHeader } from "@/lib/ingestion/ios-token";
 import { processSmsWithRetry } from "@/lib/ingestion/sms-message";
 import { SMS_INGEST_LIMITS } from "@/lib/payments/rules";
@@ -80,6 +81,7 @@ export async function POST(request: Request) {
 
   console.info("ingest/ios: accepted, reading in the background");
   const owner = profile;
-  afterResponse(() => processSmsWithRetry(owner, checked.message, { store: ingestLiveEvent }));
+  const provenance = smsProvenance("ios_token");
+  afterResponse(() => processSmsWithRetry(owner, checked.message, { store: (who, event) => ingestLiveEvent(who, event, undefined, provenance) }));
   return Response.json({ ok: true, accepted: true }, { status: 202, headers: { "Cache-Control": "no-store" } });
 }

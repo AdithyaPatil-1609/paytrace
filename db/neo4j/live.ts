@@ -4,6 +4,7 @@ import { detectCommitments, matchDictionary, NOTICE_CHANNEL } from "@/lib/paymen
 import { readDictionary } from "@/data/fixtures";
 import type { Commitment, Dataset, MandateRow, NotificationRow, StatementRow } from "@/lib/payments/types";
 import { needsCheck, splitByChecks, type StoredCheck } from "@/lib/payments/recurring-check";
+import { UNVERIFIED, type Provenance } from "@/lib/ingestion/trust";
 
 /** Stored Job 4 verdicts for one person (written by db/neo4j/recurring-checks.ts). */
 export const CHECKS_QUERY = `MATCH (:LiveProfile {id:$profile})-[:HAS_RECURRING_CHECK]->(c:RecurringCheck)
@@ -40,7 +41,12 @@ async function ensureSchema() {
   return initialized;
 }
 
-export async function ingestLiveEvent(profile: string, event: PaymentEvent, grant?: { sub: string; grantId: string; lease: string }) {
+/**
+ * `provenance` comes from the caller's real checks (lib/ingestion/trust.ts),
+ * never from the event body. A stored level is kept: a later copy never
+ * upgrades or downgrades it.
+ */
+export async function ingestLiveEvent(profile: string, event: PaymentEvent, grant?: { sub: string; grantId: string; lease: string }, provenance: Provenance = UNVERIFIED) {
   await ensureSchema();
   const dictionary = readDictionary();
   const alias = matchDictionary(event.merchant, dictionary);
@@ -85,16 +91,19 @@ export async function ingestLiveEvent(profile: string, event: PaymentEvent, gran
         }
       }
       await tx.run(`MATCH (u:LiveProfile {id:$profile})
-        MERGE (m:LiveMerchant {id:$merchantId}) SET m.name=$merchant, m.key=$key
+        MERGE (m:LiveMerchant {id:$merchantId}) SET m.name=$merchant, m.key=$key, m.profile=$profile
         MERGE (e:LiveEvent {id:$id}) SET e += {source:$source, kind:$kind, merchant:$merchant, amountPaise:$amount,
           date:$date, reference:$reference, paymentId:$paymentId, status:$status, receivedAt:datetime(), accountHint:$account,
           planPricePaise:$planPrice, renewalDate:$renewalDate, renewalFrequency:$renewalFrequency}
+        FOREACH (_ IN CASE WHEN e.sourceTrust IS NULL THEN [1] ELSE [] END |
+          SET e.sourceTrust=$trust.sourceTrust, e.verificationStatus=$trust.verificationStatus, e.verificationMethod=$trust.verificationMethod,
+            e.trustReason=$trust.trustReason, e.verifiedAt=CASE WHEN $trust.verifiedAt IS NULL THEN null ELSE datetime($trust.verifiedAt) END)
         MERGE (u)-[:RECEIVED]->(e) MERGE (e)-[:ABOUT]->(m)
         WITH e,m OPTIONAL MATCH (p:LivePayment {id:$paymentId})
         FOREACH (_ IN CASE WHEN p IS NULL THEN [] ELSE [1] END | MERGE (p)-[:EVIDENCED_BY]->(e) MERGE (p)-[:PAID_TO]->(m))
         WITH e UNWIND $candidates AS candidate
         MATCH (c:LivePayment {id:candidate}) MERGE (e)-[:POSSIBLE_MATCH]->(c)`, {
-        profile, merchantId, key, id, source: event.source, kind: event.kind, merchant: event.merchant, amount: event.amountPaise, date: event.date, reference: event.reference, paymentId: result.id, status: result.status, account: event.accountHint ?? null, candidates: result.candidates, planPrice:event.planPricePaise??null, renewalDate:event.renewalDate??null, renewalFrequency:event.renewalFrequency??null
+        profile, merchantId, key, id, source: event.source, kind: event.kind, merchant: event.merchant, amount: event.amountPaise, date: event.date, reference: event.reference, paymentId: result.id, status: result.status, account: event.accountHint ?? null, candidates: result.candidates, planPrice:event.planPricePaise??null, renewalDate:event.renewalDate??null, renewalFrequency:event.renewalFrequency??null, trust:provenance
       });
       return { eventId: id, status: result.status, paymentId: result.id };
     });
