@@ -7,7 +7,7 @@
 import { NextRequest } from "next/server";
 import { accountForSession } from "@/db/neo4j/accounts";
 import { readLiveDashboard } from "@/db/neo4j/live";
-import { SESSION } from "@/lib/accounts/security";
+import { sameOrigin, SESSION } from "@/lib/accounts/security";
 import { ask, MAX_MESSAGE } from "@/lib/assistant/assistant";
 import { demoCommitments } from "@/lib/data/load-demo";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
@@ -33,6 +33,12 @@ function inTurn<T>(work: () => Promise<T>) {
 export async function POST(request: NextRequest) {
   const hit = takeHit("assistant", clientKey(request), LIMITS.assistant);
   if (!hit.ok) return tooMany(hit.retryAfter);
+  // A request that carries the sign-in cookie must come from our own site.
+  // This stops another website from making a signed-in visitor's browser
+  // ask about their payments (cross-site request forgery).
+  if (request.cookies?.get(SESSION)?.value && !sameOrigin(request)) {
+    return Response.json({ error: "Forbidden" }, { status: 403, headers });
+  }
   if (waiting >= MAX_WAITING) {
     return Response.json(
       { error: "Ask AI is busy answering other people. Try again in a minute." },
