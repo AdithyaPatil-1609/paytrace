@@ -5,7 +5,8 @@ export type EventKind = typeof kinds[number];
 export const renewalFrequencies = ["weekly", "monthly", "quarterly", "annual"] as const;
 export type RenewalFrequency = typeof renewalFrequencies[number];
 export type PaymentEvent = {
-  source: "sms" | "email";
+  /** "statement": one debit line from a bank statement the person imported (CSV). */
+  source: "sms" | "email" | "statement";
   kind: EventKind;
   merchant: string;
   amountPaise: number | null;
@@ -40,7 +41,9 @@ export function validateEvent(input: unknown): PaymentEvent {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Invalid event");
   const x = input as Record<string, unknown>;
   if (Object.keys(x).some(k => !["source", "kind", "merchant", "amountPaise", "date", "reference", "sourceId", "accountHint", "planPricePaise", "renewalDate", "renewalFrequency"].includes(k))) throw new Error("Unexpected event field");
-  if (x.source !== "sms" && x.source !== "email") throw new Error("Invalid source");
+  if (x.source !== "sms" && x.source !== "email" && x.source !== "statement") throw new Error("Invalid source");
+  // A statement line is a money movement, never a notice about one.
+  if (x.source === "statement" && x.kind !== "debit_posted") throw new Error("Statement lines are debits only");
   if (!kinds.includes(x.kind as EventKind)) throw new Error("Invalid event kind");
   if (typeof x.merchant !== "string" || !/^[A-Za-z0-9][A-Za-z0-9 .&*+_'@/-]{0,79}$/.test(x.merchant.trim()) || isSensitive(x.merchant)) throw new Error("Invalid merchant");
   if (!isDate(x.date)) throw new Error("Invalid date");
@@ -60,7 +63,7 @@ export function validateEvent(input: unknown): PaymentEvent {
   if (x.sourceId !== undefined && (typeof x.sourceId !== "string" || !/^[A-Za-z0-9_-]{3,128}$/.test(x.sourceId))) throw new Error("Invalid source ID");
   if (x.accountHint !== undefined && (typeof x.accountHint !== "string" || !/^[A-Za-z0-9-]{2,30}$/.test(x.accountHint))) throw new Error("Invalid masked account hint");
   if (x.reference === null && !x.sourceId) throw new Error("Reference or provider ID required");
-  return { source: x.source, kind: x.kind as EventKind, merchant: x.merchant.trim().toUpperCase(), amountPaise: amount as number | null, date: x.date, reference: x.reference === null ? null : (x.reference as string).toUpperCase(), sourceId: x.sourceId as string | undefined, accountHint: x.accountHint as string | undefined, ...(x.planPricePaise === undefined ? {} : {planPricePaise:x.planPricePaise as number}), ...(x.renewalDate === undefined ? {} : {renewalDate:x.renewalDate as string}), ...(x.renewalFrequency === undefined ? {} : {renewalFrequency:x.renewalFrequency as RenewalFrequency}) };
+  return { source: x.source as PaymentEvent["source"], kind: x.kind as EventKind, merchant: x.merchant.trim().toUpperCase(), amountPaise: amount as number | null, date: x.date, reference: x.reference === null ? null : (x.reference as string).toUpperCase(), sourceId: x.sourceId as string | undefined, accountHint: x.accountHint as string | undefined, ...(x.planPricePaise === undefined ? {} : {planPricePaise:x.planPricePaise as number}), ...(x.renewalDate === undefined ? {} : {renewalDate:x.renewalDate as string}), ...(x.renewalFrequency === undefined ? {} : {renewalFrequency:x.renewalFrequency as RenewalFrequency}) };
 }
 
 /** Provider retry key, scoped to a profile and channel. Never save raw text. */

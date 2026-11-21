@@ -1,0 +1,22 @@
+/* PayTrace logo lockup. Uses <b>/<i> because some screens hide ".wordmark span". */
+.pt-logo { display: inline-flex; align-items: center; gap: 10px; font-weight: inherit; }
+.pt-logo .pt-mark { flex: 0 0 auto; display: block; filter: drop-shadow(0 2px 4px rgb(22 32 90 / 0.18)); }
+.pt-word { font: 700 24px/1 var(--sans); letter-spacing: -0.03em; color: #1E2A6E; }
+.pt-word i { font-style: normal; color: #4A5BE0; }
+@media (max-width: 640px) {
+  .pt-logo { gap: 8px; }
+  .pt-logo .pt-mark { width: 28px; height: 28px; }
+  .pt-word { font-size: 20px; }
+}
+.pt-logo-lg { gap: 14px; }
+.pt-logo-lg .pt-word { font-size: 40px; }
+@media (max-width: 640px) {
+  .pt-logo-lg .pt-mark { width: 44px; height: 44px; }
+  .pt-logo-lg .pt-word { font-size: 32px; }
+}
+
+/* Landing page: big logo and the "what it finds" list. */
+.landing-logo { margin-bottom: 26px; }
+.landing-finds { list-style: none; padding: 0; margin: 6px 0 26px; display: grid; gap: 8px; max-width: 460px; }
+.landing-finds li { position: relative; padding-left: 22px; font-size: 15px; color: var(--ink); }
+.landing-finds li::before { content: ""; position: absolute; left: 2px; top: 7px; width: 9px; height: 9px; border-radius: 3px; background: #4A5BE0; }

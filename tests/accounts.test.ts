@@ -224,7 +224,7 @@ test("the landing page and the sign-in page are separate, and both offer the dem
   assert.ok(landing.includes('href="/signin"'));
   assert.ok(landing.includes('href="/demo"'));
   assert.ok(!landing.includes("Continue with Google"),"the landing page has no sign-in form");
-  assert.ok(landing.includes("approved test accounts"));
+  assert.ok(landing.includes("Sign in / Sign up"));
   const signin=renderToStaticMarkup(createElement(SignIn,{configured:true}));
   assert.ok(signin.includes('action="/api/auth/google/start"'));
   assert.ok(signin.includes("Approved test accounts only"));

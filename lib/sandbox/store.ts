@@ -5,13 +5,15 @@
  * Kept on globalThis so the page and the API routes share one store.
  */
 import type { PaymentEvent } from "@/lib/ingestion/event";
+import type { NotificationRow, UsageRow } from "@/lib/payments/types";
+import type { StatementLine } from "@/lib/statements/csv";
 import { SANDBOX_LIMITS } from "@/lib/payments/rules";
 
 export type SandboxStep = { name: string; ok: boolean; detail: string };
 export type SandboxLogEntry = {
   n: number;
   at: string;
-  channel: "sms" | "email" | "phone";
+  channel: "sms" | "email" | "phone" | "statement";
   sender: string;
   preview: string;
   accepted: boolean;
@@ -19,7 +21,16 @@ export type SandboxLogEntry = {
   steps: SandboxStep[];
 };
 export type SandboxEvent = { n: number; receivedOn: string; channel: "sms" | "email"; sender: string; text: string; event: PaymentEvent; key: string };
-export type Sandbox = { id: string; created: number; touched: number; counter: number; log: SandboxLogEntry[]; events: SandboxEvent[] };
+/** A statement loaded in place of the demo person's: the generated sample or the visitor's own CSV. */
+export type SandboxStatement = {
+  source: "sample" | "upload";
+  name: string;
+  lines: (StatementLine & { account?: string })[];
+  usage: UsageRow[];
+  notices: NotificationRow[];
+  skipped: number;
+};
+export type Sandbox = { id: string; created: number; touched: number; counter: number; log: SandboxLogEntry[]; events: SandboxEvent[]; statement?: SandboxStatement };
 
 type Store = Map<string, Sandbox>;
 const holder = globalThis as unknown as { __paytraceSandboxes?: Store };
