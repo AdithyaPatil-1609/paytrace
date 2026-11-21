@@ -6,15 +6,18 @@
  */
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { SandboxAlert } from "@/lib/sandbox/dataset";
+import type { SandboxAlert, SandboxView } from "@/lib/sandbox/dataset";
 import type { SandboxLogEntry } from "@/lib/sandbox/store";
 import { ATTACKS, EMAIL_TEMPLATES, SMS_TEMPLATES, datesAfter, type Attack, type Template } from "@/lib/sandbox/templates";
+import { generateStatement, statementCsv } from "@/lib/statements/generate";
+import { STATEMENT_LIMITS } from "@/lib/statements/csv";
 import "./sandbox.css";
 
-type Tab = "sms" | "email" | "type" | "break" | "activity";
-type Props = { asOf: string; alerts: SandboxAlert[]; log: SandboxLogEntry[]; counts: { sms: number; email: number; accepted: number; refused: number } };
+type Tab = "statement" | "sms" | "email" | "type" | "break" | "activity";
+type Props = { asOf: string; alerts: SandboxAlert[]; log: SandboxLogEntry[]; counts: SandboxView["counts"]; statement: SandboxView["statement"] };
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: "statement", label: "Bank statement" },
   { id: "sms", label: "Bank SMS" },
   { id: "email", label: "Email" },
   { id: "type", label: "Type your own" },
@@ -23,10 +26,10 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 const DEFAULT_SENDER = { sms: "AX-ARCBNK-S", email: "billing@example.com" } as const;
 
-export function SandboxConsole({ asOf, alerts, log, counts }: Props) {
+export function SandboxConsole({ asOf, alerts, log, counts, statement }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(true);
-  const [tab, setTab] = useState<Tab>("sms");
+  const [tab, setTab] = useState<Tab>("statement");
   const [busy, setBusy] = useState<string | null>(null);
   const [results, setResults] = useState<SandboxLogEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +70,21 @@ export function SandboxConsole({ asOf, alerts, log, counts }: Props) {
     return out;
   });
 
+  const loadSample = () => run("Loading a sample statement", async () => [await post("/api/sandbox/statement", { action: "sample" })]);
+  const backToDemo = () => run("Switching back", async () => [await post("/api/sandbox/statement", { action: "clear" })]);
+  const upload = (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > STATEMENT_LIMITS.maxBytes) { setError(`The file is larger than ${STATEMENT_LIMITS.maxBytes / 1024} KB. Export a shorter period, such as 12 months.`); return; }
+    void run("Reading your statement", async () => [await post("/api/sandbox/statement", { action: "upload", name: file.name, csv: await file.text() })]);
+  };
+  function downloadSample() {
+    const csv = statementCsv(generateStatement("sample-download", new Date().toISOString().slice(0, 10)));
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const link = Object.assign(document.createElement("a"), { href: url, download: "paytrace-sample-statement.csv" });
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   const sendTyped = () => run("Your message", async () => [await post("/api/sandbox/message", { channel, sender, text })]);
 
   async function reset() {
@@ -78,19 +96,19 @@ export function SandboxConsole({ asOf, alerts, log, counts }: Props) {
   }
 
   if (!open) {
-    return <button className="sbx-launcher" type="button" onClick={() => setOpen(true)} aria-label="Open the sandbox console">Sandbox console{alerts.length ? <span>{alerts.length}</span> : null}</button>;
+    return <button className="sbx-launcher" type="button" onClick={() => setOpen(true)} aria-label="Open the try-it console">Try it: send a message{alerts.length ? <span>{alerts.length}</span> : null}</button>;
   }
 
   return <aside className="sbx-panel" aria-label="Sandbox console">
     <header className="sbx-head">
       <div>
-        <p className="sbx-eyebrow">SANDBOX · PRIVATE TO YOU · DELETED AFTER 2 HOURS</p>
-        <h2>Send messages, watch Paytrace react</h2>
+        <p className="sbx-eyebrow">TRY IT · PRIVATE TO YOU · DELETED AFTER 2 HOURS</p>
+        <h2>Send a message, watch the demo react</h2>
         <p className="sbx-meta">Sandbox date <b>{asOf}</b> · {counts.accepted} saved · {counts.refused} refused</p>
       </div>
       <div className="sbx-head-actions">
         <button type="button" className="sbx-link" onClick={() => void reset()} disabled={Boolean(busy)}>Reset</button>
-        <button type="button" className="sbx-close" onClick={() => setOpen(false)} aria-label="Hide the sandbox console">×</button>
+        <button type="button" className="sbx-close" onClick={() => setOpen(false)} aria-label="Hide the try-it console">×</button>
       </div>
     </header>
 
@@ -108,6 +126,16 @@ export function SandboxConsole({ asOf, alerts, log, counts }: Props) {
       {error && <p className="sbx-error" role="alert">{error}</p>}
       {results.map(result => <Result key={result.n} entry={result} />)}
 
+      {tab === "statement" && <div className="sbx-list">
+        <p className="sbx-note">Use a bank statement instead of the demo person&apos;s. Paytrace finds the recurring payments and the four warnings in it. It stays in this server&apos;s memory for two hours, only for you, and is never stored.</p>
+        {statement && <div className="sbx-alert sbx-price_notice"><strong>Using: {statement.name}</strong><span>{statement.lines} transactions ({statement.debits} debits), {statement.from} to {statement.to}{statement.skipped ? `, ${statement.skipped} rows skipped` : ""}.</span></div>}
+        <button type="button" className="sbx-item" disabled={Boolean(busy)} onClick={() => void loadSample()}><strong>Load a sample statement</strong><span>12 months: salary, rent, bills, shopping and subscriptions</span></button>
+        <label className="sbx-item sbx-upload"><strong>Upload your statement (CSV)</strong><span>From net banking: download the statement as CSV, or save the Excel file as CSV. Up to {STATEMENT_LIMITS.maxBytes / 1024} KB.</span>
+          <input type="file" accept=".csv,text/csv" disabled={Boolean(busy)} onChange={event => { upload(event.target.files?.[0]); event.target.value = ""; }} />
+        </label>
+        <button type="button" className="sbx-link" onClick={downloadSample}>Download the sample as a CSV file</button>
+        {statement && <button type="button" className="sbx-link" disabled={Boolean(busy)} onClick={() => void backToDemo()}>Back to the demo data</button>}
+      </div>}
       {tab === "sms" && <Templates intro="Real-looking bank SMS from a registered sender. Each one goes through the same checks and AI reader as a real phone." list={SMS_TEMPLATES} onSend={sendTemplate} busy={Boolean(busy)} />}
       {tab === "email" && <Templates intro="Payment emails: price changes, receipts, trials, renewals. A promotion shows what gets ignored." list={EMAIL_TEMPLATES} onSend={sendTemplate} busy={Boolean(busy)} />}
       {tab === "type" && <form className="sbx-type" onSubmit={event => { event.preventDefault(); void sendTyped(); }}>
@@ -143,7 +171,7 @@ function Result({ entry, compact = false }: { entry: SandboxLogEntry; compact?: 
   const held = entry.channel === "phone" ? entry.accepted : true;
   const tone = entry.channel === "phone" ? (held ? "ok" : "bad") : entry.accepted ? "ok" : "refused";
   return <details className={`sbx-result sbx-${tone}`} open={!compact}>
-    <summary><b>#{entry.n}</b> {entry.summary}<small>{entry.channel === "phone" ? "signed request" : `${entry.channel.toUpperCase()} · ${entry.sender}`}</small></summary>
+    <summary><b>#{entry.n}</b> {entry.summary}<small>{entry.channel === "phone" ? "signed request" : entry.channel === "statement" ? "bank statement" : `${entry.channel.toUpperCase()} · ${entry.sender}`}</small></summary>
     <p className="sbx-preview">{entry.preview}</p>
     <ol>{entry.steps.map((step, i) => <li key={i} className={step.ok ? "pass" : "fail"}><b>{step.ok ? "✓" : "✕"} {step.name}</b> {step.detail}</li>)}</ol>
   </details>;

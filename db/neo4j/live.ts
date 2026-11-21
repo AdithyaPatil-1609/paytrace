@@ -127,13 +127,15 @@ export const LIVE_QUERIES = {
 export async function readLiveDashboard(profile: string, options: { withDetected?: boolean } = {}) {
   const session = getNeo4jDriver().session({ database: neo4jDatabase });
   try {
-    const { payments, events, revision, checks } = await session.executeRead(async tx => {
+    const { payments, events: allEvents, revision, checks } = await session.executeRead(async tx => {
       const payments = await tx.run(LIVE_QUERIES.payments, { profile });
       const events = await tx.run(LIVE_QUERIES.events, { profile });
       const version = await tx.run("MATCH (u:LiveProfile {id:$profile}) RETURN u.revision AS revision", { profile });
       const checks = await tx.run(CHECKS_QUERY, { profile });
       return { payments: payments.records.map(r => r.get("item")), events: events.records.map(r => r.get("item")), revision: Number(version.records[0]?.get("revision") ?? 0), checks: checks.records.map(toCheck) };
     });
+    // Bank statement lines are payments, not messages: they feed the payments, never the notice list.
+    const events = allEvents.filter(e => e.source !== "statement");
     const dictionary = readDictionary();
     const asOf = new Date().toISOString().slice(0, 10);
     const statement: StatementRow[] = payments.filter(p => p.date <= asOf).map(p => ({ txnId: p.id, persona: profile, date: p.date, accountId: p.accountHint || "unidentified", accountType: "unknown", narration: p.merchant, debit: Number(p.amountPaise)/100, reference: p.reference ?? "", channel: p.sources.join("+"), txnKind: "debit_purchase" }));
@@ -186,7 +188,7 @@ export async function readLiveDashboard(profile: string, options: { withDetected
     const { commitments, everyday } = splitByChecks(detected, checks);
     const everydaySpending = everyday.map(({ item, kind, model }) => ({ id: item.id, merchant: item.merchant, rawNarration: item.rawNarration, kind, model, debitCount: item.debitCount, amount: item.amount, amountPattern: item.amountPattern, lastCharge: item.lastCharge, spentToDate: item.spentToDate }));
     const recurringChecksPending = needsCheck(detected, checks).length;
-    const summary = { revision, asOf, counts: { payments: paidRows, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, review:events.filter(e=>e.status==="review").length }, commitments, everydaySpending, recurringChecksPending, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, scheduledDebits, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
+    const summary = { revision, asOf, counts: { payments: paidRows, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, statement:allEvents.filter(e=>e.source==="statement").length, review:allEvents.filter(e=>e.status==="review").length }, commitments, everydaySpending, recurringChecksPending, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, scheduledDebits, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
     return { dataset, summary, ...(options.withDetected ? { detected: detected as Commitment[], checks: checks as StoredCheck[] } : {}) };
   } finally { await session.close(); }
 }

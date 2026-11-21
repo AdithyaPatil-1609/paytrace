@@ -1,34 +1,48 @@
 /**
- * The public landing page: what Paytrace does, how it works, and how data is
- * protected. Its only actions are "Sign in" and "Try the demo".
+ * The public landing page: the PayTrace logo, a short brief on the product,
+ * and two ways in: "Sign in / Sign up" (the authentication page) or the demo.
  */
 import { PayTraceLogo } from "@/components/paytrace-logo";
 import Link from "next/link";
 
+/** Adhyay's authentication page. Change only this if its route moves. */
+const AUTH_PATH = "/signin";
+const DEMO_PATH = "/demo";
+
+const finds = [
+  "Price hikes on plans you already pay for",
+  "Subscriptions you no longer use",
+  "Debits due in the next few days",
+  "Charges that continue after you cancel"
+];
+
 const steps = [
-  { title: "Connect", text: "Sign in with Google. Link Gmail (read-only) and the Paytrace phone app, only if you choose to." },
+  { title: "Connect", text: "Sign in with Google. Link Gmail (read-only) and the PayTrace phone app, or import a bank statement (PDF or CSV). Each one is your choice." },
   { title: "Read", text: "An AI model running on our own machine reads each bank SMS and payment email, and every value is checked against the original text." },
-  { title: "Act", text: "See price changes, unused services, upcoming debits and charges after cancelling, with the evidence and the right way to stop each one." }
+  { title: "Act", text: "See every auto debit in one place, with the evidence behind each warning and the right way to stop it." }
 ];
 
 export function Landing() {
   return <main className="account-shell login-ledger">
     <header className="account-header">
-      <Link className="wordmark" href="/"><PayTraceLogo /></Link>
+      <Link className="wordmark" href="/" aria-label="PayTrace home"><PayTraceLogo /></Link>
       <div>PAYMENTS · INSIGHTS · CONTROL</div>
-      <Link href="/signin">Sign in →</Link>
+      <Link href={AUTH_PATH}>Sign in / Sign up →</Link>
     </header>
     <section className="account-welcome">
       <div className="login-intro">
+        <div className="landing-logo"><PayTraceLogo large /></div>
         <p className="account-eyebrow">THE AUTO DEBITS NOBODY CAN FIND</p>
         <h1>Find every recurring payment, and stop the ones you don&apos;t want.</h1>
-        <p>UPI AutoPay, card mandates, eNACH and app-store plans, explained in plain words, with the proof behind every warning.</p>
+        <p>PayTrace reads your bank SMS, payment emails and bank statements, and builds one clear picture of UPI AutoPay, card mandates, eNACH and app-store plans, explained in plain words.</p>
+        <ul className="landing-finds">
+          {finds.map((item) => <li key={item}>{item}</li>)}
+        </ul>
         <div className="landing-actions">
-          <Link className="account-button primary" href="/signin">Sign in</Link>
-          <Link className="account-button demo-button" href="/demo">Try the demo <span aria-hidden="true">→</span></Link>
-          <Link className="account-button demo-button" href="/sandbox">Open the sandbox <span aria-hidden="true">→</span></Link>
+          <Link className="account-button primary" href={AUTH_PATH}>Sign in / Sign up</Link>
+          <Link className="account-button demo-button" href={DEMO_PATH}>Try the demo <span aria-hidden="true">→</span></Link>
         </div>
-        <p className="login-footnote landing-note">Gmail sign-in is open only to approved test accounts while Google reviews the app. Evaluators: use the demo, or the sandbox to send your own SMS and emails. Neither needs a sign-in.</p>
+        <p className="login-footnote landing-note">The demo needs no account. It runs on sample data, and you can load a sample bank statement or send your own test SMS and emails.</p>
       </div>
       <div className="login-options">
         <p className="account-eyebrow">HOW IT WORKS</p>

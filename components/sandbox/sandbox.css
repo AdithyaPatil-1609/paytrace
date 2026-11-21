@@ -47,3 +47,5 @@
 .sbx-primary { background: var(--ink); color: white; border: 0; border-radius: 8px; padding: 11px 14px; font: 600 14px var(--sans); cursor: pointer; }
 .sbx-primary:disabled { opacity: .55; cursor: wait; }
 @media (min-width: 1100px) { body:has(.sbx-panel) .paytrace-shell { margin-left: 440px; } }
+.sbx-upload { cursor: pointer; }
+.sbx-upload input[type="file"] { margin-top: 8px; font: 12.5px var(--sans); }

@@ -1,14 +1,15 @@
 /**
- * POST /api/assistant  { message, scope: "demo" | "account" }
+ * POST /api/assistant  { message, scope: "demo" | "account", useAura?: boolean }
  * One chat turn. The account scope reads the signed-in person's own payments;
  * the demo scope reads the same synthetic data as the public dashboard.
- * Models run on this machine only (lib/assistant/models.ts).
+ * Personal answers run locally. Opted-in generic guidance can use Aura.
  */
 import { NextRequest } from "next/server";
 import { accountForSession } from "@/db/neo4j/accounts";
 import { readLiveDashboard } from "@/db/neo4j/live";
 import { SESSION } from "@/lib/accounts/security";
 import { ask, MAX_MESSAGE, parseRouted } from "@/lib/assistant/assistant";
+import { askAuraGuidance } from "@/lib/assistant/aura";
 import { watchItems, type WatchItem } from "@/lib/assistant/watchlist";
 import { demoCommitments } from "@/lib/data/load-demo";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
   const read = await readJsonBody(request, BROWSER_BODY_LIMITS.assistantBytes);
   if (!read.ok) return Response.json({ error: read.status === 413 ? "Message too large." : "Send JSON with a message." }, { status: read.status, headers });
   if (!read.value || typeof read.value !== "object") return Response.json({ error: "Send JSON with a message." }, { status: 400, headers });
-  const body = read.value as { message?: unknown; scope?: unknown; context?: unknown };
+  const body = read.value as { message?: unknown; scope?: unknown; context?: unknown; useAura?: unknown };
   // The previous answer's subject, echoed back by the panel. Checked like a model reply.
   const context = body.context && typeof body.context === "object" ? parseRouted(JSON.stringify(body.context)) : null;
   const message = typeof body.message === "string" ? body.message.trim() : "";
@@ -73,6 +74,12 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Payment data is unavailable right now." }, { status: 503, headers });
   }
 
-  const reply = await inTurn(() => ask(message, data.items, data.asOf, { watch: data.watch, context, demo: body.scope !== "account" }));
+  const reply = await inTurn(async () => {
+    if (body.scope === "account" && body.useAura === true) {
+      const guidance = await askAuraGuidance(message);
+      if (guidance) return guidance;
+    }
+    return ask(message, data.items, data.asOf, { watch: data.watch, context, demo: body.scope !== "account" });
+  });
   return Response.json(reply, { headers });
 }

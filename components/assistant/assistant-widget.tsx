@@ -3,7 +3,7 @@
 /**
  * The Paytrace assistant: a button in the bottom-right corner that opens a
  * small chat panel. Questions go to /api/assistant, which runs the local Qwen
- * models; this component only shows the conversation.
+ * models and optionally retrieves shared graph guidance from Aura Agent.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -17,7 +17,7 @@ type Reply = {
 
 type Message = { id: number; from: "you" | "assistant"; text: string; reply?: Reply; failed?: boolean };
 
-type Status = { chat: boolean; alerts: boolean; chatModel: string; alertModel: string } | null;
+type Status = { chat: boolean; alerts: boolean; chatModel: string; alertModel: string; aura: boolean } | null;
 
 const SUGGESTIONS = [
   "How much will go out next month?",
@@ -34,6 +34,8 @@ export function AssistantWidget({ scope, onOpen }: { scope: "demo" | "demo-stati
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status>(null);
+  const [useAura, setUseAura] = useState(false);
+  const auraAvailable = scope === "account" && status?.aura === true;
   const nextId = useRef(1);
   // What the last answer was about, so a follow-up like "that's wrong" can be answered.
   const context = useRef<unknown>(null);
@@ -85,7 +87,7 @@ export function AssistantWidget({ scope, onOpen }: { scope: "demo" | "demo-stati
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, scope, ...(context.current ? { context: context.current } : {}) })
+        body: JSON.stringify({ message, scope, useAura: auraAvailable && useAura, ...(context.current ? { context: context.current } : {}) })
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body?.error ?? "The assistant could not answer.");
@@ -126,10 +128,10 @@ export function AssistantWidget({ scope, onOpen }: { scope: "demo" | "demo-stati
               <div className="assistant-intro">
                 <p>
                   Ask about your recurring payments, or paste a bank SMS to read it. Answers come only from your
-                  payment records, and nothing leaves this computer.
+                  payment records. Your personal records and messages are processed locally.
                 </p>
                 <div className="assistant-suggestions">
-                  {SUGGESTIONS.map((suggestion) => (
+                  {(auraAvailable ? [...SUGGESTIONS, "How do I cancel Spotify Premium?", "How do I revoke UPI AutoPay?"] : SUGGESTIONS).map((suggestion) => (
                     <button key={suggestion} onClick={() => void send(suggestion)} disabled={busy}>
                       {suggestion}
                     </button>
@@ -156,7 +158,7 @@ export function AssistantWidget({ scope, onOpen }: { scope: "demo" | "demo-stati
                   </div>
                 )}
                 {message.reply && (
-                  <small>{message.reply.model ? `Worded by ${message.reply.model}` : "Fixed reply, no model wording"}</small>
+                  <small>{message.reply.model === "Neo4j Aura Agent" ? "Neo4j Aura Agent · shared knowledge graph" : message.reply.model ? `Worded by ${message.reply.model}` : "Fixed reply, no model wording"}</small>
                 )}
               </div>
             ))}
@@ -170,6 +172,12 @@ export function AssistantWidget({ scope, onOpen }: { scope: "demo" | "demo-stati
             )}
           </div>
 
+          {auraAvailable && (
+            <label className="assistant-note">
+              <input type="checkbox" checked={useAura} disabled={busy} onChange={(event) => setUseAura(event.target.checked)} />{" "}
+              Use Neo4j Aura Agent for general cancellation guidance (only catalog names are sent; no personal records).
+            </label>
+          )}
           <form
             className="assistant-form"
             onSubmit={(event) => {

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" }
 };
 
-const UPDATED = "21 November 2026";
+const UPDATED = "22 November 2026";
 
 export default function PrivacyPage() {
   return (
@@ -74,6 +74,13 @@ export default function PrivacyPage() {
       <p>
         Payment fields are extracted by rules and by an AI model that runs on Paytrace&apos;s own computer.
         Your messages are not sent to any outside AI service.
+      </p>
+
+      <p>
+        Ask Paytrace optionally offers general cancellation and billing guidance from Neo4j Aura Agent. If you opt in,
+        only a standard question containing a recognized name from our shared merchant or payment-method catalog is sent
+        to Neo4j. Your original question, email, SMS, account identifier, and payment records are not sent. You can leave
+        this option off and continue using the local assistant. Shared catalog guidance does not verify your own billing arrangement.
       </p>
 
       <h2>5. Google user data: Limited Use</h2>
