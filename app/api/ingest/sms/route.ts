@@ -10,6 +10,7 @@ import { after } from "next/server";
 import { ingestLiveEvent } from "@/db/neo4j/live";
 import { deviceById, markDeviceSeen } from "@/db/neo4j/devices";
 import { identifySmsSender } from "@/lib/ingestion/device-auth";
+import { smsProvenance } from "@/lib/ingestion/trust";
 import { checkSmsBody, processSmsWithRetry } from "@/lib/ingestion/sms-message";
 import { SMS_INGEST_LIMITS } from "@/lib/payments/rules";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
@@ -62,7 +63,9 @@ export async function POST(request: Request) {
   console.info("ingest/sms: accepted, reading in the background");
   afterResponse(async () => {
     if (deviceId) await markDeviceSeen(deviceId).catch(() => undefined);
-    await processSmsWithRetry(profile, checked.message, { store: ingestLiveEvent });
+    // Trust follows how the request was authenticated, decided here on the server.
+    const provenance = smsProvenance(deviceId ? "signed_device" : "legacy_code");
+    await processSmsWithRetry(profile, checked.message, { store: (owner, event) => ingestLiveEvent(owner, event, undefined, provenance) });
   });
   return Response.json({ ok: true, accepted: true }, { status: 202, headers: { "Cache-Control": "no-store" } });
 }

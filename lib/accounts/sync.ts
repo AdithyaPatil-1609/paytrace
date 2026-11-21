@@ -9,6 +9,7 @@ import { exchangeToken, GoogleTokenError } from "./google";
 import { AccountError, type AccountErrorCode } from "./errors";
 import { GMAIL_SYNC_LIMITS } from "@/lib/payments/rules";
 import { senderAuthentication } from "@/lib/ingestion/dkim";
+import { emailProvenance } from "@/lib/ingestion/trust";
 
 type Part = { mimeType?:string; filename?:string; headers?:{name:string;value:string}[]; body?:{data?:string}; parts?:Part[] };
 function htmlReceiptText(html:string) {
@@ -162,7 +163,8 @@ export async function syncAccount(sub: string, history=false,historyDays:90|365=
         const payload=mail.payload;
         const header=(name:string)=>payload.headers?.find(h=>h.name.toLowerCase()===name)?.value??"";
         // An email Gmail says the From domain did not send (DKIM/DMARC) is never read for payments.
-        if(senderAuthentication(payload.headers,header("from"))==="fail"){skipped++;senderSkipped++;continue;}
+        const senderCheck=senderAuthentication(payload.headers,header("from"));
+        if(senderCheck==="fail"){skipped++;senderSkipped++;continue;}
         const date=timestamp.toISOString().slice(0,10),subject=header("subject");
         let {event,reason}=parseGmailReceipt({id,from:header("from"),subject,payload,labelIds:mail.labelIds,date},domains);
         if(semanticBudget>0&&!mail.labelIds?.includes("CATEGORY_PROMOTIONS")&&["subscription","unsupported","parsed"].includes(reason)&&(!event||event.kind==="subscription_candidate"&&event.planPricePaise===undefined)){
@@ -185,7 +187,7 @@ export async function syncAccount(sub: string, history=false,historyDays:90|365=
         if(event.kind==="subscription_renewal")renewals++;
         if(event.kind==="subscription_candidate")candidates++;
         stage="neo4j";
-        const result=await ingestLiveEvent(grant.profile,event,accessGrant);
+        const result=await ingestLiveEvent(grant.profile,event,accessGrant,emailProvenance(senderCheck));
         if (result.status!=="duplicate") accepted++; else duplicates++;
       }
       if(rejected.length){stage="neo4j";ignored+=await ignoreSubscriptionCandidates(grant.profile,rejected,accessGrant);}
