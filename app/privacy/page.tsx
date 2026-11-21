@@ -109,6 +109,10 @@ export default function PrivacyPage() {
         Paytrace uses only the cookies needed to keep you signed in and to protect sign-in from forgery. There
         are no advertising or tracking cookies.
       </p>
+      <p>
+        You are signed out 12 hours after you sign in, or after 30 minutes without using Paytrace, whichever
+        comes first. After that you sign in with Google again.
+      </p>
 
       <h2>8. Your choices</h2>
       <ul>
