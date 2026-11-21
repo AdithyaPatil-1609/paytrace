@@ -5,7 +5,7 @@
  * selected payment's price history and evidence path. On narrow screens the
  * panel is hidden and a row opens the full drawer instead.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { warningLabel } from "@/components/chrome/warning-tag";
 import { PriceHistory, ProofChain } from "@/components/detail/price-and-proof";
 import { issueItems } from "@/lib/payments/analysis";
@@ -52,7 +52,8 @@ export function AllPaymentsScreen({
   onOpen,
   asOf,
   live = false,
-  personal = false
+  personal = false,
+  subscriptionNotices
 }: {
   items: Commitment[];
   total: number;
@@ -65,6 +66,7 @@ export function AllPaymentsScreen({
   /** The records come from Neo4j, so the evidence path can say so. */
   live?: boolean;
   personal?: boolean;
+  subscriptionNotices?: ReactNode;
 }) {
   // The same test the Issues screen uses, so both screens always agree.
   const flagged = new Set(issueItems(items, kept).map((item) => item.id));
@@ -95,6 +97,8 @@ export function AllPaymentsScreen({
           </p>
         </header>
 
+        {subscriptionNotices}
+
         <PaymentRadar items={items} flagged={flagged} asOf={asOf} onOpen={pick} />
 
         <section className="ledger-table" aria-label="Every repeating payment">
@@ -107,8 +111,7 @@ export function AllPaymentsScreen({
 
           {personal && items.length === 0 && (
             <p className="personal-empty">
-              No recurring payments detected yet. Connect Gmail and import more payment history to discover recurring
-              charges.
+              No recurring payments detected yet from completed debits. Check the subscription watchlist for reported renewals, or import more payment history.
             </p>
           )}
 

@@ -84,3 +84,21 @@ test("live summary is never public",async()=>{
   delete process.env.PAYTRACE_LIVE_ENABLED;
   assert.equal((await GET(new Request("http://localhost/api/live/summary",{headers:{"x-paytrace-read":"secret-test-code"}}))).status,503);
 });
+
+test("automatic renewal notices import explicit terms without recording a debit",()=>{
+  const mail={id:"renewal123",from:"Apple <billing@example.com>",subject:"Your Subscription Renewal",date:"2026-11-19",body:"iCloud+\niCloud+ with 2 TB of storage (1 month)\n₹749.00/month\nDear User,\nWe hope you are enjoying your subscription, which will renew soon.\nStarting from 20 November 2026, your subscription automatically renews for ₹749.00/month. To avoid being charged, you must cancel at least one day before each renewal date."};
+  const event=parseFinancialEmail(mail,[".com",".in"]);
+  assert.equal(event?.kind,"subscription_renewal");
+  assert.equal(event?.merchant,"ICLOUD+");
+  assert.equal(event?.amountPaise,74900);
+  assert.equal(event?.renewalDate,"2026-11-20");
+  assert.equal(event?.renewalFrequency,"monthly");
+  const annual=parseFinancialEmail({...mail,from:"billing@example.in",body:"Service: Example Cloud\nYour subscription will renew on Nov 30, 2026 for INR 1,200/year."},[".in"]);
+  assert.equal(annual?.merchant,"EXAMPLE CLOUD");
+  assert.equal(annual?.renewalFrequency,"annual");
+  assert.equal(annual?.amountPaise,120000);
+  for (const body of [mail.body+"\nYour OTP is 123456",mail.body.replace("20 November 2026","31 November 2026"),mail.body.replace("automatically renews for ₹749.00","automatically renews for ₹899.00"),mail.body+"\nYour subscription has been cancelled",mail.body.replaceAll("₹749.00/month","USD 749.00/month"),"Subscribe now! Plan: Example\n₹749/month"]){
+    assert.equal(parseFinancialEmail({...mail,body},[".com"]),null,body);
+  }
+  assert.throws(()=>validateEvent({...event,renewalFrequency:"unknown"}));
+});

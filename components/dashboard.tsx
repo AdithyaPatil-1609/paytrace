@@ -145,6 +145,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
               live={source.kind === "neo4j"}
               asOf={dataset.asOf}
               personal={Boolean(account)}
+              subscriptionNotices={account?.subscriptionAlerts}
             />{account?.activity}</>
           )}
           {screen === "issues" && (

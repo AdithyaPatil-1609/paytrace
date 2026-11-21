@@ -11,13 +11,20 @@ export function renewalNotice(renewalDate: string | undefined, asOf: string) {
   return `Reported renewal · ${formatDate(renewalDate)} · charge not confirmed`;
 }
 
-export function SubscriptionWatchlist({registrations,asOf,showEmpty=false}: {registrations:NotificationRow[];asOf:string;showEmpty?:boolean}) {
-  if (!registrations.length && !showEmpty) return null;
+export function SubscriptionWatchlist({registrations,renewals=[],asOf,showEmpty=false}: {registrations:NotificationRow[];renewals?:NotificationRow[];asOf:string;showEmpty?:boolean}) {
+  if (!registrations.length && !renewals.length && !showEmpty) return null;
+  const periods={weekly:52,monthly:12,quarterly:4,annual:1};
   return <details className="personal-activity" open>
-    <summary>Subscription watchlist <small>{registrations.length} zero-cost registrations</small></summary>
-    <p>Detected from subscription confirmations. These are not completed debits or guaranteed future charges. Review renewal terms with the provider.</p>
-    {!registrations.length&&<p>No zero-cost subscriptions have been recognized yet. Use Rescan last 90 days in your account menu to check older confirmations.</p>}
+    <summary>Subscription watchlist <small>{renewals.length} renewal notices · {registrations.length} zero-cost registrations</small></summary>
+    <p>Detected from subscription confirmations and renewal notices. These are not completed debits or guaranteed future charges. Review renewal terms with the provider.</p>
+    {!registrations.length&&!renewals.length&&<p>No subscription notices have been recognized yet. Use Rescan last 90 days in your account menu to check older confirmations.</p>}
     <div className="account-table">
+      {renewals.map(item=><div key={item.noticeId}>
+        <span><strong>{item.brand}</strong><small>EMAIL · Automatic renewal notice · {formatDate(item.sentOn)}</small>
+          <small>{item.renewalFrequency??"Frequency unknown"} · {renewalNotice(item.renewalDate,asOf)}</small>
+          {item.amount!==undefined&&item.renewalFrequency&&<small>Projected annual cost if renewed: {money.format(item.amount*periods[item.renewalFrequency])}</small>}
+        </span><strong>{item.amount===undefined?"Amount unknown":money.format(item.amount)} scheduled</strong>
+      </div>)}
       {registrations.map(item=><div key={item.noticeId}>
         <span><strong>{item.brand}</strong><small>EMAIL · Zero-cost subscription · {formatDate(item.sentOn)}</small>
           <small>{item.planPrice===undefined?"Listed plan price unknown":`Listed plan price: ${money.format(item.planPrice)}`}</small>

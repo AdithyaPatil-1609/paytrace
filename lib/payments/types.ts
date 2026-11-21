@@ -100,6 +100,7 @@ export type NotificationRow = {
   amount?: number;
   planPrice?: number;
   renewalDate?: string;
+  renewalFrequency?: Exclude<Cadence, "irregular">;
   text: string;
 };
 

@@ -144,6 +144,18 @@ test("subscription watchlist shows actual zero cost and never invents a renewal 
   assert.doesNotMatch(renewalNotice("2027-01-22","2026-11-19"),/Upcoming/);
 });
 
+test("HTML renewal notices are visible as scheduled cost, never paid",()=>{
+  const html="<div>iCloud+</div><div>iCloud+ with 2 TB of storage (1 month)</div><div>&#8377;749.00/month</div><p>Starting from 20 November 2026, your subscription automatically renews for &#8377;749.00/month.</p>";
+  const event=parseGmailReceipt({id:"icloud123",from:"Apple <billing@example.com>",subject:"Your Subscription Renewal",date:"2026-11-19",payload:{mimeType:"text/html",body:{data:Buffer.from(html).toString("base64url")}}},[".com"]).event;
+  assert.equal(event?.kind,"subscription_renewal");
+  assert.equal(event?.merchant,"ICLOUD+");
+  const view=renderToStaticMarkup(createElement(SubscriptionWatchlist,{asOf:"2026-11-21",registrations:[],renewals:[{noticeId:"renewal",sentOn:"2026-11-19",channel:"email",sender:"email",eventType:"subscription_renewal",brand:"ICLOUD+",amount:749,renewalDate:"2026-11-20",renewalFrequency:"monthly",text:"Renewal"}]}));
+  assert.ok(view.includes("₹749.00 scheduled"));
+  assert.ok(view.includes("₹8,988.00"));
+  assert.ok(view.includes("has passed"));
+  assert.ok(!view.includes("₹749.00 paid"));
+});
+
 test("signed-in dashboard retains all original tabs without demo payments",()=>{
   const html=renderToStaticMarkup(createElement(AccountDashboard,{name:"Example User",email:"user@example.com",linked:false,lastSync:null,asOf:"2026-11-16"}));
   for(const tab of ["All payments","Issues","Cancel paths","Annual","Evidence graph"]) assert.ok(html.includes(tab),tab);

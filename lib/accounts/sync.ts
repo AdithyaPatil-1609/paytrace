@@ -41,7 +41,7 @@ export function parseGmailReceipt(input:{id:string;from:string;subject:string;da
   if(registration&&messageText.some(hasNonzeroReportedTotal))return {event:null,reason:"unsupported"};
   const event=registration??safe[0]??null;
   // Conflicting parsed representations are ambiguous, not two payments.
-  if(event&&safe.some(other=>other.kind!==event.kind||other.amountPaise!==event.amountPaise||other.merchant!==event.merchant))return {event:null,reason:"unsupported"};
+  if(event&&safe.some(other=>other.kind!==event.kind||other.amountPaise!==event.amountPaise||other.merchant!==event.merchant||(event.kind==="subscription_renewal"&&(other.renewalDate!==event.renewalDate||other.renewalFrequency!==event.renewalFrequency))))return {event:null,reason:"unsupported"};
   return {event,reason:event?"parsed":messageText.some(text=>/\b(?:subscription|free trial|your new plan)\b/i.test(text))?"subscription":"unsupported"};
 }
 
@@ -89,7 +89,7 @@ export async function syncAccount(sub: string, history=false) {
     if (!access) throw new Error("Missing access token");
     const after=grant.lastSync&&!history?`after:${Math.floor((Date.parse(grant.lastSync)-2*86400000)/1000)}`:"newer_than:90d";
     const query=gmailPaymentQuery(after,domains,process.env.GMAIL_ACCOUNT_QUERY);
-    let accepted=0,skipped=0,scanned=0,duplicates=0,registrations=0,subscriptionSkipped=0,senderSkipped=0,page:string|undefined;
+    let accepted=0,skipped=0,scanned=0,duplicates=0,registrations=0,renewals=0,subscriptionSkipped=0,senderSkipped=0,page:string|undefined;
     do {
       stage="neo4j"; await renewSyncLease(grant.sub,grant.lease); stage="google";
       const params=new URLSearchParams({q:query,maxResults:"100",...(page?{pageToken:page}:{})});
@@ -107,6 +107,7 @@ export async function syncAccount(sub: string, history=false) {
         const {event,reason}=parseGmailReceipt({id,from:header("from"),subject:header("subject"),payload,date:timestamp.toISOString().slice(0,10)},domains);
         if (!event) { skipped++; if(reason==="subscription")subscriptionSkipped++; if(reason==="sender")senderSkipped++; continue; }
         if(event.kind==="subscription_registered")registrations++;
+        if(event.kind==="subscription_renewal")renewals++;
         stage="neo4j";
         const result=await ingestLiveEvent(grant.profile,event,{sub:grant.sub,grantId:grant.grantId,lease:grant.lease});
         if (result.status!=="duplicate") accepted++; else duplicates++;
@@ -114,7 +115,7 @@ export async function syncAccount(sub: string, history=false) {
       page=list.nextPageToken;
     } while (page);
     state="ready";
-    return {status:"ready",accepted,skipped,scanned,duplicates,registrations,subscriptionSkipped,senderSkipped};
+    return {status:"ready",accepted,skipped,scanned,duplicates,registrations,renewals,subscriptionSkipped,senderSkipped};
   } catch (error) {
     errorCode=syncFailureCode(error,stage);
     if (errorCode==="gmail-reconnect") state="reauthorize";

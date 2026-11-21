@@ -64,13 +64,13 @@ export async function ingestLiveEvent(profile: string, event: PaymentEvent, gran
         MERGE (m:LiveMerchant {id:$merchantId}) SET m.name=$merchant, m.key=$key
         CREATE (e:LiveEvent {id:$id, source:$source, kind:$kind, merchant:$merchant, amountPaise:$amount,
           date:$date, reference:$reference, paymentId:$paymentId, status:$status, receivedAt:datetime(), accountHint:$account,
-          planPricePaise:$planPrice, renewalDate:$renewalDate})
+          planPricePaise:$planPrice, renewalDate:$renewalDate, renewalFrequency:$renewalFrequency})
         MERGE (u)-[:RECEIVED]->(e) MERGE (e)-[:ABOUT]->(m)
         WITH e,m OPTIONAL MATCH (p:LivePayment {id:$paymentId})
         FOREACH (_ IN CASE WHEN p IS NULL THEN [] ELSE [1] END | MERGE (p)-[:EVIDENCED_BY]->(e) MERGE (p)-[:PAID_TO]->(m))
         WITH e UNWIND $candidates AS candidate
         MATCH (c:LivePayment {id:candidate}) MERGE (e)-[:POSSIBLE_MATCH]->(c)`, {
-        profile, merchantId, key, id, source: event.source, kind: event.kind, merchant: event.merchant, amount: event.amountPaise, date: event.date, reference: event.reference, paymentId: result.id, status: result.status, account: event.accountHint ?? null, candidates: result.candidates, planPrice:event.planPricePaise??null, renewalDate:event.renewalDate??null
+        profile, merchantId, key, id, source: event.source, kind: event.kind, merchant: event.merchant, amount: event.amountPaise, date: event.date, reference: event.reference, paymentId: result.id, status: result.status, account: event.accountHint ?? null, candidates: result.candidates, planPrice:event.planPricePaise??null, renewalDate:event.renewalDate??null, renewalFrequency:event.renewalFrequency??null
       });
       return { eventId: id, status: result.status, paymentId: result.id };
     });
@@ -98,11 +98,17 @@ export async function readLiveDashboard(profile: string) {
     const dictionary = readDictionary();
     const asOf = new Date().toISOString().slice(0, 10);
     const statement: StatementRow[] = payments.filter(p => p.date <= asOf).map(p => ({ txnId: p.id, persona: profile, date: p.date, accountId: p.accountHint || "unidentified", accountType: "unknown", narration: p.merchant, debit: Number(p.amountPaise)/100, reference: p.reference ?? "", channel: p.sources.join("+"), txnKind: "debit_purchase" }));
-    const notifications: NotificationRow[] = events.map(e => ({ noticeId: e.id, sentOn: e.date, channel: e.source, sender: e.source, eventType: e.kind, brand: matchDictionary(e.merchant, dictionary)?.brand ?? e.merchant, relatedTxnId: e.paymentId ?? undefined, amount: e.amountPaise == null ? undefined : Number(e.amountPaise)/100, text: `${e.kind.replaceAll("_", " ")} · ${e.merchant}`, ...(e.planPricePaise==null?{}:{planPrice:Number(e.planPricePaise)/100}), ...(e.renewalDate==null?{}:{renewalDate:e.renewalDate as string}) }));
+    const notifications: NotificationRow[] = events.map(e => ({ noticeId: e.id, sentOn: e.date, channel: e.source, sender: e.source, eventType: e.kind, brand: matchDictionary(e.merchant, dictionary)?.brand ?? e.merchant, relatedTxnId: e.paymentId ?? undefined, amount: e.amountPaise == null ? undefined : Number(e.amountPaise)/100, text: `${e.kind.replaceAll("_", " ")} · ${e.merchant}`, ...(e.planPricePaise==null?{}:{planPrice:Number(e.planPricePaise)/100}), ...(e.renewalDate==null?{}:{renewalDate:e.renewalDate as string}), ...(e.renewalFrequency==null?{}:{renewalFrequency:e.renewalFrequency}) }));
     // Keep registrations available even when older than the recent event feed.
     const subscriptionRegistrations: NotificationRow[] = [];
+    const subscriptionRenewals: NotificationRow[] = [];
     const seenOrders = new Set<string>();
+    const seenRenewals = new Set<string>();
     events.forEach((e,i) => {
+      if(e.kind === "subscription_renewal" && e.date <= asOf) {
+        const key=JSON.stringify([e.merchant,e.renewalDate,Number(e.amountPaise),e.renewalFrequency]);
+        if(!seenRenewals.has(key)) { seenRenewals.add(key); subscriptionRenewals.push(notifications[i]); }
+      }
       if (e.kind !== "subscription_registered" || e.date > asOf) return;
       const key = `${e.merchant}|${e.reference ?? e.id}`;
       if (seenOrders.has(key)) return;
@@ -119,7 +125,7 @@ export async function readLiveDashboard(profile: string) {
     for (const e of lifecycle.values()) if (e.kind === "mandate_created") mandates.push({ mandateId:e.id, createdOn:e.date, mechanism: "none", narration:e.merchant, brand:matchDictionary(e.merchant,dictionary)?.brand ?? e.merchant, maxAmount:Number(e.amountPaise)/100, frequency:"unknown", mandateRef:e.reference ?? "", accountId:e.accountHint ?? "unidentified", status:"active" });
     const dataset: Dataset = { asOf, statement, notifications, mandates, dictionary, usage: [] };
     const commitments = detectCommitments(dataset);
-    const summary = { revision, asOf, counts: { payments: statement.length, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, review:events.filter(e=>e.status==="review").length }, commitments, subscriptionRegistrations, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
+    const summary = { revision, asOf, counts: { payments: statement.length, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, review:events.filter(e=>e.status==="review").length }, commitments, subscriptionRegistrations, subscriptionRenewals, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
     return { dataset, summary };
   } finally { await session.close(); }
 }
