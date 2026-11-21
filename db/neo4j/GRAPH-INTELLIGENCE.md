@@ -97,3 +97,42 @@ MATCH (a:LivePayment)-[n:NEXT]->(b:LivePayment) WHERE b.date < a.date RETURN cou
   ordering, idempotence, decisions, no cross-profile links; trust storage and
   legacy records; repeated Gmail syncs, ambiguous review, real repeats; query
   metadata without private values; route-level profile tampering.
+
+## Family View (Tasks 7-8)
+
+```
+(:PaytraceUser owner)-[:CREATED_INVITE]->(:FamilyInvite {id, hash, scope, createdAt, expiresAt, usedAt})
+(:PaytraceUser viewer)-[:CAN_VIEW {id, scope:'recurring_summary', createdAt, expiresAt}]->(:PaytraceUser owner)
+```
+
+- The owner makes a one-time link at `/family` and sends it themselves; no
+  email is looked up, so nobody can test whether an address has an account.
+  The token sits after `#` (never in server logs) and only its SHA-256 hash is
+  stored. It works once, for 48 hours (`FAMILY_LIMITS` in `rules.ts`).
+- The viewer must be signed in and tick an explicit consent box at
+  `/family/accept`. Only then is `CAN_VIEW` created, in one transaction that
+  locks the invite so two people cannot both use it.
+- `familyAccess()` checks `CAN_VIEW` on every `/api/family/summary` call,
+  with no cache and `no-store` responses. Revoked or expired access gets 404 at
+  once, and the open Family View page clears itself on its next check (every
+  20 seconds and on focus).
+- A viewer sees only an allowlist (`lib/accounts/family.ts`): merchant,
+  product, cadence, amount, yearly cost, next date and totals. Never emails,
+  SMS, statements, account numbers, references, devices or Gmail access, and
+  there is no viewer write route: no sync, cancel, export or delete.
+- The owner revokes under "People with access"; the viewer can "Stop viewing".
+  Deleting an account removes its invites and `CAN_VIEW` in both directions.
+
+```cypher
+// Every grant points from one person to a different person (expect 0)
+MATCH (v:PaytraceUser)-[g:CAN_VIEW]->(o:PaytraceUser) WHERE v = o RETURN count(g) AS selfGrants;
+// No expired grant can still be used (these are pruned when the owner or viewer opens Family access)
+MATCH ()-[g:CAN_VIEW]->() RETURN count(g) AS grants, count(CASE WHEN g.expiresAt <= datetime() THEN 1 END) AS expired;
+// Invites are hashed and owned (expect 0)
+MATCH (i:FamilyInvite) WHERE NOT EXISTS { (:PaytraceUser)-[:CREATED_INVITE]->(i) } OR size(i.hash) <> 64 RETURN count(i) AS bad;
+```
+
+Demo: as person A, open Family access, create a link and copy it. As person B
+(another browser), open the link, sign in, tick the box and accept, then open
+Family View. As A, press Remove access: B's open page shows "Your access has
+ended" within seconds.
