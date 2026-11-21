@@ -9,6 +9,7 @@ import type { SourceInfo } from "@/db/neo4j/dataset";
 import type { Dataset } from "@/lib/payments/types";
 import { formatINR } from "@/lib/presentation/format";
 import { SubscriptionWatchlist } from "@/components/subscription-watchlist";
+import { EverydaySpending } from "@/components/everyday-spending";
 import { accountErrorMessage } from "@/lib/accounts/errors";
 import { IphoneConnect } from "@/components/iphone-connect";
 import { GraphWarningsPanel } from "@/components/graph-warnings";
@@ -102,5 +103,5 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
     {data?.recentEvents.length?<div className="account-table">{data.recentEvents.map(event=><div key={event.noticeId}><span><strong>{event.brand}</strong><small>{event.channel.toUpperCase()} · {event.eventType.replaceAll("_"," ")} · {event.sentOn}</small></span><strong>{event.amount===undefined?(event.planPrice===undefined?"Amount unknown":`${formatINR(event.planPrice)} reported`):formatINR(event.amount)}{["subscription_renewal","debit_scheduled"].includes(event.eventType)?" scheduled":""}</strong></div>)}</div>:<p>No imported financial messages yet.</p>}
   </details>;
 
-  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity,subscriptionAlerts:watchlist,graphWarnings:<GraphWarningsPanel/>}}/>;
+  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity,subscriptionAlerts:<>{watchlist}<EverydaySpending rows={data?.everydaySpending??[]} onChange={()=>void refresh()}/></>,graphWarnings:<GraphWarningsPanel/>}}/>;
 }
