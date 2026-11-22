@@ -20,7 +20,15 @@ export const RULES = {
   monthlyMaxGap: 45,
   quarterlyMaxGap: 135,
   /** Next-charge gap for a row with one debit under a mandate. */
-  defaultGapDays: 30
+  defaultGapDays: 30,
+  /**
+   * A gap close to a whole number of usual gaps is missed records (an email
+   * not synced, an SMS lost), not a slower cadence: 17 Dec to 17 Aug is eight
+   * missed months of a monthly SIP. Close means within this share of the usual gap.
+   */
+  missedCycleTolerance: 0.2,
+  /** Folding missed cycles needs at least this many gaps to know the usual one. */
+  missedCycleMinGaps: 3
 } as const;
 
 /** The same keys with any value, for a test that overrides one threshold. */
@@ -216,4 +224,54 @@ export const SANDBOX_LIMITS = {
   maxBodyBytes: 6 * 1024,
   /** Messages waiting for the AI reader before new ones get "busy". */
   maxWaitingForReader: 4
+} as const;
+
+/** How the assistant treats subscriptions seen only in emails (lib/assistant/watchlist.ts). */
+export const ASSISTANT_WATCH_LIMITS = {
+  /** Days past one full cycle after the last renewal email before a subscription counts as possibly stopped. */
+  graceDays: 10,
+  /** At most this many older, possibly stopped subscriptions are named in an answer. */
+  olderNamed: 5
+} as const;
+
+/** Job 4, everyday spending kept out of the recurring list (lib/payments/recurring-check.ts). */
+export const RECURRING_CHECK_LIMITS = {
+  /** Groups sent to the local model per refresh; the rest wait for the next dashboard load. */
+  perRun: 15
+} as const;
+
+/**
+ * Merchant matching (lib/payments/merchant-match.ts). Scores run from 0 to 1.
+ * A score never merges payments: it only suggests a SIMILAR link that the
+ * person confirms or rejects. Thresholds are checked by tests/merchant-match.test.ts.
+ */
+export const MERCHANT_MATCH = {
+  /** At or above this: a strong candidate ("probably the same merchant"). */
+  strong: 0.9,
+  /** At or above this and below strong: needs the person's review. Below: kept separate. */
+  review: 0.75,
+  /** Two words count as the same word at this similarity (typos), and only when both have this many letters. */
+  fuzzyWord: 0.85,
+  fuzzyWordMinLength: 5,
+  /** The person's own merchants compared at most, newest first, so a long history stays fast. */
+  maxProfileMerchants: 200,
+  /** Bumped when the scoring changes; stored on every SIMILAR link. */
+  algorithmVersion: "merchant-match-v1"
+} as const;
+
+/**
+ * Family View (db/neo4j/family.ts): a read-only share of recurring payments
+ * that the owner starts with a one-time link and can revoke at any time.
+ */
+export const FAMILY_LIMITS = {
+  /** An invite link works once, for this long. */
+  inviteHours: 48,
+  /** Access ends after this many days unless the owner shares again. */
+  grantDays: 90,
+  /** Unused invite links one owner may have open at once. */
+  maxPendingInvites: 5,
+  /** People who may view one owner's payments at once. */
+  maxViewers: 10,
+  /** The Family View screen re-checks access this often, so a revoke shows within seconds. */
+  recheckMs: 20_000
 } as const;

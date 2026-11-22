@@ -1,5 +1,6 @@
 import { ScreenHeader } from "@/components/chrome/screen-header";
 import { WarningIcon } from "@/components/chrome/warning-tag";
+import { cancelDestination, UpiCancelLink } from "@/components/detail/upi-cancel-link";
 import { formatINR } from "@/lib/presentation/format";
 import {
   annualPriceIncrease,
@@ -107,6 +108,7 @@ export function IssuesScreen({
                       </header>
                       <p className="issue-card-explanation">{issueDescription(item, group.id)}</p>
                       <div className="issue-card-actions">
+                        {group.id !== "unknown" && cancelDestination(item) ? <UpiCancelLink item={item} /> : (
                         <button
                           className="issue-card-link"
                           onClick={() =>
@@ -121,7 +123,7 @@ export function IssuesScreen({
                               ? "Identify this payment"
                               : "How to stop it"}{" "}
                           →<span className="issues-sr-only"> {item.merchant}</span>
-                        </button>
+                        </button>)}
                         {challengeChoices(item).available && (
                           <button
                             className="issue-evidence-link"

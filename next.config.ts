@@ -10,16 +10,26 @@ import type { NextConfig } from "next";
  * docs/security/REMEDIATION.md). Every other source is locked to this site.
  * The dev server also needs 'unsafe-eval' for hot reload; production does not.
  */
-function contentSecurityPolicy() {
+/**
+ * The sign-up page alone also allows Google reCAPTCHA and Firebase, which send
+ * and check the phone number's SMS code. Every other page keeps the strict policy.
+ */
+const FIREBASE_PHONE = {
+  script: " https://www.google.com https://www.gstatic.com https://apis.google.com",
+  connect: " https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.google.com",
+  frame: "https://www.google.com https://recaptcha.google.com https://*.firebaseapp.com"
+};
+
+function contentSecurityPolicy(firebasePhone = false) {
   const dev = process.env.NODE_ENV !== "production";
   return [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}${firebasePhone ? FIREBASE_PHONE.script : ""}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: blob:",
-    `connect-src 'self'${dev ? " ws: wss:" : ""}`,
-    "frame-src 'none'",
+    `connect-src 'self'${dev ? " ws: wss:" : ""}${firebasePhone ? FIREBASE_PHONE.connect : ""}`,
+    `frame-src ${firebasePhone ? FIREBASE_PHONE.frame : "'none'"}`,
     "worker-src 'self' blob:",
     "manifest-src 'self'",
     "form-action 'self' https://accounts.google.com",
@@ -58,7 +68,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
-      { source: "/api/:path*", headers: apiHeaders }
+      { source: "/api/:path*", headers: apiHeaders },
+      // Listed last so it replaces the policy above, for /signup only.
+      { source: "/signup", headers: [{ key: "Content-Security-Policy", value: contentSecurityPolicy(true) }] }
     ];
   },
   // Google sign-in accepts one address (PAYTRACE_APP_URL). Send www visitors

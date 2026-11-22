@@ -1,5 +1,5 @@
 import { Landing } from "../components/landing";
-import { SignIn } from "../components/sign-in";
+import { gmailDateFilter, gmailHistoryDays } from "../lib/accounts/gmail-history";
 import { noticeIsError, noticeText } from "../lib/accounts/notices";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -166,6 +166,27 @@ test("HTML renewal notices are visible as scheduled cost, never paid",()=>{
   assert.ok(!view.includes("₹749.00 paid"));
 });
 
+test("two-year Gmail history is explicit; normal sync never silently expands",()=>{
+  assert.equal(gmailDateFilter(true,gmailHistoryDays("730")),"newer_than:730d");
+  assert.equal(gmailDateFilter(false,730),"newer_than:90d");
+  assert.match(gmailDateFilter(false,730,"2026-11-22"),/^after:/);
+  assert.equal(gmailHistoryDays("9999"),365);
+  assert.equal(gmailHistoryDays("90"),90);
+});
+
+test("YouTube Music student welcome records only the explicitly stated monthly schedule",()=>{
+  const body="Welcome to your Music Premium student membership! Your payment method will be charged monthly starting on <b>Nov 5, 2025</b>. You can explore, manage, and cancel your membership any time by visiting YouTube account settings.";
+  const mail={id:"sampleyoutube123",from:"YouTube <noreply-purchases@youtube.com>",subject:"Your Music Premium student membership is good to go!",date:"2025-10-05",payload:{mimeType:"text/html",body:{data:Buffer.from(body).toString("base64url")}}};
+  const {event}=parseGmailReceipt(mail,[".com"]);
+  assert.equal(event?.merchant,"YOUTUBE MUSIC PREMIUM STUDENT");
+  assert.equal(event.kind,"subscription_candidate");
+  assert.equal(event.renewalFrequency,"monthly");
+  assert.equal(event.renewalDate,"2025-11-05");
+  assert.equal(event.amountPaise,null);
+  assert.equal(event.planPricePaise,undefined);
+  assert.notEqual(parseGmailReceipt({...mail,from:"YouTube <billing@example.com>"},[".com"]).event?.merchant,event.merchant);
+});
+
 test("membership confirmation survives missing fields and MIME alternatives",()=>{
   const part=(mimeType:string,body:string)=>({mimeType,body:{data:Buffer.from(body).toString("base64url")}});
   const input={id:"youtube123",from:"YouTube <noreply-purchases@youtube.com>",subject:"Your YouTube Premium student membership is good to go!",date:"2026-10-11",payload:{parts:[part("text/plain","Thanks for joining"),part("text/html","<p>Membership active</p><p>₹89/month</p>")]}};
@@ -219,18 +240,23 @@ test("login offers a no-account static demo even when Google sign-in is unavaila
   assert.ok(dataset.statement.every(row=>row.persona==="priya"));
 });
 
-test("the landing page and the sign-in page are separate, and both offer the demo",()=>{
+test("the landing drawer handles sign-in, errors and offline demo access",()=>{
   const landing=renderToStaticMarkup(createElement(Landing));
   assert.ok(landing.includes('href="/signin"'));
   assert.ok(landing.includes('href="/demo"'));
   assert.ok(!landing.includes("Continue with Google"),"the landing page has no sign-in form");
-  assert.ok(landing.includes("Sign in / Sign up"));
-  const signin=renderToStaticMarkup(createElement(SignIn,{configured:true}));
+  const signin=renderToStaticMarkup(createElement(Landing,{configured:true,initialOpen:true,initialNotice:"Please retry",initialNoticeIsError:true}));
+  assert.ok(signin.includes('role="dialog"'));
+  assert.ok(signin.includes('role="alert"'));
+  assert.ok(signin.includes('Please retry'));
+  // One drawer for both, with no extra link at the top right.
+  assert.ok(signin.includes(">Sign in</button>") && signin.includes(">Sign up</button>"));
+  assert.ok(!landing.includes("landing-signin-link"));
   assert.ok(signin.includes('action="/api/auth/google/start"'));
   assert.ok(signin.includes("Approved test accounts only"));
   assert.ok(signin.includes('href="/demo"'));
   assert.ok(signin.includes('href="/"'));
-  const offline=renderToStaticMarkup(createElement(SignIn,{configured:false}));
+  const offline=renderToStaticMarkup(createElement(Landing,{configured:false,initialOpen:true}));
   assert.ok(!offline.includes("Continue with Google"));
   assert.ok(offline.includes('href="/demo"'));
 });

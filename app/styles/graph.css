@@ -332,3 +332,30 @@
   }
 }
 
+
+/* Personal evidence graph: SIMILAR links, trust levels, the Cypher that ran. */
+.personal-graph { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
+.personal-graph > * { min-width: 0; max-width: 100%; }
+.similar-list, .cypher-records { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
+.similar-link { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper-lift); }
+.similar-link.similar-rejected { opacity: 0.6; }
+.similar-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, 0.8fr) minmax(0, 1fr); align-items: center; gap: 8px; }
+.similar-node { display: grid; padding: 6px 10px; border: 1px solid var(--glass-edge); border-radius: 999px; background: var(--marigold-skin); text-align: center; min-width: 0; overflow-wrap: anywhere; }
+.similar-node small { color: var(--ink-faint); }
+.similar-edge { position: relative; display: grid; justify-items: center; gap: 2px; font-size: 12px; }
+.similar-edge i { display: block; height: 3px; border-radius: 3px; background: var(--marigold); justify-self: start; }
+.similar-confirmed .similar-edge i { background: var(--sage); }
+.similar-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.trust-badge { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 18px; border: 1px solid var(--rule); white-space: nowrap; }
+.trust-verified_origin { background: var(--sage-skin); color: var(--sage); }
+.trust-authenticated_source { background: var(--marigold-skin); color: var(--marigold-deep); }
+.trust-user_provided { background: var(--gold-skin); color: var(--gold-deep); }
+.trust-unverified { background: var(--paper-sink); color: var(--ink-soft); }
+.trust-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.trust-table th, .trust-table td { padding: 6px 8px; border-bottom: 1px solid var(--rule); text-align: left; }
+.cypher-run { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper-lift); }
+.cypher-run summary { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; cursor: pointer; }
+.cypher-run pre { overflow-x: auto; max-width: 100%; font-size: 12px; padding: 8px; background: var(--paper-sink); border-radius: 6px; }
+.cypher-ok { color: var(--sage); }
+.cypher-failed { color: var(--ember); }
+@media (max-width: 600px) { .similar-pair { grid-template-columns: 1fr; } }

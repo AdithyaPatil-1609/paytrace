@@ -1,4 +1,5 @@
-import { claimSync, finishSync, renewSyncLease } from "@/db/neo4j/accounts";
+import { gmailDateFilter, type GmailHistoryDays } from "./gmail-history";
+import { claimSync, finishSync, recordSyncProgress, renewSyncLease } from "@/db/neo4j/accounts";
 import { ingestLiveEvent, ignoreSubscriptionCandidates } from "@/db/neo4j/live";
 import { isSensitiveFinancialEmail, normalizeReceiptText, parseFinancialEmail } from "@/lib/ingestion/email";
 import { gmailPaymentQuery, isAllowedSender, parseAllowedDomains } from "@/lib/ingestion/gmail-filter";
@@ -9,6 +10,7 @@ import { exchangeToken, GoogleTokenError } from "./google";
 import { AccountError, type AccountErrorCode } from "./errors";
 import { GMAIL_SYNC_LIMITS } from "@/lib/payments/rules";
 import { senderAuthentication } from "@/lib/ingestion/dkim";
+import { emailProvenance } from "@/lib/ingestion/trust";
 
 type Part = { mimeType?:string; filename?:string; headers?:{name:string;value:string}[]; body?:{data?:string}; parts?:Part[] };
 function htmlReceiptText(html:string) {
@@ -123,7 +125,7 @@ async function gmailGet(access:string,path:string) {
   }
 }
 
-export async function syncAccount(sub: string, history=false,historyDays:90|365=365) {
+export async function syncAccount(sub: string, history=false,historyDays:GmailHistoryDays=365) {
   let domains:string[];
   try { domains=parseAllowedDomains(process.env.GMAIL_ALLOWED_DOMAINS); }
   catch { throw new AccountError("domain-config"); }
@@ -137,20 +139,32 @@ export async function syncAccount(sub: string, history=false,historyDays:90|365=
   try {
     const access=(await exchangeToken({grant_type:"refresh_token",refresh_token:grant.refreshToken})).access_token;
     if (!access) throw new Error("Missing access token");
-    const after=history?`newer_than:${historyDays}d`:grant.lastSync?`after:${Math.floor((Date.parse(grant.lastSync)-2*86400000)/1000)}`:"newer_than:90d";
+    const after=gmailDateFilter(history,historyDays,grant.lastSync);
     // Explicit history scans always use current broad discovery, even if an old custom query omitted memberships.
     const query=gmailPaymentQuery(after,domains,history?undefined:process.env.GMAIL_ACCOUNT_QUERY);
     let accepted=0,skipped=0,scanned=0,duplicates=0,registrations=0,renewals=0,candidates=0,subscriptionSkipped=0,senderSkipped=0,marketingSkipped=0,ignored=0,page:string|undefined;
     // Explicit local AI opt-in. Bound inference time and never block sync if the model is unavailable.
     let semanticBudget=process.env.PAYTRACE_EMAIL_AI_ENABLED==="true"?12:0;
     const accessGrant={sub:grant.sub,grantId:grant.grantId,lease:grant.lease};
+    // Live progress for the sign-up progress bar. Best effort: a failed write never stops the sync.
+    let estimate=0,lastReport=0;
+    const report=async(force=false)=>{
+      if(!force&&Date.now()-lastReport<1200)return;
+      lastReport=Date.now();
+      try{await recordSyncProgress(grant.sub,grant.lease,{scanned,accepted,estimate:Math.max(estimate,scanned)});}catch{/* progress only */}
+    };
+    await report(true);
     do {
       stage="neo4j"; await renewSyncLease(grant.sub,grant.lease); stage="google";
       const params=new URLSearchParams({q:query,maxResults:"100",...(page?{pageToken:page}:{})});
-      const list=await gmailGet(access,`messages?${params}`) as {messages?:{id:string}[];nextPageToken?:string};
+      const list=await gmailGet(access,`messages?${params}`) as {messages?:{id:string}[];nextPageToken?:string;resultSizeEstimate?:number};
+      if(!page)estimate=Math.max(Number(list.resultSizeEstimate)||0,list.messages?.length??0);
+      else estimate=Math.max(estimate,scanned+(list.messages?.length??0));
+      await report(true);
       const rejected:string[]=[];
       for (const {id} of list.messages??[]) {
         scanned++;
+        await report();
         stage="google";
         let mail:{payload?:Part;internalDate?:string;labelIds?:string[]};
         // Pace reads: the per-user Gmail limit is shared with every other device reading this mailbox.
@@ -162,7 +176,8 @@ export async function syncAccount(sub: string, history=false,historyDays:90|365=
         const payload=mail.payload;
         const header=(name:string)=>payload.headers?.find(h=>h.name.toLowerCase()===name)?.value??"";
         // An email Gmail says the From domain did not send (DKIM/DMARC) is never read for payments.
-        if(senderAuthentication(payload.headers,header("from"))==="fail"){skipped++;senderSkipped++;continue;}
+        const senderCheck=senderAuthentication(payload.headers,header("from"));
+        if(senderCheck==="fail"){skipped++;senderSkipped++;continue;}
         const date=timestamp.toISOString().slice(0,10),subject=header("subject");
         let {event,reason}=parseGmailReceipt({id,from:header("from"),subject,payload,labelIds:mail.labelIds,date},domains);
         if(semanticBudget>0&&!mail.labelIds?.includes("CATEGORY_PROMOTIONS")&&["subscription","unsupported","parsed"].includes(reason)&&(!event||event.kind==="subscription_candidate"&&event.planPricePaise===undefined)){
@@ -185,12 +200,13 @@ export async function syncAccount(sub: string, history=false,historyDays:90|365=
         if(event.kind==="subscription_renewal")renewals++;
         if(event.kind==="subscription_candidate")candidates++;
         stage="neo4j";
-        const result=await ingestLiveEvent(grant.profile,event,accessGrant);
+        const result=await ingestLiveEvent(grant.profile,event,accessGrant,emailProvenance(senderCheck));
         if (result.status!=="duplicate") accepted++; else duplicates++;
       }
       if(rejected.length){stage="neo4j";ignored+=await ignoreSubscriptionCandidates(grant.profile,rejected,accessGrant);}
       page=list.nextPageToken;
     } while (page);
+    estimate=scanned; await report(true);
     state="ready";
     return {status:"ready",accepted,skipped,scanned,duplicates,registrations,renewals,candidates,subscriptionSkipped,senderSkipped,marketingSkipped,ignored};
   } catch (error) {

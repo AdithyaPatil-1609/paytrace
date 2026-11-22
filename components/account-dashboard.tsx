@@ -1,4 +1,5 @@
 "use client";
+import type { GmailHistoryDays } from "@/lib/accounts/gmail-history";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -9,6 +10,7 @@ import type { SourceInfo } from "@/db/neo4j/dataset";
 import type { Dataset } from "@/lib/payments/types";
 import { formatINR } from "@/lib/presentation/format";
 import { SubscriptionWatchlist } from "@/components/subscription-watchlist";
+import { EverydaySpending } from "@/components/everyday-spending";
 import { accountErrorMessage } from "@/lib/accounts/errors";
 import { IphoneConnect } from "@/components/iphone-connect";
 import { GraphWarningsPanel } from "@/components/graph-warnings";
@@ -37,7 +39,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       setSnapshot(await response.json());setLoadError("");
     } catch {setLoadError("Your records could not be loaded. Check the Neo4j connection.");}
   },[]);
-  const sync=useCallback(async(history=false,days:90|365=365)=>{
+  const sync=useCallback(async(history=false,days:GmailHistoryDays=365)=>{
     setSyncing(true);setError("");setSyncResult("");
     try {
       const response=await fetch(`/api/account/gmail/sync${history?`?history=1&days=${days}`:""}`,{method:"POST"});
@@ -79,6 +81,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
         <button className="account-button primary" disabled={syncingNow} onClick={()=>void sync()}>{syncingNow?"Synchronizing…":"Sync now"}</button>
         <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,90)}>Rescan last 90 days</button>
         <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,365)}>Rescan last 12 months</button>
+        <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,730)}>Rescan last 2 years</button>
         {syncResult&&<p className="account-note" role="status">{syncResult}</p>}
       </>}
       {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
@@ -87,6 +90,10 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       <hr/>
       <IphoneConnect connected={snapshot?.iphone===true} onChange={()=>void refresh()}/>
       <PhonePairing/>
+      <hr/>
+      <p className="account-eyebrow">FAMILY ACCESS</p>
+      <p className="account-note">Share a read-only view of your recurring payments with someone you choose, and remove it at any time.</p>
+      <Link className="account-button" href="/family">Family access</Link>
       <hr/>
       <form action="/api/auth/logout" method="post"><button className="account-button" type="submit">Sign out</button></form>
       <form action="/api/auth/logout" method="post"><input type="hidden" name="scope" value="all"/><button className="account-button" type="submit">Sign out on every device</button></form>
@@ -105,5 +112,5 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
     {data?.recentEvents.length?<div className="account-table">{data.recentEvents.map(event=><div key={event.noticeId}><span><strong>{event.brand}</strong><small>{event.channel.toUpperCase()} · {event.eventType.replaceAll("_"," ")} · {event.sentOn}</small></span><strong>{event.amount===undefined?(event.planPrice===undefined?"Amount unknown":`${formatINR(event.planPrice)} reported`):formatINR(event.amount)}{["subscription_renewal","debit_scheduled"].includes(event.eventType)?" scheduled":""}</strong></div>)}</div>:<p>No imported financial messages yet.</p>}
   </details>;
 
-  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity,subscriptionAlerts:watchlist,graphWarnings:<GraphWarningsPanel/>}}/>;
+  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity,subscriptionAlerts:<>{watchlist}<EverydaySpending rows={data?.everydaySpending??[]} onChange={()=>void refresh()}/></>,graphWarnings:<GraphWarningsPanel/>}}/>;
 }

@@ -2,7 +2,26 @@ import { getNeo4jDriver, neo4jDatabase } from "./client";
 import { digest, eventKey, matchPayment, merchantKey, type PaymentEvent, type MatchablePayment } from "@/lib/ingestion/event";
 import { detectCommitments, matchDictionary, NOTICE_CHANNEL } from "@/lib/payments/engine";
 import { readDictionary } from "@/data/fixtures";
-import type { Dataset, MandateRow, NotificationRow, StatementRow } from "@/lib/payments/types";
+import type { Commitment, Dataset, MandateRow, NotificationRow, StatementRow } from "@/lib/payments/types";
+import { needsCheck, splitByChecks, type StoredCheck } from "@/lib/payments/recurring-check";
+import { UNVERIFIED, type Provenance } from "@/lib/ingestion/trust";
+
+/** Stored Job 4 verdicts for one person (written by db/neo4j/recurring-checks.ts). */
+export const CHECKS_QUERY = `MATCH (:LiveProfile {id:$profile})-[:HAS_RECURRING_CHECK]->(c:RecurringCheck)
+RETURN c.commitmentId AS commitmentId, c.hash AS hash, c.verdict AS verdict, c.kind AS kind, c.model AS model, c.personSays AS personSays`;
+
+export function toCheck(record: { get(key: string): unknown }): StoredCheck {
+  return {
+    commitmentId: String(record.get("commitmentId")),
+    hash: String(record.get("hash") ?? ""),
+    verdict: (record.get("verdict") ?? "unsure") as StoredCheck["verdict"],
+    kind: String(record.get("kind") ?? "unknown"),
+    model: String(record.get("model") ?? ""),
+    personSays: (record.get("personSays") as "commitment" | null) ?? null
+  };
+}
+
+
 
 /** Separate labels deliberately protect personal data from unscoped demo reads and seed. */
 export const LIVE_SCHEMA = [
@@ -22,7 +41,12 @@ async function ensureSchema() {
   return initialized;
 }
 
-export async function ingestLiveEvent(profile: string, event: PaymentEvent, grant?: { sub: string; grantId: string; lease: string }) {
+/**
+ * `provenance` comes from the caller's real checks (lib/ingestion/trust.ts),
+ * never from the event body. A stored level is kept: a later copy never
+ * upgrades or downgrades it.
+ */
+export async function ingestLiveEvent(profile: string, event: PaymentEvent, grant?: { sub: string; grantId: string; lease: string }, provenance: Provenance = UNVERIFIED) {
   await ensureSchema();
   const dictionary = readDictionary();
   const alias = matchDictionary(event.merchant, dictionary);
@@ -67,16 +91,19 @@ export async function ingestLiveEvent(profile: string, event: PaymentEvent, gran
         }
       }
       await tx.run(`MATCH (u:LiveProfile {id:$profile})
-        MERGE (m:LiveMerchant {id:$merchantId}) SET m.name=$merchant, m.key=$key
+        MERGE (m:LiveMerchant {id:$merchantId}) SET m.name=$merchant, m.key=$key, m.profile=$profile
         MERGE (e:LiveEvent {id:$id}) SET e += {source:$source, kind:$kind, merchant:$merchant, amountPaise:$amount,
           date:$date, reference:$reference, paymentId:$paymentId, status:$status, receivedAt:datetime(), accountHint:$account,
           planPricePaise:$planPrice, renewalDate:$renewalDate, renewalFrequency:$renewalFrequency}
+        FOREACH (_ IN CASE WHEN e.sourceTrust IS NULL THEN [1] ELSE [] END |
+          SET e.sourceTrust=$trust.sourceTrust, e.verificationStatus=$trust.verificationStatus, e.verificationMethod=$trust.verificationMethod,
+            e.trustReason=$trust.trustReason, e.verifiedAt=CASE WHEN $trust.verifiedAt IS NULL THEN null ELSE datetime($trust.verifiedAt) END)
         MERGE (u)-[:RECEIVED]->(e) MERGE (e)-[:ABOUT]->(m)
         WITH e,m OPTIONAL MATCH (p:LivePayment {id:$paymentId})
         FOREACH (_ IN CASE WHEN p IS NULL THEN [] ELSE [1] END | MERGE (p)-[:EVIDENCED_BY]->(e) MERGE (p)-[:PAID_TO]->(m))
         WITH e UNWIND $candidates AS candidate
         MATCH (c:LivePayment {id:candidate}) MERGE (e)-[:POSSIBLE_MATCH]->(c)`, {
-        profile, merchantId, key, id, source: event.source, kind: event.kind, merchant: event.merchant, amount: event.amountPaise, date: event.date, reference: event.reference, paymentId: result.id, status: result.status, account: event.accountHint ?? null, candidates: result.candidates, planPrice:event.planPricePaise??null, renewalDate:event.renewalDate??null, renewalFrequency:event.renewalFrequency??null
+        profile, merchantId, key, id, source: event.source, kind: event.kind, merchant: event.merchant, amount: event.amountPaise, date: event.date, reference: event.reference, paymentId: result.id, status: result.status, account: event.accountHint ?? null, candidates: result.candidates, planPrice:event.planPricePaise??null, renewalDate:event.renewalDate??null, renewalFrequency:event.renewalFrequency??null, trust:provenance
       });
       return { eventId: id, status: result.status, paymentId: result.id };
     });
@@ -106,14 +133,15 @@ export const LIVE_QUERIES = {
 } as const;
 
 /** Shared query; only the authenticated account endpoint receives the complete dataset. */
-export async function readLiveDashboard(profile: string) {
+export async function readLiveDashboard(profile: string, options: { withDetected?: boolean } = {}) {
   const session = getNeo4jDriver().session({ database: neo4jDatabase });
   try {
-    const { payments, events: allEvents, revision } = await session.executeRead(async tx => {
+    const { payments, events: allEvents, revision, checks } = await session.executeRead(async tx => {
       const payments = await tx.run(LIVE_QUERIES.payments, { profile });
       const events = await tx.run(LIVE_QUERIES.events, { profile });
       const version = await tx.run("MATCH (u:LiveProfile {id:$profile}) RETURN u.revision AS revision", { profile });
-      return { payments: payments.records.map(r => r.get("item")), events: events.records.map(r => r.get("item")), revision: Number(version.records[0]?.get("revision") ?? 0) };
+      const checks = await tx.run(CHECKS_QUERY, { profile });
+      return { payments: payments.records.map(r => r.get("item")), events: events.records.map(r => r.get("item")), revision: Number(version.records[0]?.get("revision") ?? 0), checks: checks.records.map(toCheck) };
     });
     // Bank statement lines are payments, not messages: they feed the payments, never the notice list.
     const events = allEvents.filter(e => e.source !== "statement");
@@ -164,9 +192,13 @@ export async function readLiveDashboard(profile: string) {
     const paidRows = statement.length;
     statement.push(...noticeRows(statement, events, profile, asOf));
     const dataset: Dataset = { asOf, statement, notifications, mandates, dictionary, usage: [] };
-    const commitments = detectCommitments(dataset);
-    const summary = { revision, asOf, counts: { payments: paidRows, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, statement:allEvents.filter(e=>e.source==="statement").length, review:allEvents.filter(e=>e.status==="review").length }, commitments, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, scheduledDebits, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
-    return { dataset, summary };
+    const detected = detectCommitments(dataset);
+    // Job 4: a shop visited often (checked by the local model, within the rules in recurring-check.ts) is listed apart, never dropped.
+    const { commitments, everyday } = splitByChecks(detected, checks);
+    const everydaySpending = everyday.map(({ item, kind, model }) => ({ id: item.id, merchant: item.merchant, rawNarration: item.rawNarration, kind, model, debitCount: item.debitCount, amount: item.amount, amountPattern: item.amountPattern, lastCharge: item.lastCharge, spentToDate: item.spentToDate }));
+    const recurringChecksPending = needsCheck(detected, checks).length;
+    const summary = { revision, asOf, counts: { payments: paidRows, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, statement:allEvents.filter(e=>e.source==="statement").length, review:allEvents.filter(e=>e.status==="review").length }, commitments, everydaySpending, recurringChecksPending, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, scheduledDebits, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
+    return { dataset, summary, ...(options.withDetected ? { detected: detected as Commitment[], checks: checks as StoredCheck[] } : {}) };
   } finally { await session.close(); }
 }
 

@@ -2,12 +2,15 @@ import { getNeo4jDriver, neo4jDatabase } from "./client";
 import { hash, open, profileFor, randomToken, seal, SESSION_IDLE_SECONDS, SESSION_ROTATE_SECONDS, SESSION_SECONDS } from "@/lib/accounts/security";
 import { AccountError, type AccountErrorCode } from "@/lib/accounts/errors";
 
-export type Account = { sub: string; email: string; name: string; profile: string; linked: boolean; lastSync: string | null; syncStatus: string | null; syncError: string | null; iphone: boolean };
+export type Account = { sub: string; email: string; name: string; profile: string; linked: boolean; lastSync: string | null; syncStatus: string | null; syncError: string | null; iphone: boolean;
+  /** Sign-up: the connected Gmail address (may differ from the sign-in email), the last 4 digits of a verified phone, and the steps done. */
+  gmailEmail: string | null; phoneLast4: string | null; phoneStep: "verified" | "skipped" | null; smsConsent: "yes" | "no" | null; signupDone: boolean };
+export type SyncProgress = { scanned: number; accepted: number; estimate: number; at: string };
 const ACCOUNT_SCHEMA = [
   "CREATE CONSTRAINT paytrace_user_sub IF NOT EXISTS FOR (u:PaytraceUser) REQUIRE u.sub IS UNIQUE",
   "CREATE CONSTRAINT paytrace_session_hash IF NOT EXISTS FOR (s:PaytraceSession) REQUIRE s.hash IS UNIQUE",
-  // iPhone Shortcut requests look the account up by token hash; an index keeps that a direct lookup.
-  "CREATE INDEX paytrace_user_ios_token IF NOT EXISTS FOR (u:PaytraceUser) ON (u.iosTokenHash)",
+  // iPhone Shortcut requests look the account up by token hash. The unique constraint brings its own index;
+  // a separate CREATE INDEX with the same name made this constraint fail on every fresh database.
   "CREATE CONSTRAINT paytrace_user_ios_token IF NOT EXISTS FOR (u:PaytraceUser) REQUIRE u.iosTokenHash IS UNIQUE"
 ];
 let initialized: Promise<void> | undefined;
@@ -15,8 +18,10 @@ async function schema() {
   if (!initialized) initialized = (async () => { const s = getNeo4jDriver().session({ database:neo4jDatabase }); try { for (const q of ACCOUNT_SCHEMA) await s.run(q); } finally { await s.close(); } })().catch(e => { initialized = undefined; throw e; });
   await initialized;
 }
-const projection = `u.sub AS sub, u.email AS email, u.name AS name, u.profile AS profile, u.grantId IS NOT NULL AS linked, u.lastSync AS lastSync, u.syncStatus AS syncStatus, u.syncError AS syncError, u.iosTokenHash IS NOT NULL AS iphone`;
-function toAccount(r: import("neo4j-driver").Record): Account { return { sub:r.get("sub"),email:r.get("email"),name:r.get("name"),profile:r.get("profile"),linked:r.get("linked"),lastSync:r.get("lastSync")??null,syncStatus:r.get("syncStatus")??null,syncError:r.get("syncError")??null,iphone:r.get("iphone")===true }; }
+const projection = `u.sub AS sub, u.email AS email, coalesce(u.fullName, u.name) AS name, u.profile AS profile, u.grantId IS NOT NULL AS linked, u.lastSync AS lastSync, u.syncStatus AS syncStatus, u.syncError AS syncError, u.iosTokenHash IS NOT NULL AS iphone,
+  CASE WHEN u.grantId IS NULL THEN null ELSE coalesce(u.gmailEmail, u.email) END AS gmailEmail, u.phoneLast4 AS phoneLast4, u.phoneStep AS phoneStep, u.smsConsent AS smsConsent, coalesce(u.signupDone, false) AS signupDone`;
+function toAccount(r: import("neo4j-driver").Record): Account { return { sub:r.get("sub"),email:r.get("email"),name:r.get("name"),profile:r.get("profile"),linked:r.get("linked"),lastSync:r.get("lastSync")??null,syncStatus:r.get("syncStatus")??null,syncError:r.get("syncError")??null,iphone:r.get("iphone")===true,
+  gmailEmail:r.get("gmailEmail")??null,phoneLast4:r.get("phoneLast4")??null,phoneStep:r.get("phoneStep")??null,smsConsent:r.get("smsConsent")??null,signupDone:r.get("signupDone")===true }; }
 
 export async function createSession(identity: { sub: string; email: string; name: string }) {
   await schema();
@@ -46,13 +51,14 @@ export async function endSession(raw?: string) {
   try { await s.run("MATCH (sess:PaytraceSession {hash:$hash}) DETACH DELETE sess",{hash:hash(raw)}); } finally { await s.close(); }
 }
 
-export async function storeGmailGrant(sub: string, refreshToken: string) {
+/** gmailEmail is set when the connected Gmail is not the sign-in account ("add another Gmail"). */
+export async function storeGmailGrant(sub: string, refreshToken: string, gmailEmail: string | null = null) {
   const s = getNeo4jDriver().session({database:neo4jDatabase});
-  try { const r = await s.run(`MATCH (u:PaytraceUser {sub:$sub}) SET u.grantId=$grantId,u.gmailToken=$encrypted,u.lastSync=null,u.syncStatus='ready',u.syncError=null,u.syncLease=null,u.syncLeaseUntil=null RETURN u.sub AS sub`,{sub,grantId:randomToken(),encrypted:seal(refreshToken,`gmail:${sub}`)}); if (!r.records.length) throw new Error("Account not found"); } finally { await s.close(); }
+  try { const r = await s.run(`MATCH (u:PaytraceUser {sub:$sub}) SET u.grantId=$grantId,u.gmailToken=$encrypted,u.gmailEmail=$gmailEmail,u.lastSync=null,u.syncStatus='ready',u.syncError=null,u.syncLease=null,u.syncLeaseUntil=null,u.syncProgress=null RETURN u.sub AS sub`,{sub,grantId:randomToken(),encrypted:seal(refreshToken,`gmail:${sub}`),gmailEmail}); if (!r.records.length) throw new Error("Account not found"); } finally { await s.close(); }
 }
 export async function removeGmailGrant(sub: string) {
   const s = getNeo4jDriver().session({database:neo4jDatabase});
-  try { const r = await s.executeWrite(async tx => { const old = await tx.run("MATCH (u:PaytraceUser {sub:$sub}) SET u.syncLock=coalesce(u.syncLock,0)+1 RETURN u.gmailToken AS token",{sub}); await tx.run("MATCH (u:PaytraceUser {sub:$sub}) REMOVE u.grantId,u.gmailToken,u.syncLease,u.syncLeaseUntil,u.syncError SET u.syncStatus='disconnected'",{sub}); return old.records[0]?.get("token"); }); return r ? open(r,`gmail:${sub}`) : null; } finally { await s.close(); }
+  try { const r = await s.executeWrite(async tx => { const old = await tx.run("MATCH (u:PaytraceUser {sub:$sub}) SET u.syncLock=coalesce(u.syncLock,0)+1 RETURN u.gmailToken AS token",{sub}); await tx.run("MATCH (u:PaytraceUser {sub:$sub}) REMOVE u.grantId,u.gmailToken,u.gmailEmail,u.syncProgress,u.syncLease,u.syncLeaseUntil,u.syncError SET u.syncStatus='disconnected'",{sub}); return old.records[0]?.get("token"); }); return r ? open(r,`gmail:${sub}`) : null; } finally { await s.close(); }
 }
 export async function linkedAccounts() {
   const s = getNeo4jDriver().session({database:neo4jDatabase});
@@ -64,7 +70,7 @@ export async function claimSync(sub: string) {
   try {
     const r = await s.run(`MATCH (u:PaytraceUser {sub:$sub}) SET u.syncLock=coalesce(u.syncLock,0)+1
       WITH u WHERE u.grantId IS NOT NULL AND (u.syncLeaseUntil IS NULL OR u.syncLeaseUntil < datetime())
-      SET u.syncLease=$lease,u.syncLeaseUntil=datetime()+duration({minutes:10}),u.syncStatus='syncing',u.syncError=null
+      SET u.syncLease=$lease,u.syncLeaseUntil=datetime()+duration({minutes:10}),u.syncStatus='syncing',u.syncError=null,u.syncProgress=null
       RETURN u.grantId AS grantId,u.gmailToken AS encrypted,u.profile AS profile,u.lastSync AS lastSync`,{sub,lease});
     const row = r.records[0]; if (!row) return null;
     let refreshToken:string;
@@ -135,5 +141,47 @@ export async function rotateSession(raw?: string): Promise<{ raw: string; expire
       {hash:hash(raw),fresh:hash(fresh),rotate:SESSION_ROTATE_SECONDS});
     const expires = r.records[0]?.get("expires") as string | undefined;
     return expires ? { raw: fresh, expires } : null;
+  } finally { await s.close(); }
+}
+
+/* ---------- Sign-up (name, phone, SMS consent, progress) ---------- */
+
+async function writeUser(sub: string, cypher: string, params: Record<string, unknown> = {}) {
+  const s = getNeo4jDriver().session({database:neo4jDatabase});
+  try { const r = await s.run(`MATCH (u:PaytraceUser {sub:$sub}) ${cypher} RETURN u.sub AS sub`,{sub,...params}); if (!r.records.length) throw new Error("Account not found"); }
+  finally { await s.close(); }
+}
+/** The name typed on the sign-up page, shown instead of the Google profile name. */
+export async function setFullName(sub: string, fullName: string) {
+  await writeUser(sub, "SET u.fullName=$fullName", {fullName});
+}
+/** A phone number proven by an SMS code. Kept encrypted; only the last 4 digits are readable. */
+export async function setVerifiedPhone(sub: string, phoneE164: string) {
+  await writeUser(sub, "SET u.phone=$sealed,u.phoneLast4=$last4,u.phoneStep='verified',u.phoneVerifiedAt=datetime()", {sealed:seal(phoneE164,`phone:${sub}`),last4:phoneE164.slice(-4)});
+}
+/** The person chose not to give a phone number. */
+export async function skipPhone(sub: string) {
+  await writeUser(sub, "REMOVE u.phone,u.phoneLast4,u.phoneVerifiedAt SET u.phoneStep='skipped'");
+}
+/** Consent (or refusal) to read bank SMS through the phone app, with the text version shown. */
+export async function setSmsConsent(sub: string, answer: "yes" | "no", version: string) {
+  await writeUser(sub, "SET u.smsConsent=$answer,u.smsConsentVersion=$version,u.smsConsentAt=datetime()", {answer,version});
+}
+export async function finishSignup(sub: string) {
+  await writeUser(sub, "SET u.signupDone=true,u.signupDoneAt=datetime()");
+}
+/** Live progress of the running Gmail sync, written only by the sync holding the lease. */
+export async function recordSyncProgress(sub: string, lease: string, progress: Omit<SyncProgress,"at">) {
+  const s = getNeo4jDriver().session({database:neo4jDatabase});
+  try { await s.run("MATCH (u:PaytraceUser {sub:$sub,syncLease:$lease}) SET u.syncProgress=$json",{sub,lease,json:JSON.stringify({...progress,at:new Date().toISOString()})}); }
+  finally { await s.close(); }
+}
+export async function syncProgressFor(sub: string): Promise<SyncProgress | null> {
+  const s = getNeo4jDriver().session({database:neo4jDatabase});
+  try {
+    const r = await s.run("MATCH (u:PaytraceUser {sub:$sub}) RETURN u.syncProgress AS json",{sub});
+    const json = r.records[0]?.get("json");
+    if (typeof json !== "string") return null;
+    try { return JSON.parse(json) as SyncProgress; } catch { return null; }
   } finally { await s.close(); }
 }

@@ -6,6 +6,7 @@
  * know (last real use, a cancellation), which becomes user-confirmed evidence.
  */
 import { useCallback, useEffect, useState } from "react";
+import { TrustBadge } from "@/components/personal-graph-panel";
 import type { CancelWarning, Evidence, GraphWarnings, MandateWarning, PriceAheadWarning, PriceWarning, UnusedWarning, UpcomingWarning } from "@/db/neo4j/warnings";
 
 const inr = (paise: number | null | undefined) =>
@@ -34,7 +35,8 @@ const CANCEL_LABEL: Record<CancelWarning["kind"], string> = {
 
 function EvidenceList({ items }: { items: Evidence[] }) {
   if (!items.length) return <small>Evidence: estimated from payment history; no message confirms it yet.</small>;
-  return <small>Evidence: {items.map((e) => `${e.source.toUpperCase()} ${e.kind.replaceAll("_", " ")} · ${e.date}`).join("; ")}</small>;
+  const channels = new Set(items.filter((e) => ["sms", "email", "statement"].includes(e.source)).map((e) => e.source));
+  return <small>Evidence: {items.map((e, i) => <span key={`${e.id}-${i}`}>{i ? "; " : ""}{e.source.toUpperCase()} {e.kind.replaceAll("_", " ")} · {e.date} <TrustBadge evidence={e}/></span>)}{channels.size >= 2 ? ` · confirmed by ${channels.size} channels` : ""}</small>;
 }
 
 function Row({ title, money, why, evidence, next, children }: { title: string; money: string; why: string; evidence: Evidence[]; next: string; children?: React.ReactNode }) {
@@ -106,6 +108,7 @@ export function GraphWarningsPanel() {
   <details className="personal-activity graph-warnings" open>
     <summary>Warnings from your payment graph <small>{count} {count === 1 ? "warning" : "warnings"} · as of {data.asOf}</small></summary>
     <p>Found by Neo4j from your own payments and messages. Where Paytrace cannot see enough, it says so instead of guessing.</p>
+    {data.incomplete && <p role="alert">A graph query failed this time, so some warnings may be missing. The Evidence graph screen shows which one.</p>}
     <div className="account-table">
       {data.cancellation.map((w: CancelWarning) => <Row key={`c-${w.payment.id}`} title={`${CANCEL_LABEL[w.kind]} · ${w.merchant}`} money={inr(w.payment.amountPaise)} why={w.why} evidence={[...w.cancellationEvidence, ...w.payment.evidence]} next={w.kind === "FINAL_BILLING" ? "Nothing, unless more charges follow." : w.kind === "UNCONFIRMED_CANCELLATION" ? "Ask the merchant to confirm the cancellation in writing." : "Revoke the mandate in your bank or UPI app, then ask the merchant or your bank for a refund."}/>)}
       {mandateViolations.map((w) => <Row key={`m-${w.kind}-${w.date}`} title={`${MANDATE_LABEL[w.kind]} · ${w.merchant}`} money={`${inr(w.amountPaise)} of ${inr(w.limitPaise)}`} why={w.why} evidence={w.evidence} next="Ask your bank to dispute the amount above the limit, and review the mandate."/>)}

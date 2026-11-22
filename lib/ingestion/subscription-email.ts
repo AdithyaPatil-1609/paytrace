@@ -119,7 +119,8 @@ export function parseSubscriptionCandidate(text:string,input:{id:string;date:str
   const product=text.match(new RegExp(`^\\s*(${name}?)\\s+(?:Subscription|Membership)\\s+${inr}`,"im"))?.[1];
   const welcome=input.subject.match(new RegExp(`^Welcome to\\s+(${name})[!.]?$`,"i"))?.[1];
   const domain=input.from.match(/@([\w.-]+)>?\s*$/)?.[1];
-  const merchant=[named,labeled,product,welcome,domain].map(x=>x?.trim()).find(x=>x&&!/^(?:your|this|the|a|my|new|paid|monthly|annual|premium|subscription|membership|plan|trial)$/i.test(x));
+  const youtubeMusic=domain?.toLowerCase()==="youtube.com" && /^music premium(?: student| family)?$/i.test(named??"");
+  const merchant=[youtubeMusic ? "YouTube "+named : named,labeled,product,welcome,domain].map(x=>x?.trim()).find(x=>x&&!/^(?:your|this|the|a|my|new|paid|monthly|annual|premium|subscription|membership|plan|trial)$/i.test(x));
   if(!merchant)return null;
   const ratePattern=new RegExp(`${inr}\\s*(?:/\\s*|per\\s+|every\\s+|\\s+)(week|month|quarter|year|annum|weekly|monthly|quarterly|annually)\\b`,"gi");
   const rates=[...text.matchAll(ratePattern)].map(m=>({amount:toPaise(m[1]),frequency:(m[2].toLowerCase().startsWith("week")?"weekly":m[2].toLowerCase().startsWith("month")?"monthly":m[2].toLowerCase().startsWith("quarter")?"quarterly":"annual") as RenewalFrequency}));
@@ -134,5 +135,11 @@ export function parseSubscriptionCandidate(text:string,input:{id:string;date:str
   const dates=[...text.matchAll(new RegExp(`\\b(?:starting (?:from|on)|renews? on|renewal date|next (?:billing|renewal|payment|charge) date|next charge on)\\s*:?\\s*(${datePattern})`,"gi"))].map(m=>receiptDate(m[1]));
   const renewalDate=dates.length&&dates[0]&&dates.every(d=>d===dates[0])?dates[0]:undefined;
   const price=rate?.amount??(rates.length?undefined:reportedAmount(text,subjectConfirmed||lifecycle));
-  try{return validateEvent({source:"email",kind:"subscription_candidate",merchant,amountPaise:null,date:input.date,reference:null,sourceId:input.id,...(price===undefined?{}:{planPricePaise:price}),...(rate?{renewalFrequency:rate.frequency}:{}),...(renewalDate?{renewalDate}:{})});}catch{return null;}
+  const frequencies = new Set<RenewalFrequency>(rates.map(r=>r.frequency));
+  for (const match of text.matchAll(/\byour payment method will be charged\s+(weekly|monthly|quarterly|annually|yearly)\s+starting (?:on|from)\b/gi)) {
+    const period = match[1].toLowerCase();
+    frequencies.add(period === "annually" || period === "yearly" ? "annual" : period as RenewalFrequency);
+  }
+  const frequency=frequencies.size===1?[...frequencies][0]:undefined;
+  try{return validateEvent({source:"email",kind:"subscription_candidate",merchant,amountPaise:null,date:input.date,reference:null,sourceId:input.id,...(price===undefined?{}:{planPricePaise:price}),...(frequency?{renewalFrequency:frequency}:{}),...(renewalDate?{renewalDate}:{})});}catch{return null;}
 }

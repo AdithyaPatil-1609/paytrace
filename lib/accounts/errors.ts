@@ -5,7 +5,7 @@ export const accountErrors = {
   "permission-required": "Google did not grant Gmail read access or offline access. Reconnect and allow Gmail read permission.",
   "identity-unverified": "Google identity could not be verified. Start authorization again and check your internet connection.",
   "oauth-config": "Google OAuth configuration was rejected. Check the Web client ID, secret and callback URL in .env.local and Google Cloud.",
-  "oauth-network": "Could not reach Google. Check your internet connection and retry.",
+  "oauth-network": "PayTrace could not complete the connection to Google. Please start sign-in again in a moment.",
   "google-denied": "Google declined authorization. Check that Gmail access is allowed and your account is a test user if the app is in Testing mode.",
   "authorization-error": "Authorization was not completed. Please retry with the correct account and permissions.",
   "domain-config": "Gmail sender domains are invalid. Set GMAIL_ALLOWED_DOMAINS=.com,.in in .env.local and restart Paytrace.",

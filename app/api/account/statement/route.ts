@@ -7,6 +7,7 @@
  */
 import { after, type NextRequest } from "next/server";
 import { ingestLiveEvent } from "@/db/neo4j/live";
+import { statementProvenance } from "@/lib/ingestion/trust";
 import { requireUser } from "@/lib/accounts/require-user";
 import { parseStatementCsv, STATEMENT_LIMITS } from "@/lib/statements/csv";
 import { statementEvents } from "@/lib/statements/events";
@@ -33,9 +34,10 @@ export async function POST(request: NextRequest) {
   if (!events.length) return fail(400, "The statement has no debit lines to import.");
 
   const profile = signedIn.user.profile;
+  const provenance = statementProvenance();
   const store = async () => {
     for (const event of events) {
-      try { await ingestLiveEvent(profile, event); } catch { /* one bad line must not stop the rest; never log its contents */ }
+      try { await ingestLiveEvent(profile, event, undefined, provenance); } catch { /* one bad line must not stop the rest; never log its contents */ }
     }
   };
   try { after(store); } catch { void store(); }

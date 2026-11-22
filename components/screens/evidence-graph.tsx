@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ScreenHeader } from "@/components/chrome/screen-header";
 import { PaymentEvidenceExplorer } from "@/components/visualizations/payment-evidence-graph";
+import { PersonalGraphPanel } from "@/components/personal-graph-panel";
 import type { SourceInfo } from "@/db/neo4j/dataset";
 import type { GraphFacts, GraphFinding } from "@/db/neo4j/graph";
 import type { Commitment, DictionaryEntry } from "@/lib/payments/types";
@@ -109,6 +110,8 @@ export function EvidenceGraphScreen({
             </Finding>
           </div>
         </details>
+      ) : source.personal ? (
+        <PersonalGraphPanel />
       ) : (
         <details className="evidence-live-details">
           <summary>Where this comes from</summary>

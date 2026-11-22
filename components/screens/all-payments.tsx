@@ -8,6 +8,7 @@
 import { useState, type ReactNode } from "react";
 import { warningLabel } from "@/components/chrome/warning-tag";
 import { PriceHistory, ProofChain } from "@/components/detail/price-and-proof";
+import { UpiCancelLink } from "@/components/detail/upi-cancel-link";
 import { issueItems } from "@/lib/payments/analysis";
 import { ChargeSparkline } from "@/components/visualizations/charge-sparkline";
 import { PaymentRadar } from "@/components/visualizations/payment-radar";
@@ -108,7 +109,7 @@ export function AllPaymentsScreen({
 
           {personal && items.length === 0 && (
             <p className="personal-empty">
-              No repeating payments yet. A payment appears here once two charges or renewal notices show it repeating. Rescan the last 12 months from your account menu to read older emails.
+              No repeating payments yet. A payment appears here once two charges or renewal notices show it repeating. Check the Subscription watchlist for signup emails, or use the account menu to rescan up to 2 years.
             </p>
           )}
 
@@ -188,8 +189,9 @@ export function AllPaymentsScreen({
             <code>{selected.rawNarration}</code>
             <PriceHistory item={selected} flagged={flagged.has(selected.id)} />
             <ProofChain item={selected} flagged={flagged.has(selected.id)} live={live} />
+            <UpiCancelLink item={selected} />
             <button type="button" className="ledger-panel-more" onClick={() => onOpen(selected.id)}>
-              All details and cancel steps →
+              View payment details and checklist →
             </button>
           </div>
         </aside>

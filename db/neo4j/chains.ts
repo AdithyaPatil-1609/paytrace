@@ -6,9 +6,11 @@
  * One subscription per profile and merchant key. Chains are derived data:
  * they are rebuilt from the payments whenever the profile's revision moved, so
  * older payments arriving in a later sync land in the right place, and running
- * it twice changes nothing.
+ * it twice changes nothing. The same rebuild refreshes SIMILAR merchant
+ * candidates (merchant-links.ts).
  */
 import { getNeo4jDriver, neo4jDatabase } from "./client";
+import { refreshSimilarLinks } from "./merchant-links";
 
 export const CHAIN_SCHEMA = [
   "CREATE CONSTRAINT live_subscription_id IF NOT EXISTS FOR (n:LiveSubscription) REQUIRE n.id IS UNIQUE",
@@ -89,6 +91,8 @@ export async function ensureChains(profile: string, today = new Date().toISOStri
       for (const query of CLEAR) await tx.run(query, { profile });
       await tx.run(BUILD, { profile, today });
       await tx.run(PRUNE, { profile });
+      // Derived like the chains: SIMILAR candidates follow the same revision.
+      await refreshSimilarLinks(tx, profile);
       await tx.run("MATCH (u:LiveProfile {id:$profile}) SET u.chainRevision = $revision, u.chainDay = $today", { profile, revision, today });
       return true;
     });

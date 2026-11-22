@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" }
 };
 
-const UPDATED = "21 November 2026";
+const UPDATED = "22 November 2026";
 
 export default function PrivacyPage() {
   return (
@@ -76,6 +76,13 @@ export default function PrivacyPage() {
         Your messages are not sent to any outside AI service.
       </p>
 
+      <p>
+        Ask Paytrace optionally offers general cancellation and billing guidance from Neo4j Aura Agent. If you opt in,
+        only a standard question containing a recognized name from our shared merchant or payment-method catalog is sent
+        to Neo4j. Your original question, email, SMS, account identifier, and payment records are not sent. You can leave
+        this option off and continue using the local assistant. Shared catalog guidance does not verify your own billing arrangement.
+      </p>
+
       <h2>5. Google user data: Limited Use</h2>
       <p>
         Paytrace&apos;s use and transfer of information received from Google APIs adheres to the{" "}
@@ -96,11 +103,21 @@ export default function PrivacyPage() {
         Your account and payment fields are stored in Paytrace&apos;s database and are visible only to you
         when you are signed in. Each account&apos;s data is kept separate. Connections use HTTPS.
       </p>
+      <p>
+        <strong>Family View (optional).</strong> If you make an invite link and someone accepts it while signed
+        in, they can see a read-only list of your recurring payments: names, amounts, how often, next dates and
+        yearly totals. They never see your emails, SMS, statements, account numbers or Gmail access, and cannot
+        change anything. Access ends after 90 days, or at once when you remove it under Family access.
+      </p>
 
       <h2>7. Cookies</h2>
       <p>
         Paytrace uses only the cookies needed to keep you signed in and to protect sign-in from forgery. There
         are no advertising or tracking cookies.
+      </p>
+      <p>
+        You are signed out 12 hours after you sign in, or after 30 minutes without using Paytrace, whichever
+        comes first. After that you sign in with Google again.
       </p>
 
       <h2>8. Your choices</h2>
