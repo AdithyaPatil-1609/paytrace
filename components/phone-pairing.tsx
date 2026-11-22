@@ -1,6 +1,6 @@
 "use client";
 /**
- * Account menu section for the Paytrace phone app: shows a one-time pairing
+ * Add phone → Android, in the top bar, for the Paytrace phone app: shows a one-time pairing
  * code (10 minutes, single use) and a way to unpair every phone.
  */
 import { useState } from "react";

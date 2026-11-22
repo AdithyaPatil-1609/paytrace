@@ -9,7 +9,7 @@ export const accountErrors = {
   "google-denied": "Google declined authorization. Check that Gmail access is allowed and your account is a test user if the app is in Testing mode.",
   "authorization-error": "Authorization was not completed. Please retry with the correct account and permissions.",
   "domain-config": "Gmail sender domains are invalid. Set GMAIL_ALLOWED_DOMAINS=.com,.in in .env.local and restart Paytrace.",
-  "gmail-reconnect": "Gmail permission is missing, expired or revoked. Reconnect Gmail from your account menu.",
+  "gmail-reconnect": "Gmail permission is missing, expired or revoked. Reconnect Gmail from Sync Gmail at the top.",
   "gmail-api-disabled": "Gmail API is disabled for this Google Cloud project. Enable it in Google Cloud and retry.",
   "gmail-rate-limit": "Gmail is temporarily limiting requests. Wait before retrying; use a shorter history rescan if possible.",
   "gmail-daily-quota": "The Google Cloud project's daily Gmail API quota has been reached. Check Gmail API quotas and wait for the quota to reset before rescanning.",
@@ -19,8 +19,8 @@ export const accountErrors = {
   "gmail-unavailable": "Gmail is temporarily unavailable. Check your connection and retry.",
   "neo4j-unavailable": "Paytrace could not read or save data in Neo4j. Check that Neo4j is running and its configured credentials are correct.",
   "origin-mismatch": "Open Paytrace at the exact PAYTRACE_APP_URL configured in .env.local (including port), then retry.",
-  "gmail-disconnected": "Connect Gmail from your account menu before syncing.",
-  "sync-unavailable": "Sync could not finish. Retry from your account menu.",
+  "gmail-disconnected": "Connect Gmail from Sync Gmail at the top before syncing.",
+  "sync-unavailable": "Sync could not finish. Retry from Sync Gmail at the top.",
 } as const;
 export type AccountErrorCode = keyof typeof accountErrors;
 export class AccountError extends Error {

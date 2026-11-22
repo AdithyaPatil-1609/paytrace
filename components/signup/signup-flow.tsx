@@ -191,7 +191,7 @@ function PermissionsStep({ account, origin, gmailConsentVersion, smsConsentText,
               <li>Read-only: Paytrace cannot send, change or delete any email.</li>
               <li>Only payment emails: receipts, renewals, price changes, mandates, trials. Emails with an OTP, PIN or password are skipped.</li>
               <li>Only the payment details are kept (merchant, amount, date, reference), never the email text.</li>
-              <li>Disconnect at any time from your account menu. <Link href="/privacy">Full privacy notice</Link></li>
+              <li>Disconnect at any time from Sync Gmail at the top of your dashboard. <Link href="/privacy">Full privacy notice</Link></li>
             </ul>
             {gmailChoice === "ask" && <div className="signup-choice">
               <button className="account-button primary" type="button" onClick={() => setGmailChoice("own")}>Yes, use this Gmail</button>
@@ -215,7 +215,7 @@ function PermissionsStep({ account, origin, gmailConsentVersion, smsConsentText,
         <button className={`account-button ${account.smsConsent === "no" ? "primary" : "demo-button"}`} type="button" onClick={() => answerSms("no")} disabled={busy} aria-pressed={account.smsConsent === "no"}>No</button>
       </div>
       {account.smsConsent === "yes" && <div className="signup-pair">
-        <p className="account-note">Install the Paytrace Android app, open it, and enter the server <strong>{origin || "this site's address"}</strong> with the code below (or pair later from your account menu).</p>
+        <p className="account-note">Install the Paytrace Android app, open it, and enter the server <strong>{origin || "this site's address"}</strong> with the code below (or pair later from Add phone at the top of your dashboard).</p>
         <PhonePairing />
       </div>}
       {account.smsConsent === "no" && <div className="signup-pair">

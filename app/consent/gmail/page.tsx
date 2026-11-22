@@ -23,7 +23,7 @@ const points: { title: string; text: string }[] = [
   { title: "What Paytrace keeps", text: "Only the payment details: merchant, amount, date, renewal date and reference. The email text itself is not stored and never written to logs. Emails with an OTP, PIN or password are skipped." },
   { title: "Where it goes", text: "Emails are read by an AI model running on Paytrace's own machine. Payment details are stored in Paytrace's database, kept apart from everyone else's. Nothing is sold or used for advertising, and no cloud AI is used without asking you separately." },
   { title: "How long", text: "Until you disconnect Gmail or delete your data. Your Gmail access key is stored encrypted." },
-  { title: "How to stop", text: "Disconnect Gmail in your account menu at any time: Paytrace revokes its access at Google and stops reading. Delete my data removes everything Paytrace holds about you." }
+  { title: "How to stop", text: "Disconnect Gmail under Sync Gmail at the top of your dashboard at any time: Paytrace revokes its access at Google and stops reading. Delete my data removes everything Paytrace holds about you." }
 ];
 
 export default async function GmailConsentPage() {
