@@ -252,6 +252,7 @@ test("the landing drawer handles sign-in, errors and offline demo access",()=>{
   // One drawer for both, with no extra link at the top right.
   assert.ok(signin.includes(">Sign in</button>") && signin.includes(">Sign up</button>"));
   assert.ok(!landing.includes("landing-signin-link"));
+  assert.ok(!landing.includes('href="/sandbox"'));
   assert.ok(signin.includes('action="/api/auth/google/start"'));
   assert.ok(signin.includes("Approved test accounts only"));
   assert.ok(signin.includes('href="/demo"'));
