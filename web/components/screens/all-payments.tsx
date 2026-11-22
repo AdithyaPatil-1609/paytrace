@@ -151,9 +151,18 @@ export function AllPaymentsScreen({
                 <span className="ledger-merchant">
                   <strong>
                     {item.merchant}
-                    {!item.inDictionary && <i className="unknown-tag">unknown</i>}
+                    {!item.inDictionary && item.merchantIdentity?.status !== "confirmed" && (
+                      <i
+                        className="unknown-tag"
+                        title={item.merchantIdentity ? `AI suggests ${item.merchantIdentity.name}; confirm in payment details` : "Not in our merchant list"}
+                      >
+                        unknown
+                      </i>
+                    )}
                   </strong>
                   <code>{item.rawNarration}</code>
+                  {item.merchantIdentity?.status === "suggested" && <small>AI suggests {item.merchantIdentity.name} · review</small>}
+                  {item.merchantIdentity?.status === "confirmed" && <small>Identity confirmed by you</small>}
                   {lastUsed && <small className={`last-used${item.kind === "unused" ? " is-stale" : ""}`}>{lastUsed}</small>}
                 </span>
                 <span className="ledger-rail">

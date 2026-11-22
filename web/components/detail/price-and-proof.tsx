@@ -46,14 +46,15 @@ export function PriceHistory({ item, flagged }: { item: Commitment; flagged: boo
   const labelEvery = Math.max(1, Math.ceil(points.length / 5));
 
   const firstRise = rises[0];
+  const unit = item.combinedCycle ? "combined cycles" : item.basis === "notices" ? "notices" : "charges";
   const summary =
     item.amountPattern === "variable"
-      ? `Changes with use: between ${formatINR(low)} and ${formatINR(high)} across ${points.length} charges.`
+      ? `Varies between ${formatINR(low)} and ${formatINR(high)} across ${points.length} ${unit}.`
       : firstRise
         ? `Went from ${formatINR(points[firstRise.index - 1].amount)} to ${formatINR(firstRise.point.amount)} on ${formatDate(firstRise.point.date)}. ${
             item.hasPriceChangeNotice ? "A price-change notice was found." : "No price-change notice was found."
           }`
-        : `Steady at ${formatINR(high)} across ${points.length} charges.`;
+        : `Steady at ${formatINR(high)} across ${points.length} ${unit}.`;
 
   return (
     <section className="drawer-block" aria-labelledby="price-history-title">

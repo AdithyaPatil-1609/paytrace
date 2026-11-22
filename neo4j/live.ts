@@ -6,6 +6,7 @@ import { usageMatches } from "./app-usage";
 import type { Commitment, Dataset, DictionaryEntry, MandateRow, NotificationRow, StatementRow, UsageRow } from "@/server/payments/types";
 import { needsCheck, splitByChecks, type StoredCheck } from "@/server/payments/recurring-check";
 import { UNVERIFIED, type Provenance } from "@/server/ingestion/trust";
+import { MERCHANT_IDENTITY_READ, identityRecords, pendingIdentities, visibleIdentities } from "./merchant-identities";
 
 /** Stored Job 4 verdicts for one person (written by neo4j/recurring-checks.ts). */
 export const CHECKS_QUERY = `MATCH (:LiveProfile {id:$profile})-[:HAS_RECURRING_CHECK]->(c:RecurringCheck)
@@ -195,14 +196,15 @@ export function usageRows(stored: StoredUsage[], dictionary: DictionaryEntry[]):
 export async function readLiveDashboard(profile: string, options: { withDetected?: boolean } = {}) {
   const session = getNeo4jDriver().session({ database: neo4jDatabase });
   try {
-    const { payments, events: allEvents, revision, checks, usage } = await session.executeRead(async tx => {
+    const { payments, events: allEvents, revision, checks, usage, identities } = await session.executeRead(async tx => {
       const payments = await tx.run(LIVE_QUERIES.payments, { profile });
       const events = await tx.run(LIVE_QUERIES.events, { profile });
       const version = await tx.run("MATCH (u:LiveProfile {id:$profile}) RETURN u.revision AS revision", { profile });
       const checks = await tx.run(CHECKS_QUERY, { profile });
       const usage = await tx.run(USAGE_QUERY, { profile });
       const report = await tx.run("MATCH (u:LiveProfile {id:$profile}) RETURN u.appUsageReport AS report", { profile });
-      return { payments: payments.records.map(r => r.get("item")), events: events.records.map(r => r.get("item")), revision: Number(version.records[0]?.get("revision") ?? 0), checks: checks.records.map(toCheck), usage: [...usage.records.map(r => ({ ...r.toObject(), source: r.get("source") === "user_confirmed" ? "user_confirmed" : "android_usage_stats" }) as StoredUsage), ...phoneReport(report.records[0]?.get("report"))] };
+      const identities = await tx.run(MERCHANT_IDENTITY_READ, { profile });
+      return { payments: payments.records.map(r => r.get("item")), events: events.records.map(r => r.get("item")), revision: Number(version.records[0]?.get("revision") ?? 0), checks: checks.records.map(toCheck), usage: [...usage.records.map(r => ({ ...r.toObject(), source: r.get("source") === "user_confirmed" ? "user_confirmed" : "android_usage_stats" }) as StoredUsage), ...phoneReport(report.records[0]?.get("report"))], identities: identityRecords(identities.records) };
     });
     // Bank statement lines are payments, not messages: they feed the payments, never the notice list.
     const events = allEvents.filter(e => e.source !== "statement");
@@ -252,13 +254,14 @@ export async function readLiveDashboard(profile: string, options: { withDetected
     // become dated rows, marked as notices; a bank debit for the same merchant, date and amount wins.
     const paidRows = statement.length;
     statement.push(...noticeRows(statement, events, profile, asOf));
-    const dataset: Dataset = { asOf, statement, notifications, mandates, dictionary, usage: usageFor([...new Set(statement.map(row => row.narration))], usage, dictionary) };
+    const dataset: Dataset = { asOf, statement, notifications, mandates, dictionary, merchantIdentities: visibleIdentities(identities), usage: usageFor([...new Set(statement.map(row => row.narration))], usage, dictionary) };
     const detected = detectCommitments(dataset);
     // Job 4: a shop visited often (checked by the local model, within the rules in recurring-check.ts) is listed apart, never dropped.
     const { commitments, everyday } = splitByChecks(detected, checks);
     const everydaySpending = everyday.map(({ item, kind, model }) => ({ id: item.id, merchant: item.merchant, rawNarration: item.rawNarration, kind, model, debitCount: item.debitCount, amount: item.amount, amountPattern: item.amountPattern, lastCharge: item.lastCharge, spentToDate: item.spentToDate }));
     const recurringChecksPending = needsCheck(detected, checks).length;
-    const summary = { revision, asOf, counts: { payments: paidRows, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, statement:allEvents.filter(e=>e.source==="statement").length, review:allEvents.filter(e=>e.status==="review").length }, commitments, everydaySpending, recurringChecksPending, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, scheduledDebits, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
+    const merchantIdentityPending = pendingIdentities(identities, detected.filter(item => !item.inDictionary).map(item => item.rawNarration)).map(row => row.descriptor);
+    const summary = { revision, asOf, counts: { payments: paidRows, sms: events.filter(e=>e.source==="sms").length, email:events.filter(e=>e.source==="email").length, statement:allEvents.filter(e=>e.source==="statement").length, review:allEvents.filter(e=>e.status==="review").length }, commitments, everydaySpending, recurringChecksPending, merchantIdentityPending, subscriptionRegistrations, subscriptionRenewals, subscriptionCandidates, scheduledDebits, recentEvents: notifications.slice(0, 20), coverage: "partial", note: "Only imported events are covered. Missing notices or account identity are uncertain; candidate matches are excluded from payment totals." };
     return { dataset, summary, ...(options.withDetected ? { detected: detected as Commitment[], checks: checks as StoredCheck[] } : {}) };
   } finally { await session.close(); }
 }
@@ -279,11 +282,17 @@ export type NoticeEvent = { id: string; kind: string; merchant: string; date: st
 
 export function noticeRows(paid: StatementRow[], events: NoticeEvent[], profile: string, asOf: string): StatementRow[] {
   const dayMs = 86_400_000;
-  const confirmedBy = (key: string, day: string) =>
-    paid.some(row => merchantKey(row.narration) === key && Math.abs(Date.parse(row.date) - Date.parse(day)) <= 3 * dayMs);
+  const confirmedBy = (key: string, day: string, amount: number, account?: string | null) =>
+    paid.some(row => merchantKey(row.narration) === key && row.debit === amount && (!account || !row.accountId || row.accountId === account) && Math.abs(Date.parse(row.date) - Date.parse(day)) <= 3 * dayMs);
   // Notices rarely name the account; borrow it from a real debit to the same
   // merchant so both land in one repeating payment, not two.
-  const accountOf = new Map(paid.map(row => [merchantKey(row.narration), row.accountId] as const));
+  const accountsByMerchant = new Map<string, Set<string>>();
+  for (const row of paid) {
+    const key = merchantKey(row.narration);
+    const accounts = accountsByMerchant.get(key) ?? new Set<string>();
+    if (row.accountId !== "unidentified") accounts.add(row.accountId);
+    accountsByMerchant.set(key, accounts);
+  }
   const seen = new Set<string>();
   const rows: StatementRow[] = [];
   for (const e of events) {
@@ -291,10 +300,12 @@ export function noticeRows(paid: StatementRow[], events: NoticeEvent[], profile:
     const day = typeof e.renewalDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.renewalDate) ? e.renewalDate : e.date;
     if (typeof day !== "string" || day > asOf) continue;
     const amount = Number(e.amountPaise) / 100;
-    const key = JSON.stringify([merchantKey(e.merchant), day, amount]);
-    if (confirmedBy(merchantKey(e.merchant), day) || seen.has(key)) continue;
+    const accounts = accountsByMerchant.get(merchantKey(e.merchant));
+    const account = e.accountHint || (accounts?.size === 1 ? [...accounts][0] : "unidentified");
+    const key = JSON.stringify([merchantKey(e.merchant), day, amount, account]);
+    if (confirmedBy(merchantKey(e.merchant), day, amount, e.accountHint) || seen.has(key)) continue;
     seen.add(key);
-    rows.push({ txnId: `notice-${e.id}`, persona: profile, date: day, accountId: e.accountHint || accountOf.get(merchantKey(e.merchant)) || "unidentified", accountType: "unknown", narration: e.merchant, debit: amount, reference: e.reference ?? "", channel: NOTICE_CHANNEL, txnKind: "debit_notice" } as StatementRow);
+    rows.push({ txnId: `notice-${e.id}`, persona: profile, date: day, accountId: account, accountType: "unknown", narration: e.merchant, debit: amount, reference: e.reference ?? "", channel: NOTICE_CHANNEL, txnKind: "debit_notice" } as StatementRow);
   }
   return rows;
 }

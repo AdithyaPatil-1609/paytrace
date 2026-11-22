@@ -1,4 +1,4 @@
-import { matchDictionary } from "@/server/payments/engine";
+import { matchDictionary, NOTICE_CHANNEL } from "@/server/payments/engine";
 import { formatDate, formatINR } from "@/server/presentation/format";
 import type { Commitment, DictionaryEntry } from "@/server/payments/types";
 
@@ -35,7 +35,7 @@ export function layoutEvidence(item: Commitment, dictionary: DictionaryEntry[]) 
         detail: `${formatDate(row.date)} · ${row.narration} · ${row.account} · Reference: ${row.reference || "not supplied"}`,
         x: 450 + 300 * Math.cos(angle),
         y: 350 + 300 * Math.sin(angle),
-        relationship: "charged"
+        relationship: row.channel === NOTICE_CHANNEL ? "scheduled" : "charged"
       };
     }),
     ...messages.map((row, index): EvidenceNode => {
@@ -80,7 +80,7 @@ export function layoutEvidence(item: Commitment, dictionary: DictionaryEntry[]) 
             relationship: "matches"
           }
         ]
-      : [])
+      : item.merchantIdentity ? [{ id: `identity-${item.merchantIdentity.id}`, kind: "pattern" as const, label: "AI identity", caption: item.merchantIdentity.status, detail: `${item.merchantIdentity.name} · ${item.merchantIdentity.category}. ${item.merchantIdentity.status === "confirmed" ? "Confirmed by you" : "Local AI suggestion, not verified"}.`, x: 450, y: 670, relationship: item.merchantIdentity.status === "confirmed" ? "confirmed by you" : "suggested" }] : [])
   ];
   const words = item.merchant.split(" ");
   const split = Math.ceil(words.length / 2);
