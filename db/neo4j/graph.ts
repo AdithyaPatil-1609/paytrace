@@ -60,12 +60,14 @@ RETURN m.brand AS brand, toString(t.sent_on) AS noticeOn, toString(first.date) A
        first.debit_inr AS amount, head(collect(h.debit_inr)) AS hold
 ORDER BY brand`;
 
-/** A live Mandate FOR a Merchant nobody opens, and what was PAID_TO it since the last open. */
+/**
+ * A live Mandate FOR a Merchant whose last use (as the person gave it) is too old, and what was
+ * PAID_TO it since. No last-use date means unknown, so the merchant is left out.
+ */
 export const UNOPENED_QUERY = `MATCH (md:Mandate {status: 'active'})-[:FOR]->(m:Merchant)
-WHERE (m.last_opened IS NOT NULL AND duration.inDays(m.last_opened, date($asOf)).days > $zombieDays)
-   OR (m.last_opened IS NULL AND m.opens_last_12_months = 0)
+WHERE m.last_opened IS NOT NULL AND duration.inDays(m.last_opened, date($asOf)).days > $zombieDays
 OPTIONAL MATCH (p:Payment)-[:PAID_TO]->(m)
-WHERE m.last_opened IS NULL OR p.date > m.last_opened
+WHERE p.date > m.last_opened
 RETURN m.brand AS brand, toString(m.last_opened) AS lastOpened, md.mandate_ref AS mandateRef,
        count(p) AS charges, coalesce(sum(p.debit_inr), 0) AS paid
 ORDER BY paid DESC`;

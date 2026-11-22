@@ -109,10 +109,17 @@ describe("Cypher engine on the live graph", { skip }, () => {
     assert.equal(loan.canCancel, false);
   });
 
-  test("C9. the year adds to 1,99,138 over 14 commitments, 27,936 of it unused", () => {
+  test("C9. the year adds to 1,99,138 over 14 commitments, 27,576 of it unused, as offline", () => {
     assert.equal(cypher.length, 14);
     assert.equal(yearlyTotal(cypher), 199138);
-    assert.equal(unusedTotal(cypher), 27936);
+    assert.equal(unusedTotal(cypher), 27576);
+  });
+
+  test("C9b. a pack with no last-use date is \"In use\" in Cypher, as offline, with no warning", () => {
+    const pack = find("Caller tune");
+    assert.equal(pack.signals.includes("zombie"), false);
+    assert.equal(pack.status, "In use");
+    assert.equal(pack.issue, undefined);
   });
 
   test("C10. ids are unique and carry the account, as offline", () => {
@@ -165,7 +172,7 @@ describe("Cypher engine on the live graph", { skip }, () => {
 
   // Screen 00.
 
-  test("C14. the graph findings name Spotify, YouTube, and 24,341 paid after the last open", async () => {
+  test("C14. the graph findings name Spotify, YouTube, and 23,981 paid after the last use", async () => {
     const graph = await loadGraphFacts(session, AS_OF);
     assert.deepEqual(
       graph.silentHikes.rows.map((row) => [row.brand, row.from, row.to]),
@@ -174,9 +181,10 @@ describe("Cypher engine on the live graph", { skip }, () => {
     assert.deepEqual(graph.trials.rows.map((row) => [row.brand, row.amount, row.hold]), [["YouTube", 149, 1]]);
     assert.deepEqual(
       graph.unopened.rows.map((row) => row.brand).sort(),
-      ["Caller tune", "Canva", "FitApp", "FitLine Gym"]
+      // Caller tune has no last-use date, so it is unknown, not unused.
+      ["Canva", "FitApp", "FitLine Gym"]
     );
-    assert.equal(graph.unopened.rows.reduce((sum, row) => sum + row.paid, 0), 24341);
+    assert.equal(graph.unopened.rows.reduce((sum, row) => sum + row.paid, 0), 23981);
     assert.equal(graph.focus?.brand, "Spotify");
     assert.deepEqual(graph.focus?.messages.map((row) => row.eventType), ["debit_sms"]);
   });

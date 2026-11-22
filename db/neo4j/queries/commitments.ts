@@ -97,17 +97,18 @@ WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gap
      any(msg IN notices WHERE msg.event_type = 'trial_ending') AS hasTrial,
      CASE WHEN m IS NULL OR m.last_opened IS NULL THEN null
           ELSE duration.inDays(m.last_opened, date($asOf)).days END AS openedDays,
-     m IS NOT NULL AND m.opens_last_12_months IS NOT NULL AND m.last_opened IS NULL AND m.opens_last_12_months = 0 AS neverOpened,
      toFloat(amounts[size(amounts) - 1]) AS latest,
      CASE WHEN amountPattern = 'step' THEN toFloat(amounts[0]) ELSE null END AS previous
 WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gapMedian, amountPattern, cadence, notices,
-     hasPrice, hasTrial, openedDays, neverOpened, latest, previous,
+     hasPrice, hasTrial, openedDays, latest, previous,
      coalesce(pat.mechanism, md.mechanism, 'none') AS mechanism,
      coalesce(pat.cancel_mode, 'normal') AS cancelMode,
      (amountPattern = 'step' AND previous IS NOT NULL AND latest > previous AND NOT hasPrice) AS silentHike,
-     ((openedDays IS NOT NULL AND openedDays > $rules.zombieDays) OR neverOpened) AS zombie
+     // Only a last-use date the person gave can make a payment "Stopped using it", as in
+     // lib/payments/engine.ts. No date means unknown, so no warning.
+     (openedDays IS NOT NULL AND openedDays > $rules.zombieDays) AS zombie
 WITH patternKey, a, pat, m, charges, holds, md, amounts, gaps, amountMedian, gapMedian, amountPattern, cadence, notices,
-     hasPrice, hasTrial, openedDays, neverOpened, latest, previous, mechanism, cancelMode, silentHike, zombie,
+     hasPrice, hasTrial, openedDays, latest, previous, mechanism, cancelMode, silentHike, zombie,
      [signal IN
        (CASE WHEN silentHike THEN ['silent_hike'] ELSE [] END) +
        (CASE WHEN hasTrial THEN ['trial_converted'] ELSE [] END) +
