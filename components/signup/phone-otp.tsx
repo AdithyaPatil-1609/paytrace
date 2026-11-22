@@ -5,7 +5,7 @@
  * and is signed out again once our server has checked the token.
  */
 import { useEffect, useRef, useState } from "react";
-import type { Auth, ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
+import type { Auth, ConfirmationResult, RecaptchaVerifier } from "@firebase/auth";
 import { toE164 } from "@/lib/accounts/phone-number";
 import { saveStep } from "./signup-flow";
 
@@ -14,8 +14,8 @@ export type FirebaseWebConfig = { apiKey: string; authDomain: string; projectId:
 let authPromise: Promise<Auth> | null = null;
 function firebaseAuth(config: FirebaseWebConfig) {
   authPromise ??= (async () => {
-    const { initializeApp, getApps } = await import("firebase/app");
-    const { initializeAuth, inMemoryPersistence } = await import("firebase/auth");
+    const { initializeApp, getApps } = await import("@firebase/app");
+    const { initializeAuth, inMemoryPersistence } = await import("@firebase/auth");
     const app = getApps()[0] ?? initializeApp(config);
     return initializeAuth(app, { persistence: inMemoryPersistence });
   })().catch(error => { authPromise = null; throw error; });
@@ -58,7 +58,7 @@ export function PhoneOtp({ config, onVerified }: { config: FirebaseWebConfig; on
     setBusy(true); setError("");
     try {
       const auth = await firebaseAuth(config);
-      const { RecaptchaVerifier, signInWithPhoneNumber } = await import("firebase/auth");
+      const { RecaptchaVerifier, signInWithPhoneNumber } = await import("@firebase/auth");
       verifier.current ??= new RecaptchaVerifier(auth, "signup-recaptcha", { size: "invisible" });
       confirmation.current = await signInWithPhoneNumber(auth, number, verifier.current);
       setSentTo(number); setCode(""); setWait(30);
@@ -75,7 +75,7 @@ export function PhoneOtp({ config, onVerified }: { config: FirebaseWebConfig; on
       const credential = await confirmation.current.confirm(code);
       const idToken = await credential.user.getIdToken();
       const problem = await saveStep({ action: "phone", idToken });
-      const { signOut } = await import("firebase/auth");
+      const { signOut } = await import("@firebase/auth");
       await signOut(await firebaseAuth(config)).catch(() => undefined);
       if (problem) setError(problem); else onVerified();
     } catch (e) { setError(firebaseMessage(e)); }
