@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import { PayTraceLogo } from "@/web/components/paytrace-logo";
+import { LandingMotion } from "@/web/components/landing-motion";
 import Link from "next/link";
 
 const AUTH_PATH = "/signin";
@@ -75,6 +76,7 @@ export function Landing({
 
   return (
     <main className="landing-shell">
+      <LandingMotion />
       {/* ── Background Watercolour & Evidence Arc ── */}
       <div className="watercolour-bg" aria-hidden="true">
         <svg
@@ -112,14 +114,17 @@ export function Landing({
             </filter>
           </defs>
 
+          <g className="wash-drift">
           {/* Deep organic watercolor pools */}
           <path
-            d="M-40 450 L-40 280 Q140 210 360 270 T820 250 Q1120 180 1480 230 L1480 450 Z"
+            d="M-120 450 L-120 280 Q140 210 360 270 T820 250 Q1120 180 1560 230 L1560 450 Z"
             fill="url(#wash-teal-1)"
             filter="url(#soft-blur)"
           />
+          </g>
+          <g className="wash-drift-slow">
           <path
-            d="M-20 450 L-20 310 Q260 240 540 310 T1040 280 Q1280 220 1480 290 L1480 450 Z"
+            d="M-120 450 L-120 310 Q260 240 540 310 T1040 280 Q1280 220 1560 290 L1560 450 Z"
             fill="url(#wash-teal-2)"
             filter="url(#soft-blur)"
           />
@@ -129,6 +134,7 @@ export function Landing({
             filter="url(#fine-blur)"
           />
 
+          </g>
           {/* Fine coast edge */}
           <path
             d="M-20 330 Q220 260 490 315 T980 270 Q1240 220 1460 260"

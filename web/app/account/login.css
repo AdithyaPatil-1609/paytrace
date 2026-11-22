@@ -763,3 +763,89 @@ a.account-button { text-decoration: none; }
 .drawer-form .signup-field { display: grid; gap: 6px; font-size: calc(14px * var(--text-scale)); font-weight: 600; color: var(--ink); }
 .drawer-form .signup-field input { font: inherit; font-weight: 400; font-size: calc(16px * var(--text-scale)); padding: 11px 12px; border: 1px solid var(--rule-firm); border-radius: 6px; background: var(--paper-lift); color: var(--ink); }
 .drawer-form .signup-field input:focus { outline: 2px solid var(--marigold); outline-offset: 1px; }
+
+/* ── Moving backdrop: paper bars with a slow travelling wave ──
+   Light only. Bars sit behind the hero, fade out toward the centre so text
+   stays easy to read, and stop moving under prefers-reduced-motion. */
+.motion-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 16%, transparent 36%, transparent 64%, #000 84%, #000 100%);
+  mask-image: linear-gradient(90deg, #000 0%, #000 16%, transparent 36%, transparent 64%, #000 84%, #000 100%);
+}
+.motion-bank {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(6px, 0.7vw, 12px);
+}
+.motion-bank-left { left: 0; }
+.motion-bank-right { right: 0; flex-direction: row-reverse; }
+.motion-bank i {
+  flex: 1 1 0;
+  height: var(--h);
+  border-radius: 18px 18px 0 0;
+  /* Lit from the left: a bright face, a cool shaded right edge, a soft cast shadow. */
+  background:
+    linear-gradient(90deg, #ffffff 0%, #f6f8fa 55%, #dfe6ee 100%),
+    #f1f4f7;
+  background-blend-mode: normal;
+  box-shadow:
+    inset 0 1px 0 #ffffff,
+    inset -2px 0 0 rgba(44, 74, 110, 0.07),
+    14px 6px 28px -10px rgba(31, 54, 83, 0.22),
+    0 -1px 0 rgba(31, 54, 83, 0.05);
+  transform-origin: 50% 100%;
+  animation: bar-wave 9s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  /* Negative delays start every bar mid-wave, so the wave rolls from the edge inward. */
+  animation-delay: calc(var(--i) * -0.32s);
+  will-change: transform;
+}
+@keyframes bar-wave {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.74); }
+}
+/* A band of light that drifts slowly across the bars. */
+.motion-sheen {
+  position: absolute;
+  inset: 0 -40%;
+  background: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.55) 48%, rgba(120, 190, 189, 0.12) 52%, transparent 65%);
+  animation: sheen-drift 14s linear infinite;
+}
+@keyframes sheen-drift {
+  from { transform: translateX(-30%); }
+  to { transform: translateX(30%); }
+}
+/* The watercolour wash at the bottom breathes sideways. */
+.watercolour-canvas .wash-drift {
+  animation: wash-drift 18s ease-in-out infinite alternate;
+}
+.watercolour-canvas .wash-drift-slow {
+  animation: wash-drift 26s ease-in-out infinite alternate-reverse;
+}
+@keyframes wash-drift {
+  from { transform: translateX(-36px); }
+  to { transform: translateX(36px); }
+}
+@media (max-width: 900px) {
+  .motion-bank { width: 46%; }
+  .motion-bank i { height: calc(var(--h) * 0.45); }
+  .motion-field {
+    -webkit-mask-image: linear-gradient(90deg, #000 0%, transparent 38%, transparent 62%, #000 100%);
+    mask-image: linear-gradient(90deg, #000 0%, transparent 38%, transparent 62%, #000 100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .motion-bank i,
+  .motion-sheen,
+  .watercolour-canvas .wash-drift,
+  .watercolour-canvas .wash-drift-slow {
+    animation: none;
+  }
+}
