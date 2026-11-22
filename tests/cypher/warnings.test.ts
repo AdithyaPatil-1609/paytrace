@@ -111,6 +111,21 @@ test("10: a debit due within 7 days is warned, confirmed by a notice or estimate
   assert.ok(!upcoming.some((w) => w.merchant === "LATERFLIX"), "due 10 Dec, outside the window");
 });
 
+test("10b: a debit notice that arrives on the debit day may have come late; one sent days before is fine (card G4)", { skip }, async () => {
+  const profile = fresh();
+  await load(profile, [
+    event("debit_scheduled", "LATEFUND", "2026-11-23", 500000, { source: "sms", renewalDate: "2026-11-23" }),
+    event("debit_scheduled", "EARLYFUND", "2026-11-20", 300000, { source: "sms", renewalDate: "2026-11-24" })]);
+  const { upcoming, headsUp: alerts } = await readGraphWarnings(profile, TODAY);
+  const late = upcoming.find((w) => w.merchant === "LATEFUND")!;
+  assert.equal(late.lateNotice, true);
+  assert.match(late.why, /This notice may have come late\. Check your other messages and your bank\./);
+  assert.doesNotMatch(late.why, /violat/i);
+  const early = upcoming.find((w) => w.merchant === "EARLYFUND")!;
+  assert.equal(early.lateNotice, false);
+  assert.ok(alerts.find((a) => a.merchant === "LATEFUND")!.body.includes("may have come late"));
+});
+
 test("11: a payment after an effective cancellation is unexpected; one before it is the final bill", { skip }, async () => {
   const profile = fresh();
   await load(profile, [debit("GONEFLIX", "2026-08-05", 19900), debit("GONEFLIX", "2026-09-05", 19900), debit("GONEFLIX", "2026-10-05", 19900),

@@ -49,9 +49,9 @@ test("a bank pre-debit notice fixes the date; the heads-up merges it with the du
   assert.equal(priceAhead[0].chargeOn, "2026-11-24");
   assert.equal(priceAhead[0].dateConfirmed, true);
   const upcoming = [
-    { merchant: "Spotify", subscriptionId: "s2", amountPaise: 13900, expectedOn: "2026-11-24", daysRemaining: 2, frequency: "monthly", confidence: "high", confirmed: true, history: [], evidence: [], why: "" },
-    { merchant: "HDFC Life", subscriptionId: "s3", amountPaise: 120000, expectedOn: "2026-11-25", daysRemaining: 3, frequency: "monthly", confidence: "high", confirmed: false, history: [], evidence: [], why: "" },
-    { merchant: "BESCOM", subscriptionId: "s4", amountPaise: 128500, expectedOn: "2026-11-28", daysRemaining: 6, frequency: "monthly", confidence: "medium", confirmed: false, history: [], evidence: [], why: "" }
+    { merchant: "Spotify", subscriptionId: "s2", amountPaise: 13900, expectedOn: "2026-11-24", daysRemaining: 2, frequency: "monthly", confidence: "high", confirmed: true, lateNotice: false, history: [], evidence: [], why: "" },
+    { merchant: "HDFC Life", subscriptionId: "s3", amountPaise: 120000, expectedOn: "2026-11-25", daysRemaining: 3, frequency: "monthly", confidence: "high", confirmed: false, lateNotice: false, history: [], evidence: [], why: "" },
+    { merchant: "BESCOM", subscriptionId: "s4", amountPaise: 128500, expectedOn: "2026-11-28", daysRemaining: 6, frequency: "monthly", confidence: "medium", confirmed: false, lateNotice: false, history: [], evidence: [], why: "" }
   ] as UpcomingWarning[];
   const alerts = headsUp({ priceAhead, upcoming }, 3);
   assert.deepEqual(alerts.map((a) => `${a.kind}:${a.merchant}`), ["price_rise_ahead:Spotify", "debit_due:HDFC Life"]);

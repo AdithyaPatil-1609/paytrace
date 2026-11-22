@@ -1,5 +1,6 @@
 import type { NotificationRow } from "@/lib/payments/types";
 import { formatDate } from "@/lib/presentation/format";
+import { isLateDebitNotice, LATE_NOTICE_MESSAGE } from "@/lib/payments/notice-timing";
 
 const money = new Intl.NumberFormat("en-IN", {style:"currency",currency:"INR",minimumFractionDigits:2,maximumFractionDigits:2});
 const periods = {weekly:52,monthly:12,quarterly:4,annual:1};
@@ -21,11 +22,11 @@ const rank: Record<Kind, number> = {renewal:0,scheduled:1,registration:2,candida
 /** What we know about one merchant, from its most telling notice. */
 function describe(kind: Kind, item: NotificationRow, asOf: string) {
   if (kind === "scheduled") return {
-    lines: [`${item.renewalFrequency??"Frequency unknown"} · ${item.renewalDate?`Reported debit date: ${formatDate(item.renewalDate)}${item.renewalDate<asOf?" (passed; verify status)":""}`:"Debit date unknown"}`],
+    lines: [`${item.renewalFrequency??"Frequency unknown"} · ${item.renewalDate?`Reported debit date: ${formatDate(item.renewalDate)}${item.renewalDate<asOf?" (passed; verify status)":""}`:"Debit date unknown"}`, ...(isLateDebitNotice(item)?[LATE_NOTICE_MESSAGE]:[])],
     amount: `${item.amount===undefined?"Amount unknown":money.format(item.amount)} scheduled · Not confirmed paid`
   };
   if (kind === "renewal") return {
-    lines: [`${item.renewalFrequency??"Frequency unknown"} · ${renewalNotice(item.renewalDate,asOf)}`, ...(item.amount!==undefined&&item.renewalFrequency?[`Projected annual cost if renewed: ${money.format(item.amount*periods[item.renewalFrequency])}`]:[])],
+    lines: [`${item.renewalFrequency??"Frequency unknown"} · ${renewalNotice(item.renewalDate,asOf)}`, ...(isLateDebitNotice(item)?[LATE_NOTICE_MESSAGE]:[]), ...(item.amount!==undefined&&item.renewalFrequency?[`Projected annual cost if renewed: ${money.format(item.amount*periods[item.renewalFrequency])}`]:[])],
     amount: `${item.amount===undefined?"Amount unknown":money.format(item.amount)} scheduled`
   };
   if (kind === "registration") return {
