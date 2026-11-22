@@ -15,7 +15,7 @@ import { accountErrorMessage } from "@/lib/accounts/errors";
 import { IphoneConnect } from "@/components/iphone-connect";
 import { GraphWarningsPanel } from "@/components/graph-warnings";
 import { PhonePairing } from "@/components/phone-pairing";
-import { StatementImport, StatementImportButton } from "@/components/statement-import";
+import { StatementImportButton } from "@/components/statement-import";
 
 type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
   linked: boolean; lastSync: string | null; syncStatus: string | null; syncError?:string|null; iphone?: boolean;
@@ -87,8 +87,6 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
         {syncResult&&<p className="account-note" role="status">{syncResult}</p>}
       </>}
       {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
-      <hr/>
-      <StatementImport onImported={afterImport}/>
       <hr/>
       <IphoneConnect connected={snapshot?.iphone===true} onChange={()=>void refresh()}/>
       <PhonePairing/>

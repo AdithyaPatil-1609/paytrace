@@ -1,6 +1,6 @@
 "use client";
 /**
- * Import a bank statement as CSV or PDF, from the top bar or the account menu.
+ * Import a bank statement as CSV or PDF, from the top bar or the sign-up page.
  * The file is read in the browser (a PDF and its password never leave the
  * device); only the debit lines' date, amount and description are sent, with
  * account numbers removed, and the file itself is not stored.
@@ -63,7 +63,7 @@ function PasswordPrompt({ retry, onAnswer }: { retry: boolean; onAnswer: (passwo
   </div>;
 }
 
-/** Account menu section. */
+/** Sign-up page section (the dashboard uses the top bar button below). */
 export function StatementImport({ onImported }: { onImported: () => void }) {
   const { busy, message, importFile, prompt } = useStatementImport(onImported);
   return <>
