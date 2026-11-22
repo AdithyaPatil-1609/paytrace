@@ -3,10 +3,10 @@
  * sign in (approved Google test accounts only) or the open demo.
  * A signed-in visitor goes straight to their account.
  */
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Landing } from "@/web/components/landing";
-import { accountConfigured, SESSION } from "@/server/accounts/security";
+import { accountConfigured } from "@/server/accounts/security";
+import { hasLiveSession } from "@/server/accounts/live-session";
 import { noticeIsError, noticeText } from "@/server/accounts/notices";
 import "./account/account.css";
 import "./account/login.css";
@@ -24,8 +24,9 @@ export default async function Home({
   if (params.demo === "1") redirect("/demo");
 
   const notice = params.notice ?? "";
-  // A signed-in visitor with no pending notice goes straight to their account.
-  if ((await cookies()).get(SESSION)?.value && !notice) redirect("/account");
+  // Only a session that is still valid goes straight to the account. An old,
+  // expired cookie gets the plain landing page, not a "signed out" bounce.
+  if (!notice && (await hasLiveSession())) redirect("/account");
 
   return (
     <Landing
@@ -36,3 +37,4 @@ export default async function Home({
     />
   );
 }
+
