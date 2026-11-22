@@ -21,7 +21,9 @@ const config = [
     ignores: ["web/.next/**", ".next/**", "node_modules/**", "out/**", "build/**", "web/next-env.d.ts", "ai/training/.venv/**"]
   },
   ...nextCoreWebVitals,
-  ...nextTypescript
+  ...nextTypescript,
+  // The Next.js site lives in web/, so point Next's lint rules there.
+  { settings: { next: { rootDir: "web/" } } }
 ];
 
 export default config;
