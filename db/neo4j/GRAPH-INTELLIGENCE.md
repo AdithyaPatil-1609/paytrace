@@ -83,8 +83,10 @@ MATCH (a:LivePayment)-[n:NEXT]->(b:LivePayment) WHERE b.date < a.date RETURN cou
    Google One, Google Play and YouTube are never linked.
 3. **How far each record can be trusted**: channels against trust levels, then
    payments confirmed by both SMS and email, each piece with its badge.
-4. **Cypher that ran**: every parameterized query behind the warnings, with
-   success, rows, the warnings it produced and the evidence. `$profile` comes
+4. **What each graph query found**: every parameterized query behind the
+   warnings, drawn as the nodes and relationships it found (you, messages,
+   merchants, SIMILAR links, trust levels), with success, rows and warnings.
+   "Show Cypher" opens the exact query. `$profile` comes
    from the session and is never shown; the browser cannot send Cypher.
 5. **Issues** screen: each warning's evidence now carries its trust badge and
    "confirmed by 2 channels" where true.
