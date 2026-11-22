@@ -142,6 +142,9 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         LastSms.load(this)
         CompanionSettings.load(this)
+        AppUsage.load(this)
+        // Card M3: at most every 12 hours, and only if the person turned it on.
+        AppUsage.sendIfDue(this)
     }
 
     // Reads a paytrace://connect link once, then forgets it, so turning
@@ -224,6 +227,8 @@ fun PaytraceScreen() {
 
             ServerConnectionCard()
 
+            AppUsageCard()
+
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -247,7 +252,7 @@ fun PaytraceScreen() {
             HorizontalDivider()
 
             Text(
-                "HackFront 2026 | Version 0.6 - Signed pairing",
+                "HackFront 2026 | Version 0.7 - App usage",
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -480,6 +485,74 @@ fun ServerConnectionCard() {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Unpair and disconnect this phone")
+            }
+        }
+    }
+}
+
+// Card M3, optional: app usage for known subscription apps, so Paytrace can
+// say "Spotify: paid every month, opened 0 minutes in 30 days".
+@Composable
+fun AppUsageCard() {
+    val context = LocalContext.current
+    // Re-read in onResume, so it updates when the person comes back from Settings.
+    val access = AppUsage.access.value
+    var enabled by remember { mutableStateOf(AppUsage.enabled(context)) }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("App usage (optional)", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Finds subscriptions you pay for but don't use. Only for known " +
+                        "subscription apps like Netflix or Spotify: the day each was last " +
+                        "opened and its minutes in the last 30 days. Nothing on screen is " +
+                        "read, and no other app is ever sent.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(if (access) "Usage access: on" else "Usage access: off")
+            if (!access) {
+                Button(onClick = { context.startActivity(AppUsage.settingsIntent()) }) {
+                    Text("Turn on usage access")
+                }
+                Text(
+                    "In the list, tap Paytrace Companion and switch on Permit usage access.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Send app usage to Paytrace", modifier = Modifier.weight(1f))
+                Switch(
+                    checked = enabled,
+                    enabled = access,
+                    onCheckedChange = {
+                        enabled = it
+                        AppUsage.setEnabled(context, it)
+                        if (it) AppUsage.sendIfDue(context, force = true)
+                    }
+                )
+            }
+            OutlinedButton(
+                onClick = { AppUsage.sendIfDue(context, force = true) },
+                enabled = access && enabled,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Send now")
+            }
+            if (AppUsage.lastResult.value.isNotEmpty()) {
+                Text("Last result: ${AppUsage.lastResult.value}", style = MaterialTheme.typography.bodySmall)
+            }
+            AppUsage.found.value.take(8).forEach { app ->
+                Text(
+                    "${app.merchant}: " + (app.lastUsed?.let { "last opened $it" } ?: "not opened recently") +
+                            ", ${app.minutes30d} min in 30 days",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }

@@ -6,8 +6,10 @@ package com.paytrace.companion
 object SigningFormat {
 
     // The phone signs these bytes, followed by the exact body bytes.
-    fun prefix(deviceId: String, time: String, nonce: String): ByteArray =
-        "PAYTRACE-SMS-v1\n$deviceId\n$time\n$nonce\n".toByteArray(Charsets.UTF_8)
+    // purpose is "SMS" for bank SMS and "USAGE" for app-usage reports (card M3),
+    // so a signature made for one can never be replayed as the other.
+    fun prefix(deviceId: String, time: String, nonce: String, purpose: String = "SMS"): ByteArray =
+        "PAYTRACE-$purpose-v1\n$deviceId\n$time\n$nonce\n".toByteArray(Charsets.UTF_8)
 
     // What the server accepts for each header.
     val deviceIdShape = Regex("""^[A-Za-z0-9_-]{16,64}$""")

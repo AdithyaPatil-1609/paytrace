@@ -82,16 +82,16 @@ export async function processSandboxMessage(
 
   const message: IncomingMessage = { text, sender, receivedAt: `${receivedOn}T10:00:00.000+05:30` };
   const queued = inTurn(() => read(message));
-  if (!queued) return stop("AI reader (Qwen)", "The AI reader on our laptop is busy with other visitors. Try again in a few seconds.", "Busy: try again");
+  if (!queued) return stop("AI reader", "The AI reader is busy with other people. Try again in a few seconds.", "Busy: try again");
   const result = await queued;
 
-  if (result.status === "dropped") return stop("AI reader (Qwen)", `Dropped before reading: ${result.reason}.`, "Dropped");
+  if (result.status === "dropped") return stop("AI reader", `Dropped before reading: ${result.reason}.`, "Dropped");
   if (result.status === "unreadable") {
-    return stop("AI reader (Qwen)", result.reason === "model_down"
-      ? "The AI reader (Qwen on our laptop) is not running right now, so the message could not be read. Nothing was guessed."
+    return stop("AI reader", result.reason === "model_down"
+      ? "The AI reader is offline right now, so this message was not read. PayTrace never guesses, so nothing was saved. Try again in a minute."
       : "The AI's reply did not match the fixed form, so it was refused rather than repaired by guessing.", "Could not read");
   }
-  pass("AI reader (Qwen)", `Read as "${result.fields.kind}"${result.fields.merchant ? ` from ${result.fields.merchant}` : ""}${result.fields.amount_text ? `, ${result.fields.amount_text}` : ""}.`);
+  pass("AI reader", `Read as "${result.fields.kind}"${result.fields.merchant ? ` from ${result.fields.merchant}` : ""}${result.fields.amount_text ? `, ${result.fields.amount_text}` : ""}.`);
 
   const removed = result.removed ?? [];
   steps.push(removed.length

@@ -56,12 +56,21 @@ export type QueryRun = {
   settings: Record<string, string | number>; ok: boolean; rows: number; ms: number;
   warnings: number; records: { merchant: string; detail: string; evidence: Evidence[] }[];
 };
+/** A higher price announced (price-change notice, pre-debit notice or renewal notice) that has not been charged yet. */
+export type PriceAheadWarning = {
+  subscriptionId: string; merchant: string; currentPaise: number; lastPaidOn: string; newPaise: number; pctChange: number;
+  chargeOn: string | null; daysRemaining: number | null; dateConfirmed: boolean; evidence: Evidence[]; why: string;
+};
 export type GraphWarnings = {
-  asOf: string; price: PriceWarning[]; mandate: MandateWarning[]; mandateUnknown: string[];
+  asOf: string; price: PriceWarning[]; priceAhead: PriceAheadWarning[]; mandate: MandateWarning[]; mandateUnknown: string[];
   unused: UnusedWarning[]; cancellation: CancelWarning[]; upcoming: UpcomingWarning[];
   /** The Cypher that ran for this answer. incomplete: a query failed, so some warnings may be missing. */
   queries: QueryRun[]; incomplete: boolean;
+  /** The few that need action in the next days: shown first, and sent to the phone. */
+  headsUp: HeadsUp[];
 };
+/** One short alert for the phone and the top of the account page: what will happen, when, and what to do. */
+export type HeadsUp = { id: string; kind: "price_rise_ahead" | "debit_due"; merchant: string; date: string | null; daysRemaining: number | null; amountPaise: number | null; title: string; body: string };
 
 const n = (value: unknown) => (value == null ? null : Number(value));
 const params = (profile: string, today: string, extra: Record<string, unknown> = {}) => ({ profile, today, ...L, ...extra });
@@ -164,6 +173,26 @@ MATCH (u:LiveProfile {id:$profile})-[:HAS_SUBSCRIPTION]->(s:LiveSubscription) WH
   AND NOT EXISTS { (u)-[:RECEIVED]->(m:LiveEvent {kind:'mandate_created'})-[:ABOUT]->(mm:LiveMerchant) WHERE mm.key = s.merchantKey AND m.amountPaise > 0 }
 RETURN s.merchant AS merchant ORDER BY merchant`;
 
+/**
+ * Query 5: a notice announcing a higher amount than the last one paid, so the
+ * person hears about the rise before the money is taken. Notices: a price-change
+ * email or SMS, a bank's pre-debit notice, or a renewal notice.
+ */
+export const PRICE_AHEAD_QUERY = `
+MATCH (u:LiveProfile {id:$profile})-[:HAS_SUBSCRIPTION]->(s:LiveSubscription)-[:LATEST]->(latest:LivePayment)
+WHERE s.cancelEffectiveOn IS NULL OR s.cancelEffectiveOn > $today
+MATCH (u)-[:RECEIVED]->(e:LiveEvent)-[:ABOUT]->(m:LiveMerchant)
+WHERE m.key = s.merchantKey AND e.kind IN ['price_change', 'debit_scheduled', 'subscription_renewal']
+  AND coalesce(e.status, '') <> 'ignored' AND e.amountPaise IS NOT NULL
+  AND e.date >= toString(date(latest.date) - duration({days: $noticeLeadDays}))
+  AND toInteger(e.amountPaise) * 100 >= (100 + $priceRisePct) * toInteger(latest.amountPaise)
+  AND (e.renewalDate IS NULL OR e.renewalDate >= $today)
+OPTIONAL MATCH (s)-[:FIRST]->(:LivePayment)-[:NEXT*0..]->(:LivePayment)-[n:NEXT]->(:LivePayment)
+WITH s, latest, e, collect(n.gapDays) AS gaps
+RETURN s.id AS subscriptionId, s.merchant AS merchant, latest.date AS latestDate, toInteger(latest.amountPaise) AS currentPaise, gaps,
+  e {.id, .source, .kind, .date, .renewalDate, .sourceTrust, .trustReason, amountPaise: toInteger(e.amountPaise)} AS notice
+ORDER BY e.date DESC`;
+
 /** Cycle facts per subscription, shared by the unused and upcoming warnings. */
 const CYCLES = `
 MATCH (u:LiveProfile {id:$profile})-[:HAS_SUBSCRIPTION]->(s:LiveSubscription)-[:LATEST]->(latest:LivePayment)
@@ -174,7 +203,8 @@ WITH u, s, latest, collect(n.gapDays) AS gaps`;
 export const UNUSED_QUERY = `${CYCLES}
 WHERE size(gaps) >= 1 AND (s.cancelEffectiveOn IS NULL OR s.cancelEffectiveOn > $today)
 RETURN s.id AS subscriptionId, s.merchant AS merchant, latest.date AS latestDate, toInteger(latest.amountPaise) AS amountPaise, gaps,
-  s.lastVerifiedUsageAt AS lastVerifiedUsageAt, s.usageSource AS usageSource, s.usageEvidenceId AS usageEvidenceId, s.usageCoverage AS usageCoverage`;
+  s.lastVerifiedUsageAt AS lastVerifiedUsageAt, s.usageSource AS usageSource, s.usageEvidenceId AS usageEvidenceId, s.usageCoverage AS usageCoverage,
+  s.usageNoUseSince AS noUseSince, s.usageMinutes30d AS minutes30d`;
 
 /** Query 4: payments on or after a subscription or mandate cancellation. */
 export const CANCEL_QUERY = `
@@ -210,10 +240,11 @@ async function rows(tx: ManagedTransaction, query: string, values: Record<string
   return (await tx.run(query, values)).records.map((record) => record.toObject() as Record<string, unknown>);
 }
 
-export type QueryKey = "price" | "mandate" | "mandateUnknown" | "unused" | "cancel" | "cycles" | "notices";
+export type QueryKey = "price" | "priceAhead" | "mandate" | "mandateUnknown" | "unused" | "cancel" | "cycles" | "notices";
 /** The fixed queries readGraphWarnings runs, in order. The browser can never send its own. */
 export const WARNING_QUERIES: { key: QueryKey; name: string; purpose: string; cypher: string }[] = [
   { key: "price", name: "Price increase detection", purpose: "Walks each payment chain along NEXT and keeps steps where the price rose by at least the threshold, then looks for a price-change notice before the higher charge.", cypher: PRICE_QUERY },
+  { key: "priceAhead", name: "Price rise coming (before the debit)", purpose: "Finds a price-change, pre-debit or renewal notice with a higher amount than the last payment, so the rise is warned before the money is taken.", cypher: PRICE_AHEAD_QUERY },
   { key: "mandate", name: "Mandate-limit warnings", purpose: "Compares each verified mandate's limit with the debits after it and with announced upcoming debits.", cypher: MANDATE_QUERY },
   { key: "mandateUnknown", name: "Mandate limit unknown", purpose: "Lists repeating payments with no mandate message, so their maximum debit stays unknown instead of guessed.", cypher: MANDATE_UNKNOWN_QUERY },
   { key: "unused", name: "Unused subscriptions", purpose: "Reads each active subscription's cycle and its last verified use. No usage record means unknown, never unused.", cypher: UNUSED_QUERY },
@@ -265,8 +296,10 @@ export async function readGraphWarnings(profile: string, today = new Date().toIS
   const unused = raw.unused.map((row) => unusedWarning(row, today));
   const cancellation = raw.cancel.map(cancelWarning);
   const upcoming = upcomingWarnings(raw.cycles, raw.notices, today, until);
+  const priceAhead = priceAheadWarnings(raw.priceAhead, today);
   const fed: Record<QueryKey, QueryRun["records"]> = {
     price: price.map((w) => ({ merchant: w.merchant, detail: w.why, evidence: [...w.notices, ...w.previous.evidence, ...w.latest.evidence] })),
+    priceAhead: priceAhead.map((w) => ({ merchant: w.merchant, detail: w.why, evidence: w.evidence })),
     mandate: mandates.mandate.map((w) => ({ merchant: w.merchant, detail: w.why, evidence: w.evidence })),
     mandateUnknown: mandates.mandateUnknown.map((merchant) => ({ merchant, detail: "No mandate message found; limit unknown.", evidence: [] })),
     unused: unused.map((w) => ({ merchant: w.merchant, detail: w.why, evidence: [] })),
@@ -275,7 +308,7 @@ export async function readGraphWarnings(profile: string, today = new Date().toIS
     notices: upcoming.filter((w) => w.confirmed).map((w) => ({ merchant: w.merchant, detail: w.why, evidence: w.evidence }))
   };
   const queries: QueryRun[] = runs.map((run) => ({ ...run, warnings: fed[run.key].length, records: fed[run.key].slice(0, 10) }));
-  return { asOf: today, price, ...mandates, unused, cancellation, upcoming, queries, incomplete: runs.some((run) => !run.ok) };
+  return { asOf: today, price, priceAhead, ...mandates, unused, cancellation, upcoming, headsUp: headsUp({ priceAhead, upcoming }), queries, incomplete: runs.some((run) => !run.ok) };
 }
 
 function priceWarning(row: Record<string, unknown>): PriceWarning {
@@ -290,6 +323,59 @@ function priceWarning(row: Record<string, unknown>): PriceWarning {
       ? `${base} Paytrace sees this merchant's emails, but found no price-change notice before the higher charge. It may still have been announced somewhere Paytrace cannot see.`
       : `${base} Paytrace sees too little of this merchant's mail to say whether the rise was announced.`;
   return { subscriptionId: String(row.subscriptionId), merchant: String(row.merchant), previous, latest, deltaPaise: Number(row.deltaPaise), pctChange: pct, gapDays: Number(row.gapDays), classification, notices, severity: severityOf(pct), why };
+}
+
+/** One warning per subscription, from the newest notice. The date comes from the notice, else the cycle. */
+export function priceAheadWarnings(found: Record<string, unknown>[], today: string): PriceAheadWarning[] {
+  const seen = new Set<string>();
+  const out: PriceAheadWarning[] = [];
+  for (const row of found) {
+    const id = String(row.subscriptionId);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const notice = row.notice as Record<string, unknown>;
+    const currentPaise = Number(row.currentPaise), newPaise = Number(notice.amountPaise);
+    const gap = median((row.gaps as unknown[]).map(Number));
+    const announced = (notice.renewalDate as string | null) ?? null;
+    let chargeOn = announced ?? (gap != null && gap >= L.minCycleDays ? nextDate(String(row.latestDate), gap) : null);
+    // An estimate already in the past means the cycle has moved on: roll it forward.
+    while (!announced && chargeOn && gap && chargeOn < today) chargeOn = nextDate(chargeOn, gap);
+    const daysRemaining = chargeOn ? days(today, chargeOn) : null;
+    const pct = Math.round(((newPaise - currentPaise) * 1000) / currentPaise) / 10;
+    const kind = String(notice.kind).replaceAll("_", " ");
+    const when = chargeOn ? `${announced ? "on" : "around"} ${chargeOn}${daysRemaining != null ? ` (in ${daysRemaining} ${daysRemaining === 1 ? "day" : "days"})` : ""}` : "at the next renewal";
+    out.push({
+      subscriptionId: id, merchant: String(row.merchant), currentPaise, lastPaidOn: String(row.latestDate), newPaise, pctChange: pct,
+      chargeOn, daysRemaining, dateConfirmed: Boolean(announced),
+      evidence: [toEvidence(notice)],
+      why: `A ${kind} ${String(notice.source) === "sms" ? "SMS" : "email"} dated ${notice.date} says ${row.merchant} will charge ${rupees(newPaise)}. You last paid ${rupees(currentPaise)} on ${row.latestDate} (+${pct}%). The higher amount is expected ${when}.`
+    });
+  }
+  return out.sort((a, b) => (a.chargeOn ?? "9999").localeCompare(b.chargeOn ?? "9999"));
+}
+
+/**
+ * The heads-up list: every price rise not yet charged, and every debit due in
+ * the next few days. A merchant with both gets one alert, the price one.
+ */
+export function headsUp(w: Pick<GraphWarnings, "priceAhead" | "upcoming">, withinDays: number = L.headsUpDays): HeadsUp[] {
+  const out: HeadsUp[] = [];
+  const priced = new Set<string>();
+  for (const p of w.priceAhead) {
+    priced.add(p.merchant);
+    const when = p.chargeOn ? `${p.dateConfirmed ? "on" : "around"} ${p.chargeOn}` : "at the next renewal";
+    out.push({ id: `price:${p.subscriptionId}:${p.evidence[0]?.id ?? ""}`, kind: "price_rise_ahead", merchant: p.merchant, date: p.chargeOn, daysRemaining: p.daysRemaining, amountPaise: p.newPaise,
+      title: `${p.merchant} is going up to ${rupees(p.newPaise)}`,
+      body: `You pay ${rupees(p.currentPaise)} now (+${p.pctChange}%). The new price will be taken ${when}. If it is not worth it, cancel before then: PayTrace shows how.` });
+  }
+  for (const u of w.upcoming) {
+    if (u.daysRemaining < 0 || u.daysRemaining > withinDays || priced.has(u.merchant)) continue;
+    const day = u.daysRemaining === 0 ? "today" : u.daysRemaining === 1 ? "tomorrow" : `in ${u.daysRemaining} days`;
+    out.push({ id: `due:${u.merchant}:${u.expectedOn}`, kind: "debit_due", merchant: u.merchant, date: u.expectedOn, daysRemaining: u.daysRemaining, amountPaise: u.amountPaise,
+      title: `${u.merchant}: ${u.amountPaise == null ? "a debit" : rupees(u.amountPaise)} ${day}`,
+      body: `${u.confirmed ? "Your bank or the merchant has announced it" : "Expected from your past payments"} for ${u.expectedOn}. Keep enough in the account, or cancel before then if you no longer want it.` });
+  }
+  return out.sort((a, b) => (a.date ?? "9999").localeCompare(b.date ?? "9999"));
 }
 
 function mandateWarnings(found: Record<string, unknown>[], unknown: Record<string, unknown>[]) {
@@ -311,14 +397,20 @@ function unusedWarning(row: Record<string, unknown>, today: string): UnusedWarni
   const gap = median((row.gaps as unknown[]).map(Number));
   const amountPaise = Number(row.amountPaise);
   const last = (row.lastVerifiedUsageAt as string | null) ?? null;
-  const daysSince = last ? days(last, today) : null;
+  // The phone's usage stats can also say "not opened at all since <date>": a lower bound, never a made-up last use.
+  const noUseSince = last == null ? ((row.noUseSince as string | null) ?? null) : null;
+  const minutes = row.minutes30d == null ? null : Number(row.minutes30d);
+  const daysSince = last ? days(last, today) : noUseSince ? days(noUseSince, today) : null;
   const unused = daysSince != null && daysSince >= L.unusedDays;
   const savings = annualPaise(amountPaise, gap);
-  const why = last == null
+  const onPhone = row.usageSource === "android_usage_stats" && minutes != null ? ` ${minutes} minute${minutes === 1 ? "" : "s"} of use in the last 30 days on your phone.` : "";
+  const why = noUseSince
+    ? `Not opened on your phone since at least ${noUseSince} (${daysSince} days, source: Android usage stats), while payments continue.${unused && savings ? ` Stopping it would save about ${rupees(savings)} a year.` : ""}`
+    : last == null
     ? `Usage unavailable. Payments continue, but Paytrace has no verified record of when you last used ${row.merchant}. Review whether you still use it.`
     : unused
-      ? `Your last verified use was ${last} (${daysSince} days ago, source: ${row.usageSource ?? "unknown"}), while payments continue.${savings ? ` Stopping it would save about ${rupees(savings)} a year.` : ""}`
-      : `Last verified use ${last} (${daysSince} days ago).`;
+      ? `Your last verified use was ${last} (${daysSince} days ago, source: ${row.usageSource ?? "unknown"}), while payments continue.${onPhone}${savings ? ` Stopping it would save about ${rupees(savings)} a year.` : ""}`
+      : `Last verified use ${last} (${daysSince} days ago).${onPhone}`;
   return { subscriptionId: String(row.subscriptionId), merchant: String(row.merchant), status: unused ? "UNUSED" : "USAGE_UNAVAILABLE", lastVerifiedUsageAt: last, usageSource: (row.usageSource as string | null) ?? null, usageEvidenceId: (row.usageEvidenceId as string | null) ?? null, usageCoverage: (row.usageCoverage as string | null) ?? null, daysSinceLastUsage: daysSince, amountPaise, frequency: frequencyOf(gap), annualSavingsPaise: unused ? savings : null, why };
 }
 

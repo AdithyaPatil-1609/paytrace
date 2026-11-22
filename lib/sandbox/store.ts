@@ -30,7 +30,7 @@ export type SandboxStatement = {
   notices: NotificationRow[];
   skipped: number;
 };
-export type Sandbox = { id: string; created: number; touched: number; counter: number; log: SandboxLogEntry[]; events: SandboxEvent[]; statement?: SandboxStatement };
+export type Sandbox = { id: string; created: number; touched: number; counter: number; log: SandboxLogEntry[]; events: SandboxEvent[]; statement?: SandboxStatement; samples?: number; /** Its private Neo4j copy (db/neo4j/sandbox-graph.ts). */ graph?: "syncing" | "ready" | "error" };
 
 type Store = Map<string, Sandbox>;
 const holder = globalThis as unknown as { __paytraceSandboxes?: Store };

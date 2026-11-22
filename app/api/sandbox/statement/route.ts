@@ -4,6 +4,8 @@
  * person's: the generated sample, or their own CSV export. Memory only.
  */
 import { cookies } from "next/headers";
+import { after } from "next/server";
+import { dropSandboxGraph, syncSandboxGraph } from "@/db/neo4j/sandbox-graph";
 import { clearStatement, loadSampleStatement, loadUploadedStatement } from "@/lib/sandbox/statement";
 import { SANDBOX_COOKIE, newSandboxId, sandboxCookieOptions, validSandboxId } from "@/lib/sandbox/session";
 import { openSandbox } from "@/lib/sandbox/store";
@@ -34,5 +36,11 @@ export async function POST(request: Request) {
   else if (input.action === "upload" && typeof input.csv === "string" && typeof input.name === "string") entry = loadUploadedStatement(box, input.name, input.csv);
   else return Response.json({ error: "Send action sample, clear, or upload with name and csv." }, { status: 400, headers });
   jar.set(SANDBOX_COOKIE, id, sandboxCookieOptions());
+  // Write the visitor's own Neo4j copy after answering; a cleared statement leaves only typed messages.
+  if (entry.accepted) runAfter(() => box.statement || box.events.length ? syncSandboxGraph(box) : dropSandboxGraph(box.id));
   return Response.json(entry, { headers });
+}
+
+function runAfter(work: () => Promise<unknown>) {
+  try { after(work); } catch { void work().catch(() => undefined); }
 }

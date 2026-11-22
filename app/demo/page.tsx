@@ -8,7 +8,9 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Dashboard } from "@/components/dashboard";
-import { SandboxConsole } from "@/components/sandbox/sandbox-console";
+import { SandboxConsole, SandboxLauncher } from "@/components/sandbox/sandbox-console";
+import { GraphWarningsPanel } from "@/components/graph-warnings";
+import { PersonalGraphPanel } from "@/components/personal-graph-panel";
 import { sandboxView } from "@/lib/sandbox/dataset";
 import { SANDBOX_COOKIE, validSandboxId } from "@/lib/sandbox/session";
 import { getSandbox } from "@/lib/sandbox/store";
@@ -28,7 +30,7 @@ export default async function DemoPage() {
     note: view.statement ? `Your statement: ${view.statement.name}. Private to you; deleted after 2 hours.` : box ? "Demo: synthetic data plus the messages you sent. Private to you; deleted after 2 hours." : "Synthetic sample data. No account or email access."
   };
   return <>
-    <Dashboard dataset={view.dataset} source={source} />
+    <Dashboard dataset={view.dataset} source={source} demoAction={<SandboxLauncher count={view.alerts.length} />} demoGraph={box?.graph === "ready" || box?.graph === "syncing" ? { warnings: <GraphWarningsPanel />, graph: <PersonalGraphPanel /> } : undefined} />
     <SandboxConsole asOf={view.asOf} alerts={view.alerts} log={box?.log ?? []} counts={view.counts} statement={view.statement} />
   </>;
 }

@@ -32,6 +32,10 @@ type DashboardProps = {
   commitments?: Commitment[];
   graph?: GraphFacts;
   account?: { name: string; controls: ReactNode; notice?: ReactNode; activity?: ReactNode; subscriptionAlerts?: ReactNode; graphWarnings?: ReactNode };
+  /** Demo only: a button shown in the top bar, left of the profile menu. */
+  demoAction?: ReactNode;
+  /** Demo only: the visitor's own Neo4j graph panels, once their sample is written there. */
+  demoGraph?: { warnings: ReactNode; graph: ReactNode };
 };
 type Screen = "graph" | "annual" | "list" | "issues" | "paths";
 
@@ -43,7 +47,7 @@ const screens: { id: Screen; number: string; label: string }[] = [
   { id: "graph", number: "05", label: "Evidence graph" }
 ];
 
-export function Dashboard({ dataset, source, commitments, graph, account }: DashboardProps) {
+export function Dashboard({ dataset, source, commitments, graph, account, demoAction, demoGraph }: DashboardProps) {
   const [screen, setScreen] = useState<Screen>("list");
   const [openId, setOpenId] = useState<string | null>(null);
   const [challengeOpen, setChallengeOpen] = useState(false);
@@ -86,15 +90,18 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
             title={source.note}
           >
             <i />
-            {account ? "Private Neo4j" : source.kind === "neo4j" ? "Reading Neo4j" : "Reading CSV statements"}
+            {account ? "Your data · private" : source.kind === "neo4j" ? "Live data" : "Sample data"}
           </span>
           <div className="bar-actions">
-            <button className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
-              <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
-                <path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M2.5 11.5v2h11v-2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Export CSV
-            </button>
+            {account && (
+              <button className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
+                <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+                  <path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M2.5 11.5v2h11v-2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Export CSV
+              </button>
+            )}
+            {!account && demoAction}
             {account ? account.controls : <ProfileMenu />}
           </div>
         </header>
@@ -126,6 +133,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
         <section className={screen === "list" ? "main-stage is-ledger" : "main-stage"}>
           {screen === "graph" && (
             <EvidenceGraphScreen
+              visitorGraph={account ? undefined : demoGraph?.graph}
               graph={graph}
               source={source}
               items={active}
@@ -150,7 +158,7 @@ export function Dashboard({ dataset, source, commitments, graph, account }: Dash
             /></>
           )}
           {screen === "issues" && (
-            <>{account?.graphWarnings}<IssuesScreen
+            <>{account?.graphWarnings ?? demoGraph?.warnings}<IssuesScreen
               allItems={active}
               kept={kept}
               onOpen={openPayment}

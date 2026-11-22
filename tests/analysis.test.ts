@@ -95,8 +95,8 @@ test("9. the next-year projections add to 1,99,138", () => {
 
 // The screens around those nine.
 
-test("10. the unused part of the year is 27,936", () => {
-  assert.equal(unusedTotal(commitments), 27936);
+test("10. the unused part of the year is 27,576", () => {
+  assert.equal(unusedTotal(commitments), 27576);
 });
 
 test("11. the annual screen splits the year five ways without losing a rupee", () => {
@@ -186,11 +186,11 @@ test("21. the price chart is drawn from real dated debits", () => {
   assert.equal(spotify.priceSeries.every((point) => /^\d{4}-\d{2}-\d{2}$/.test(point.date)), true);
 });
 
-test("22. the what-if totals 27,936 and never offers insurance or the loan", () => {
+test("22. the what-if totals 27,576 and never offers insurance or the loan", () => {
   const { eligible } = potentialSavings(commitments, []);
   const all = potentialSavings(commitments, eligible.map((item) => item.id));
-  assert.equal(all.saved, 27936);
-  assert.equal(all.revisedYear, 199138 - 27936);
+  assert.equal(all.saved, 27576);
+  assert.equal(all.revisedYear, 199138 - 27576);
   assert.equal(eligible.some((item) => item.merchant === "HDFC Life" || item.merchant === "Home loan"), false);
 });
 
@@ -264,6 +264,6 @@ test("27. keeping a row settles it everywhere, without moving the year", () => {
 
   // The money still leaves, so the year and the leak total do not move.
   assert.equal(yearlyTotal(commitments), 199138);
-  assert.equal(unusedTotal(commitments), 27936);
+  assert.equal(unusedTotal(commitments), 27576);
   assert.equal(keptLeakTotal(commitments, [gym.id]), 18000);
 });

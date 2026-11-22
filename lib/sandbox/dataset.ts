@@ -49,7 +49,7 @@ function statementAlerts(dataset: Dataset): SandboxAlert[] {
   const soon = addDays(dataset.asOf, 7);
   for (const c of detectCommitments(dataset)) {
     if (c.signals.includes("silent_hike") && c.previousAmount) found.push({ n: 0, kind: "price_rise", title: `Price rise: ${c.merchant}`, detail: `${c.merchant} went from ₹${c.previousAmount.toLocaleString("en-IN")} to ₹${c.amount.toLocaleString("en-IN")} with no price notice.` });
-    if (c.kind === "unused") found.push({ n: 0, kind: "unused", title: `Unused: ${c.merchant}`, detail: `₹${c.amount.toLocaleString("en-IN")} a month, but ${c.lastOpened ? `last opened ${c.lastOpened}` : "never opened"}.` });
+    if (c.kind === "unused") found.push({ n: 0, kind: "unused", title: `Unused: ${c.merchant}`, detail: `₹${c.amount.toLocaleString("en-IN")} a month. Your last use was ${c.lastOpened} (as you told PayTrace), while payments continue.` });
     const cancelledOn = cancelled.get(c.merchant);
     const after = cancelledOn ? c.evidenceRows.filter(row => row.date > cancelledOn) : [];
     if (after.length) found.push({ n: 0, kind: "after_cancel", title: `Charged after cancelling: ${c.merchant}`, detail: `${after.length} charge(s) of ₹${after[0].amount.toLocaleString("en-IN")} after it was cancelled on ${cancelledOn}.` });
@@ -124,8 +124,8 @@ export function sandboxView(box: Sandbox | null): SandboxView {
         alerts.push({ n, kind: "after_cancel", title: `Charged after cancelling: ${brand}`, detail: `${rupees(event.amountPaise)} was taken on ${event.date}, after the autopay was cancelled on ${cancelledOn}. Raise a dispute with the bank; the evidence is in the graph.` });
       }
       const used = usage.find(row => row.brand === brand);
-      if (used && (!used.lastOpened || used.lastOpened < addDays(event.date, -90))) {
-        alerts.push({ n, kind: "unused", title: `Unused: ${brand}`, detail: `Charged ${rupees(event.amountPaise)}, but last opened ${used.lastOpened ?? "never"} (${used.opensLast12Months} opens in a year).` });
+      if (used?.lastOpened && used.lastOpened < addDays(event.date, -90)) {
+        alerts.push({ n, kind: "unused", title: `Unused: ${brand}`, detail: `Charged ${rupees(event.amountPaise)}. Your last use was ${used.lastOpened} (as you told PayTrace), while payments continue.` });
       }
     } else if (event.kind === "mandate_created") {
       mandates.push({ mandateId: `SBX-MDT-${n}`, createdOn: event.date, mechanism: entry?.mechanism ?? "upi_autopay", narration, brand, maxAmount: (event.amountPaise ?? 0) / 100, frequency: "monthly", mandateRef: event.reference ?? "", accountId, status: "active" });

@@ -170,6 +170,18 @@ type Group = {
   holds: StatementRow[];
 };
 
+/**
+ * A payment the person sends by hand (rent, a person, an IMPS/NEFT/RTGS transfer)
+ * with no mandate word in it. Auto debits say ACH, NACH, ECS, AUTOPAY, MANDATE or SI.
+ */
+export function isManualTransfer(narration: string) {
+  const text = narration.toUpperCase();
+  if (/\b(ACH|NACH|ECS|AUTOPAY|AUTO PAY|MANDATE|SI|STANDING)\b/.test(text)) return false;
+  // Rent, or money to a person (Mr, Mrs, Ms…) or by IMPS/NEFT/RTGS. A UPI payment to a shop stays,
+  // so the recurring check (lib/payments/recurring-check.ts) can still decide about it.
+  return /\bRENT\b/.test(text) || /^(IMPS|NEFT|RTGS)\b/.test(text) || (/^UPI\b/.test(text) && /\b(MR|MRS|MS|SHRI|SMT|KUMARI)\b/.test(text));
+}
+
 /** The channel of a dated row built from a debit or renewal notice, not from a bank debit. */
 export const NOTICE_CHANNEL = "email-notice";
 
@@ -230,6 +242,8 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
     );
     // One debit is a purchase. Two debits, or one debit under a live mandate, is a commitment.
     if (rows.length < 2 && !mandate) continue;
+    // Rent, a maid or a friend paid by UPI, IMPS or NEFT is sent by hand each time: not an auto debit.
+    if (!entry && !mandate && isManualTransfer(group.narration)) continue;
 
     const dates = rows.map((row) => row.date);
     const amounts = rows.map((row) => row.debit ?? 0);
@@ -263,7 +277,9 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
     const usageRow = entry ? usage.find((item) => item.brand === entry.brand) : undefined;
     const lastOpened = usageRow?.lastOpened || undefined;
     const openedDaysAgo = lastOpened ? days(lastOpened, asOf) : undefined;
-    const neverOpened = Boolean(usageRow) && !lastOpened && usageRow?.opensLast12Months === 0;
+    // Same rule as live data: only a last-use date the person gave (synthetic in the demo) can make
+    // a payment "Not used". No date means unknown, never "unused".
+    const neverOpened = false;
 
     const changeDate = dates[Math.max(0, amounts.findIndex((amount) => amount !== amounts[0]))];
     const hasPriceChangeNotice = notices.some((notice) => notice.eventType === "price_change" &&

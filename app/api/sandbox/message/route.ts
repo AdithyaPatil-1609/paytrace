@@ -4,6 +4,8 @@
  * reader into the visitor's own sandbox, and returns the step-by-step trace.
  */
 import { cookies } from "next/headers";
+import { after } from "next/server";
+import { syncSandboxGraph } from "@/db/neo4j/sandbox-graph";
 import { processSandboxMessage } from "@/lib/sandbox/pipeline";
 import { SANDBOX_COOKIE, newSandboxId, sandboxCookieOptions, validSandboxId } from "@/lib/sandbox/session";
 import { isFull, openSandbox } from "@/lib/sandbox/store";
@@ -35,6 +37,7 @@ export async function POST(request: Request) {
   if (isFull(box)) return Response.json({ error: "This sandbox is full. Reset it to start again." }, { status: 409, headers });
 
   const outcome = await processSandboxMessage(box, { channel, sender: input.sender, text: input.text });
+  if (outcome.accepted) { try { after(() => syncSandboxGraph(box)); } catch { void syncSandboxGraph(box).catch(() => undefined); } }
   jar.set(SANDBOX_COOKIE, id, sandboxCookieOptions());
   return Response.json(outcome, { headers });
 }

@@ -562,3 +562,18 @@
     grid-column: 2 / -1;
   }
 }
+
+/* Month: arrows on the right, click the title to pick any month. */
+.fridge-head { position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.fridge-title { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; font: 700 clamp(24px, 2.4vw, 34px)/1.15 var(--serif); color: var(--ink); letter-spacing: -0.02em; }
+.fridge-title span { font-size: .5em; color: var(--ink-soft); line-height: 1; }
+.fridge-title:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 6px; }
+.fridge-arrows { display: flex; gap: 8px; }
+.fridge-arrows button { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--rule-firm); background: var(--paper-lift); color: var(--ink); font: 400 22px/1 var(--sans); cursor: pointer; }
+.fridge-arrows button:hover:not(:disabled) { border-color: var(--ink); }
+.fridge-arrows button:disabled { opacity: .35; cursor: default; }
+.fridge-picker { position: absolute; top: 100%; left: 0; z-index: 5; margin-top: 8px; display: grid; grid-template-columns: repeat(4, 64px); gap: 6px; padding: 10px; background: var(--paper-lift); border: 1px solid var(--rule-firm); border-radius: 12px; box-shadow: 0 12px 30px rgba(20, 28, 60, .14); }
+.fridge-picker button { border: 1px solid transparent; background: transparent; border-radius: 8px; padding: 8px 0; font: 600 13px var(--sans); color: var(--ink); cursor: pointer; }
+.fridge-picker button:hover { border-color: var(--rule-firm); }
+.fridge-picker button.on { background: var(--ink); color: var(--paper-lift); }
+.note.note-paid { opacity: .72; }

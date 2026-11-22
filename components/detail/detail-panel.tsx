@@ -127,12 +127,8 @@ export function DetailPanel({
             <Fact label="Spent so far" value={formatINR(item.spentToDate)} />
             <Fact label="Next charge" value={formatDate(item.nextCharge)} />
             <Fact
-              label="Last opened"
-              value={item.lastOpened ? formatDate(item.lastOpened) : "No record"}
-            />
-            <Fact
-              label="Opens in 12 months"
-              value={item.opensLast12Months === undefined ? "—" : String(item.opensLast12Months)}
+              label="Last used (you told us)"
+              value={item.lastOpened ? formatDate(item.lastOpened) : "Not known"}
             />
           </section>
         </details>

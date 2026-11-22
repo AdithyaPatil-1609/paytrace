@@ -107,8 +107,8 @@ export function describeIssue(
   if (signals.includes("trial_converted")) return "A trial-ending notice, then the paid price. The ₹1 hold is not the price.";
   if (signals.includes("zombie")) {
     return context.lastOpened
-      ? `Last opened ${context.lastOpened}, about ${Math.floor((context.openedDaysAgo ?? 0) / 30)} months ago. The charge did not stop.`
-      : "Never opened in the last twelve months. A pack she did not go looking for.";
+      ? `Your last use was ${context.lastOpened}, about ${Math.floor((context.openedDaysAgo ?? 0) / 30)} months ago (as you told PayTrace), while payments continue.`
+      : "PayTrace has no record of when you last used it. Review whether you still use it.";
   }
   return undefined;
 }
@@ -172,6 +172,8 @@ export const GRAPH_WARNING_LIMITS = {
   unusedDays: 90,
   /** Days ahead an upcoming debit is warned about. */
   upcomingWindowDays: 7,
+  /** Days ahead a debit is pushed to the person as a heads-up (phone notification and banner). */
+  headsUpDays: 3,
   /** A mandate limit this many times the usual charge is a risk worth showing. */
   highMandateRatio: 3,
   /** Severity steps for a price rise, in percent. */
@@ -272,4 +274,20 @@ export const FAMILY_LIMITS = {
   maxViewers: 10,
   /** The Family View screen re-checks access this often, so a revoke shows within seconds. */
   recheckMs: 20_000
+} as const;
+
+/**
+ * App-usage reports from the Android app (card M3): for apps already known to
+ * be paid subscriptions, the day each was last opened and its minutes in the
+ * last 30 days. Nothing else about the phone is sent.
+ */
+export const APP_USAGE_LIMITS = {
+  maxBodyBytes: 8192,
+  maxApps: 40,
+  /** 30 days of minutes. */
+  maxMinutes: 30 * 24 * 60,
+  /** How far back the phone looks for "last opened". */
+  windowDays: 180,
+  /** An app name and a subscription name must share at least this many letters to match. */
+  minMatchLength: 4
 } as const;

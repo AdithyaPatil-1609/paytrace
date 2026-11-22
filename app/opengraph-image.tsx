@@ -17,7 +17,7 @@ export default async function OpenGraphImage() {
           {/* ImageResponse embeds local artwork directly in the share card. */}
           <img src={`data:image/svg+xml;base64,${mark.toString("base64")}`} width={84} height={84} alt="" />
           <div style={{ display: "flex", fontSize: 60, fontWeight: 700, letterSpacing: -2 }}>
-            <span style={{ color: "#1E2A6E" }}>Pay</span><span style={{ color: "#4A5BE0" }}>Trace</span>
+            <span style={{ color: "#1B2433" }}>Pay</span><span style={{ color: "#3E6A9A" }}>Trace</span>
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>

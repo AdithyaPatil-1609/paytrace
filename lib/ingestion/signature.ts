@@ -3,6 +3,8 @@
  *
  * The phone signs, with its Android Keystore P-256 key, these exact bytes:
  *   "PAYTRACE-SMS-v1\n" + deviceId + "\n" + time + "\n" + nonce + "\n" + body
+ * App-usage reports use "PAYTRACE-USAGE-v1" instead, so a signature made for
+ * one kind of request can never be replayed as the other.
  * and sends four headers: x-paytrace-device-id, x-paytrace-time (milliseconds
  * since 1970), x-paytrace-nonce and x-paytrace-signature (base64, DER, as
  * Android's Signature("SHA256withECDSA") makes it).
@@ -45,9 +47,12 @@ export function checkSignedHeaders(request: Request, now = Date.now()): HeaderCh
   return { ok: true, headers: { deviceId, time: at, nonce, signature: Buffer.from(signature, "base64") } };
 }
 
+/** What a signed request is for; part of the signed bytes. */
+export type SignedPurpose = "SMS" | "USAGE";
+
 /** The exact bytes the phone signs. */
-export function signedBytes(deviceId: string, time: number, nonce: string, rawBody: string) {
-  return Buffer.concat([Buffer.from(`PAYTRACE-SMS-v1\n${deviceId}\n${time}\n${nonce}\n`, "utf8"), Buffer.from(rawBody, "utf8")]);
+export function signedBytes(deviceId: string, time: number, nonce: string, rawBody: string, purpose: SignedPurpose = "SMS") {
+  return Buffer.concat([Buffer.from(`PAYTRACE-${purpose}-v1\n${deviceId}\n${time}\n${nonce}\n`, "utf8"), Buffer.from(rawBody, "utf8")]);
 }
 
 /**
@@ -68,9 +73,9 @@ export function parseDevicePublicKey(base64: string): KeyObject | null {
 }
 
 /** Verifies the signature over the exact body bytes. Never throws. */
-export function verifyDeviceSignature(publicKey: KeyObject, headers: SignedHeaders, rawBody: string) {
+export function verifyDeviceSignature(publicKey: KeyObject, headers: SignedHeaders, rawBody: string, purpose: SignedPurpose = "SMS") {
   try {
-    return verify("sha256", signedBytes(headers.deviceId, headers.time, headers.nonce, rawBody), { key: publicKey, dsaEncoding: "der" }, headers.signature);
+    return verify("sha256", signedBytes(headers.deviceId, headers.time, headers.nonce, rawBody, purpose), { key: publicKey, dsaEncoding: "der" }, headers.signature);
   } catch {
     return false;
   }

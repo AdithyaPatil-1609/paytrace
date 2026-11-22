@@ -1,6 +1,7 @@
 "use client";
 
-import { nextMonthSchedule } from "@/lib/payments/calendar";
+import { useState } from "react";
+import { monthSchedule } from "@/lib/payments/calendar";
 import { formatINR } from "@/lib/presentation/format";
 import type { Commitment } from "@/lib/payments/types";
 
@@ -34,21 +35,42 @@ export function PaymentCalendar({
   asOf: string;
   onOpen: (id: string) => void;
 }) {
-  const { year, month, rows: dues, undated, blanks, length } = nextMonthSchedule(items, asOf);
-  const monthTotal = dues.reduce((sum, due) => sum + due.item.amount, 0);
+  // Opens on next month; every month of that year, January to December, is one click away.
+  const snapshot = new Date(asOf);
+  const opening = new Date(Date.UTC(snapshot.getUTCFullYear(), snapshot.getUTCMonth() + 1, 1));
+  const year = opening.getUTCFullYear();
+  const [month, setMonth] = useState(opening.getUTCMonth());
+  const [picking, setPicking] = useState(false);
+  const { rows: dues, undated, blanks, length } = monthSchedule(items, asOf, year, month);
+  const monthTotal = dues.reduce((sum, due) => sum + due.amount, 0);
+  const asOfMonth = snapshot.getUTCFullYear() === year ? snapshot.getUTCMonth() : snapshot.getUTCFullYear() < year ? -1 : 12;
+  const verb = month < asOfMonth ? "left" : month === asOfMonth ? "leaves" : "will leave";
 
   return (
     <section className="viz-block">
       <div className="fridge">
         <header className="fridge-head">
           <div>
-            <strong>
-              {MONTH_NAMES[month]} {year}
-            </strong>
+            <button type="button" className="fridge-title" aria-expanded={picking} onClick={() => setPicking(value => !value)}>
+              {MONTH_NAMES[month]} {year} <span aria-hidden="true">▾</span>
+            </button>
             <span>
-              {dues.length} debits · {formatINR(monthTotal)} leaves this month
+              {dues.length} {dues.length === 1 ? "debit" : "debits"} · {formatINR(monthTotal)} {verb} this month
             </span>
           </div>
+          <div className="fridge-arrows">
+            <button type="button" aria-label="Previous month" disabled={month === 0} onClick={() => { setMonth(month - 1); setPicking(false); }}>‹</button>
+            <button type="button" aria-label="Next month" disabled={month === 11} onClick={() => { setMonth(month + 1); setPicking(false); }}>›</button>
+          </div>
+          {picking && (
+            <div className="fridge-picker" role="listbox" aria-label={`Pick a month of ${year}`}>
+              {MONTH_NAMES.map((name, index) => (
+                <button key={name} type="button" role="option" aria-selected={index === month} className={index === month ? "on" : undefined} onClick={() => { setMonth(index); setPicking(false); }}>
+                  {name.slice(0, 3)}
+                </button>
+              ))}
+            </div>
+          )}
         </header>
 
         <div className="fridge-weekdays">
@@ -68,17 +90,18 @@ export function PaymentCalendar({
             return (
               <div className={onThisDay.length ? "fridge-day has-notes" : "fridge-day"} key={day}>
                 <b>{day}</b>
-                {onThisDay.map(({ item }) => (
+                {onThisDay.map(({ item, amount, paid }) => (
                   <button
-                    key={item.id}
-                    className={`note note-${item.bucket} note-kind-${item.kind}`}
+                    key={`${item.id}-${paid ? "paid" : "due"}`}
+                    className={`note note-${item.bucket} note-kind-${item.kind}${paid ? " note-paid" : ""}`}
                     onClick={() => onOpen(item.id)}
-                    title={`${item.merchant} — ${formatINR(item.amount)}`}
+                    title={`${item.merchant} — ${formatINR(amount)}${paid ? " (paid)" : " (expected)"}`}
                   >
                     <span>{item.merchant}</span>
                     <i>
-                      {item.amountPattern === "variable" ? "~" : ""}
-                      {formatINR(item.amount)}
+                      {!paid && item.amountPattern === "variable" ? "~" : ""}
+                      {formatINR(amount)}
+                      {paid ? " · paid" : ""}
                     </i>
                   </button>
                 ))}

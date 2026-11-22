@@ -7,11 +7,16 @@
 import { NextRequest } from "next/server";
 import { accountForSession } from "@/db/neo4j/accounts";
 import { readLiveDashboard } from "@/db/neo4j/live";
+import { sandboxProfile } from "@/db/neo4j/sandbox-graph";
 import { SESSION } from "@/lib/accounts/security";
 import { ask, MAX_MESSAGE, parseRouted } from "@/lib/assistant/assistant";
 import { askAuraGuidance } from "@/lib/assistant/aura";
 import { watchItems, type WatchItem } from "@/lib/assistant/watchlist";
 import { demoCommitments } from "@/lib/data/load-demo";
+import { detectCommitments } from "@/lib/payments/engine";
+import { sandboxView } from "@/lib/sandbox/dataset";
+import { SANDBOX_COOKIE, validSandboxId } from "@/lib/sandbox/session";
+import { getSandbox } from "@/lib/sandbox/store";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
 import { forbidden, fromOurSite } from "@/lib/security/origin";
 import { readJsonBody } from "@/lib/security/body";
@@ -68,7 +73,19 @@ export async function POST(request: NextRequest) {
       const watch = watchItems({ renewals: summary.subscriptionRenewals, scheduled: summary.scheduledDebits, registrations: summary.subscriptionRegistrations, candidates: summary.subscriptionCandidates }, summary.commitments);
       data = { items: summary.commitments, asOf: summary.asOf, watch };
     } else {
-      data = await demoCommitments(body.scope === "demo-static");
+      // A demo visitor who loaded a sample statement or sent messages gets answers about that data.
+      const id = request.cookies.get(SANDBOX_COOKIE)?.value;
+      const box = validSandboxId(id) ? getSandbox(id) : null;
+      if (box?.graph === "ready") {
+        // The visitor's own Neo4j graph: Ask AI answers from it the same way as for a signed-in person.
+        const { summary } = await readLiveDashboard(sandboxProfile(box.id));
+        data = { items: summary.commitments, asOf: summary.asOf };
+      } else if (box && (box.statement || box.events.length)) {
+        const view = sandboxView(box);
+        data = { items: detectCommitments(view.dataset), asOf: view.asOf };
+      } else {
+        data = await demoCommitments(body.scope === "demo-static");
+      }
     }
   } catch {
     return Response.json({ error: "Payment data is unavailable right now." }, { status: 503, headers });
