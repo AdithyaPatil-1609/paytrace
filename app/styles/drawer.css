@@ -16,7 +16,7 @@
 }
 .cancellation-drawer .cancellation-guide-header h2 {
   font-family: var(--serif);
-  font-size: clamp(28px, 3vw, 42px);
+  font-size: clamp(calc(28px * var(--text-scale)), 3vw, calc(42px * var(--text-scale)));
 }
 .cancellation-drawer .cancellation-guide-controls {
   flex-direction: column;
@@ -25,7 +25,7 @@
 .cancellation-drawer .cancellation-guide-controls button {
   width: 44px;
   height: 44px;
-  font-size: 28px;
+  font-size: calc(28px * var(--text-scale));
   line-height: 1;
   padding: 0;
 }
@@ -57,6 +57,6 @@
   .cancellation-drawer .cancellation-status {
     white-space: normal;
     max-width: 100px;
-    font-size: 10px;
+    font-size: calc(10px * var(--text-scale));
   }
 }
