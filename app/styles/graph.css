@@ -359,3 +359,28 @@
 .cypher-ok { color: var(--sage); }
 .cypher-failed { color: var(--ember); }
 @media (max-width: 600px) { .similar-pair { grid-template-columns: 1fr; } }
+
+/* What each graph query found, drawn as nodes and relationships (components/visualizations/query-graph.tsx). */
+.query-graph { margin: 10px 0 6px; padding: 8px; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper-lift); }
+.query-graph { overflow-x: auto; }
+.query-graph svg { display: block; width: 100%; min-width: 540px; height: auto; }
+.query-graph figcaption { font-size: 13px; color: var(--ink-faint); padding: 4px 6px 0; text-transform: none; letter-spacing: normal; font-family: inherit; }
+.query-graph-node rect { fill: var(--paper); stroke: var(--rule); stroke-width: 1.5; }
+.query-graph-node.kind-you rect { fill: var(--marigold); stroke: var(--marigold-deep); }
+.query-graph-node.kind-you text { fill: var(--paper-lift); }
+.query-graph-node.kind-merchant rect, .query-graph-node.kind-payment rect { fill: var(--marigold-skin); stroke: var(--marigold-bright); }
+.query-graph-node.kind-channel rect { fill: var(--paper-sink); stroke: var(--ink-faint); }
+.query-graph-node.tone-ok rect { stroke: var(--sage); }
+.query-graph-node.tone-muted rect { stroke-dasharray: 4 3; }
+.query-graph-label { font-size: 15px; font-weight: 600; fill: var(--ink); }
+.query-graph-caption { font-size: 12px; fill: var(--ink-faint); }
+.query-graph-edge path { fill: none; stroke: var(--ink-faint); stroke-width: 1.6; }
+.query-graph-edge text { font-size: 12px; font-family: var(--font-mono, ui-monospace, monospace); fill: var(--ink-soft); paint-order: stroke; stroke: var(--paper-lift); stroke-width: 5px; stroke-linejoin: round; }
+.query-graph-arrow { fill: var(--ink-faint); }
+.query-graph-edge.tone-ok path { stroke: var(--sage); }
+.query-graph-edge.tone-review path { stroke: var(--marigold-bright); stroke-dasharray: 6 4; }
+.query-graph-edge.tone-muted { opacity: 0.55; }
+.query-graph-edge.tone-muted path { stroke-dasharray: 3 3; }
+.query-graph-empty { color: var(--ink-faint); font-style: italic; }
+.cypher-source { margin-top: 6px; }
+.cypher-source > summary { cursor: pointer; font-size: 14px; color: var(--marigold); width: fit-content; }

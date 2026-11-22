@@ -21,8 +21,9 @@ export const RECURRING_MODEL = "Qwen3 8B + Paytrace recurring adapter";
 
 const TIMEOUT_MS = 90_000;
 
-/** A teammate's laptop on the same Wi-Fi: only private network addresses, and only when switched on. */
-const PRIVATE_LAN = /^(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/;
+/** A teammate's laptop on our private network (Tailscale or a home LAN): only private addresses, and only when switched on. */
+// Includes 100.64-127.x, the addresses Tailscale gives each laptop on our own encrypted network.
+const PRIVATE_LAN = /^(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d+\.\d+)$/;
 
 function local(base: string) {
   const url = new URL(base);
