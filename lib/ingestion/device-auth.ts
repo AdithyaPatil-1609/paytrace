@@ -15,7 +15,7 @@ import { createHash, type KeyObject } from "node:crypto";
 import type { DeviceOwner } from "@/db/neo4j/devices";
 import { authorized, liveProfile } from "@/lib/ingestion/auth";
 import { claimNonce } from "@/lib/ingestion/nonce-store";
-import { checkSignedHeaders, looksSigned, parseDevicePublicKey, verifyDeviceSignature } from "@/lib/ingestion/signature";
+import { checkSignedHeaders, looksSigned, parseDevicePublicKey, verifyDeviceSignature, type SignedPurpose } from "@/lib/ingestion/signature";
 import { DEVICE_LIMITS, SMS_INGEST_LIMITS } from "@/lib/payments/rules";
 import { LIMITS, takeHit } from "@/lib/security/rate-limit";
 
@@ -46,35 +46,43 @@ export function resetDeviceCache() {
   cache.clear();
 }
 
-async function readLimitedBody(request: Request) {
+async function readLimitedBody(request: Request, maxBytes: number = SMS_INGEST_LIMITS.maxBodyBytes) {
   const raw = await request.text();
-  return Buffer.byteLength(raw) > SMS_INGEST_LIMITS.maxBodyBytes ? null : raw;
+  return Buffer.byteLength(raw) > maxBytes ? null : raw;
+}
+
+/**
+ * A request signed by a paired phone, for one purpose. Signed only: the old
+ * shared code is never accepted here. Same order as for SMS: headers, device,
+ * limit per device, body, signature, then the one-use number.
+ */
+export async function identifySignedDevice(request: Request, lookup: DeviceLookup, options: { purpose: SignedPurpose; maxBodyBytes: number; bucket: string }, now = Date.now()): Promise<SmsSender> {
+  if (!looksSigned(request)) return { ok: false, status: 401, error: "Unsigned or malformed request" };
+  const checked = checkSignedHeaders(request, now);
+  if (!checked.ok) return { ok: false, status: 401, error: checked.error };
+  const { headers } = checked;
+
+  let device: Cached;
+  try {
+    device = await findDevice(headers.deviceId, lookup, now);
+  } catch {
+    return { ok: false, status: 503, error: "Device check unavailable; retry" };
+  }
+  if (!device.owner || !device.key) return { ok: false, status: 401, error: "Unknown device" };
+
+  const byDevice = takeHit(options.bucket, headers.deviceId, LIMITS.sms, now);
+  if (!byDevice.ok) return { ok: false, status: 429, error: "Too many requests", retryAfter: byDevice.retryAfter };
+
+  const raw = await readLimitedBody(request, options.maxBodyBytes);
+  if (raw === null) return { ok: false, status: 413, error: "Message too large" };
+  if (!verifyDeviceSignature(device.key, headers, raw, options.purpose)) return { ok: false, status: 401, error: "Bad signature" };
+  // Only a correctly signed request may use up a nonce, so nobody can fill the store.
+  if (!claimNonce(headers.deviceId, headers.nonce, now)) return { ok: false, status: 409, error: "Replayed request" };
+  return { ok: true, profile: device.owner.profile, raw, deviceId: headers.deviceId };
 }
 
 export async function identifySmsSender(request: Request, lookup: DeviceLookup, now = Date.now()): Promise<SmsSender> {
-  if (looksSigned(request)) {
-    const checked = checkSignedHeaders(request, now);
-    if (!checked.ok) return { ok: false, status: 401, error: checked.error };
-    const { headers } = checked;
-
-    let device: Cached;
-    try {
-      device = await findDevice(headers.deviceId, lookup, now);
-    } catch {
-      return { ok: false, status: 503, error: "Device check unavailable; retry" };
-    }
-    if (!device.owner || !device.key) return { ok: false, status: 401, error: "Unknown device" };
-
-    const byDevice = takeHit("ingest-device", headers.deviceId, LIMITS.sms, now);
-    if (!byDevice.ok) return { ok: false, status: 429, error: "Too many requests", retryAfter: byDevice.retryAfter };
-
-    const raw = await readLimitedBody(request);
-    if (raw === null) return { ok: false, status: 413, error: "Message too large" };
-    if (!verifyDeviceSignature(device.key, headers, raw)) return { ok: false, status: 401, error: "Bad signature" };
-    // Only a correctly signed request may use up a nonce, so nobody can fill the store.
-    if (!claimNonce(headers.deviceId, headers.nonce, now)) return { ok: false, status: 409, error: "Replayed request" };
-    return { ok: true, profile: device.owner.profile, raw, deviceId: headers.deviceId };
-  }
+  if (looksSigned(request)) return identifySignedDevice(request, lookup, { purpose: "SMS", maxBodyBytes: SMS_INGEST_LIMITS.maxBodyBytes, bucket: "ingest-device" }, now);
 
   const code = process.env.PAYTRACE_DEVICE_CODE;
   if (process.env.PAYTRACE_ALLOW_DEVICE_CODE === "false" || !authorized(request, "x-paytrace-device", code)) {

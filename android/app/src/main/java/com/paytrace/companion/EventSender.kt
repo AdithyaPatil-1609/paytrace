@@ -23,6 +23,7 @@ object EventSender {
 
     private const val SMS_PATH = "/api/ingest/sms"
     private const val PAIR_PATH = "/api/devices/pair"
+    private const val USAGE_PATH = "/api/ingest/usage"
     private const val TIMEOUT_MS = 10_000
 
     fun buildBody(sms: OutgoingSms): String =
@@ -89,6 +90,37 @@ object EventSender {
             mapOf("x-paytrace-device" to code)
         }
         return postBytes(base + SMS_PATH, bytes, headers)
+    }
+
+    // Card M3: an app-usage report. Signed only (purpose USAGE); a phone that is
+    // not paired cannot send one. Must run on a background thread.
+    // Returns null on success, or a short reason on failure.
+    fun sendUsage(context: Context, body: String): String? {
+        val base = CompanionSettings.serverUrl(context)
+        if (base.isBlank() || !isAllowedAddress(base)) return "Not sent: no valid server address saved"
+        val deviceId = DevicePairing.deviceIdFor(context, base) ?: return "Not sent: pair this phone first"
+        val bytes = body.toByteArray(Charsets.UTF_8)
+        val time = System.currentTimeMillis().toString()
+        val nonce = DeviceKey.newNonce()
+        val signature = try {
+            DeviceKey.sign(SigningFormat.prefix(deviceId, time, nonce, "USAGE") + bytes)
+        } catch (e: Exception) {
+            return "Not sent: this phone's key is missing. Pair the phone again."
+        }
+        val answer = postBytes(base + USAGE_PATH, bytes, mapOf(
+            "x-paytrace-device-id" to deviceId,
+            "x-paytrace-time" to time,
+            "x-paytrace-nonce" to nonce,
+            "x-paytrace-signature" to signature
+        ))
+        answer.error?.let { return it }
+        return when (val status = answer.status!!) {
+            in 200..299 -> null
+            401 -> "Not sent: the server refused this phone (401). Pair it again."
+            404 -> "Not sent: the server does not take usage reports yet (404)"
+            429 -> "Not sent: too many reports, try again later (429)"
+            else -> "Not sent: the server answered $status"
+        }
     }
 
     // Returns null on success, or a short reason on failure.

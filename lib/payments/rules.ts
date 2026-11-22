@@ -256,3 +256,19 @@ export const MERCHANT_MATCH = {
   /** Bumped when the scoring changes; stored on every SIMILAR link. */
   algorithmVersion: "merchant-match-v1"
 } as const;
+
+/**
+ * App-usage reports from the Android app (card M3): for apps already known to
+ * be paid subscriptions, the day each was last opened and its minutes in the
+ * last 30 days. Nothing else about the phone is sent.
+ */
+export const APP_USAGE_LIMITS = {
+  maxBodyBytes: 8192,
+  maxApps: 40,
+  /** 30 days of minutes. */
+  maxMinutes: 30 * 24 * 60,
+  /** How far back the phone looks for "last opened". */
+  windowDays: 180,
+  /** An app name and a subscription name must share at least this many letters to match. */
+  minMatchLength: 4
+} as const;

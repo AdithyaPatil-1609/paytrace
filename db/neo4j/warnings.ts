@@ -174,7 +174,8 @@ WITH u, s, latest, collect(n.gapDays) AS gaps`;
 export const UNUSED_QUERY = `${CYCLES}
 WHERE size(gaps) >= 1 AND (s.cancelEffectiveOn IS NULL OR s.cancelEffectiveOn > $today)
 RETURN s.id AS subscriptionId, s.merchant AS merchant, latest.date AS latestDate, toInteger(latest.amountPaise) AS amountPaise, gaps,
-  s.lastVerifiedUsageAt AS lastVerifiedUsageAt, s.usageSource AS usageSource, s.usageEvidenceId AS usageEvidenceId, s.usageCoverage AS usageCoverage`;
+  s.lastVerifiedUsageAt AS lastVerifiedUsageAt, s.usageSource AS usageSource, s.usageEvidenceId AS usageEvidenceId, s.usageCoverage AS usageCoverage,
+  s.usageNoUseSince AS noUseSince, s.usageMinutes30d AS minutes30d`;
 
 /** Query 4: payments on or after a subscription or mandate cancellation. */
 export const CANCEL_QUERY = `
@@ -311,14 +312,20 @@ function unusedWarning(row: Record<string, unknown>, today: string): UnusedWarni
   const gap = median((row.gaps as unknown[]).map(Number));
   const amountPaise = Number(row.amountPaise);
   const last = (row.lastVerifiedUsageAt as string | null) ?? null;
-  const daysSince = last ? days(last, today) : null;
+  // The phone's usage stats can also say "not opened at all since <date>": a lower bound, never a made-up last use.
+  const noUseSince = last == null ? ((row.noUseSince as string | null) ?? null) : null;
+  const minutes = row.minutes30d == null ? null : Number(row.minutes30d);
+  const daysSince = last ? days(last, today) : noUseSince ? days(noUseSince, today) : null;
   const unused = daysSince != null && daysSince >= L.unusedDays;
   const savings = annualPaise(amountPaise, gap);
-  const why = last == null
+  const onPhone = row.usageSource === "android_usage_stats" && minutes != null ? ` ${minutes} minute${minutes === 1 ? "" : "s"} of use in the last 30 days on your phone.` : "";
+  const why = noUseSince
+    ? `Not opened on your phone since at least ${noUseSince} (${daysSince} days, source: Android usage stats), while payments continue.${unused && savings ? ` Stopping it would save about ${rupees(savings)} a year.` : ""}`
+    : last == null
     ? `Usage unavailable. Payments continue, but Paytrace has no verified record of when you last used ${row.merchant}. Review whether you still use it.`
     : unused
-      ? `Your last verified use was ${last} (${daysSince} days ago, source: ${row.usageSource ?? "unknown"}), while payments continue.${savings ? ` Stopping it would save about ${rupees(savings)} a year.` : ""}`
-      : `Last verified use ${last} (${daysSince} days ago).`;
+      ? `Your last verified use was ${last} (${daysSince} days ago, source: ${row.usageSource ?? "unknown"}), while payments continue.${onPhone}${savings ? ` Stopping it would save about ${rupees(savings)} a year.` : ""}`
+      : `Last verified use ${last} (${daysSince} days ago).${onPhone}`;
   return { subscriptionId: String(row.subscriptionId), merchant: String(row.merchant), status: unused ? "UNUSED" : "USAGE_UNAVAILABLE", lastVerifiedUsageAt: last, usageSource: (row.usageSource as string | null) ?? null, usageEvidenceId: (row.usageEvidenceId as string | null) ?? null, usageCoverage: (row.usageCoverage as string | null) ?? null, daysSinceLastUsage: daysSince, amountPaise, frequency: frequencyOf(gap), annualSavingsPaise: unused ? savings : null, why };
 }
 
