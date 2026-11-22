@@ -15,7 +15,7 @@ import { PaymentRadar } from "@/web/components/visualizations/payment-radar";
 import { formatINR } from "@/server/presentation/format";
 import { lastUsedLine } from "@/server/presentation/last-used";
 import { issueGroups, type IssueCategory } from "@/server/presentation/issue-cards";
-import { CueChip, CueIcon, MerchantMark, MoneyBar, toneOf, type CueKind } from "@/web/components/chrome/visual-cues";
+import { CueChip, CueIcon, MerchantMark, toneOf, type CueKind } from "@/web/components/chrome/visual-cues";
 import type { Commitment, Mechanism } from "@/server/payments/types";
 
 const RAIL: Record<Mechanism, string | null> = {
@@ -121,7 +121,6 @@ export function AllPaymentsScreen({
               )}
             </small>
           </p>
-          <MoneyBar items={items} flagged={flagged} onOpen={pick} />
           <div className="glance-chips" aria-label="Problems found">
             {problems.length === 0 && items.length > 0 ? (
               <CueChip kind="ok" tone="calm">Nothing needs a look</CueChip>
