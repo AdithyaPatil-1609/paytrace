@@ -74,3 +74,28 @@ Send the body bytes you signed, unchanged. Do not pretty-print or re-encode afte
 A signed phone's messages are stored in its owner's own data (`LiveProfile` of their Google account), so they appear on that person's dashboard and nobody else's.
 
 The old shared pairing code (`x-paytrace-device`) still works until every phone has this update. Then set `PAYTRACE_ALLOW_DEVICE_CODE=false` in `.env.local` (card S11).
+
+## App-usage reports (card M3)
+
+`POST /api/ingest/usage` takes a usage report from a paired phone. It is
+**signed only** (the old `x-paytrace-device` code is never accepted) with the
+same headers and key, but the signed bytes start with `PAYTRACE-USAGE-v1`
+instead of `PAYTRACE-SMS-v1`, so an SMS signature can never be replayed as a
+usage report or the other way round.
+
+Body (at most 8 KB, 40 apps):
+
+```json
+{"windowStart":"2026-05-26","apps":[{"package":"com.spotify.music","merchant":"SPOTIFY","lastUsed":"2026-09-01","minutes30d":3}]}
+```
+
+- The phone reports only apps in `android/.../KnownApps.kt` (known paid
+  subscription apps), and only after the person switches on Settings > Usage
+  access and the switch in the app.
+- `lastUsed` is the day the app was last opened, or `null` if it was not
+  opened since `windowStart` (the first day the phone has usage statistics
+  for, at most 180 days back).
+- The server matches `merchant` to the owner's own `LiveSubscription` by name
+  (`db/neo4j/app-usage.ts`) and sets `lastVerifiedUsageAt` (source
+  `android_usage_stats`), or `usageNoUseSince` when not opened. The unused
+  warning reads these; a newer user-confirmed date is never overwritten.

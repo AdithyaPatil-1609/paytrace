@@ -1,11 +1,48 @@
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission
         android:name="android.permission.RECEIVE_SMS" />
 
     <uses-permission
         android:name="android.permission.INTERNET" />
+
+    <!-- Card M3, optional: app usage for known subscription apps only. The person
+         switches it on in Settings > Usage access; the app cannot grant it itself. -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- Card M3: lets the app see whether these known subscription apps are installed.
+         Same list as KnownApps.kt. -->
+    <queries>
+        <package android:name="com.netflix.mediaclient" />
+        <package android:name="com.spotify.music" />
+        <package android:name="in.startv.hotstar" />
+        <package android:name="com.amazon.avod.thirdpartyclient" />
+        <package android:name="com.google.android.apps.youtube.music" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.jio.media.ondemand" />
+        <package android:name="com.sonyliv" />
+        <package android:name="com.graymatrix.did" />
+        <package android:name="com.google.android.apps.subscriptions.red" />
+        <package android:name="com.linkedin.android" />
+        <package android:name="com.duolingo" />
+        <package android:name="com.apple.android.music" />
+        <package android:name="com.audible.application" />
+        <package android:name="in.swiggy.android" />
+        <package android:name="com.application.zomato" />
+        <package android:name="com.openai.chatgpt" />
+        <package android:name="com.canva.editor" />
+        <package android:name="com.dropbox.android" />
+        <package android:name="com.microsoft.office.officehubrow" />
+        <package android:name="com.bsbportal.music" />
+        <package android:name="com.jio.media.jiobeats" />
+        <package android:name="com.gaana" />
+        <package android:name="com.tinder" />
+        <package android:name="com.medium.reader" />
+    </queries>
 
     <application
         android:allowBackup="false"

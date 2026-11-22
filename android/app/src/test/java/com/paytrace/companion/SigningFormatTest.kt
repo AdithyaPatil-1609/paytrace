@@ -17,4 +17,9 @@ class SigningFormatTest {
         val p = String(SigningFormat.prefix("dev_1234567890abcdef", "1763700000000", "nonce_abcdefghijklmnop"), Charsets.UTF_8)
         assertEquals("PAYTRACE-SMS-v1\ndev_1234567890abcdef\n1763700000000\nnonce_abcdefghijklmnop\n", p)
     }
+
+    @Test fun usageReportsUseTheirOwnPrefix() {
+        val p = String(SigningFormat.prefix("dev_1234567890abcdef", "1763700000000", "nonce_abcdefghijklmnop", "USAGE"), Charsets.UTF_8)
+        assertEquals("PAYTRACE-USAGE-v1\ndev_1234567890abcdef\n1763700000000\nnonce_abcdefghijklmnop\n", p)
+    }
 }
