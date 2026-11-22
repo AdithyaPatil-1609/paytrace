@@ -85,7 +85,7 @@ test("the Shortcut body keeps a given time inside the window and refuses one out
   assert.equal(checkShortcutBody({ sender: "VM-HDFCBK", text: TEXT, receivedAt: "yesterday" }, NOW).ok, false);
 });
 
-test("the account menu offers Connect iPhone, and Disconnect once connected", async () => {
+test("Add phone offers Connect iPhone, and Disconnect once connected", async () => {
   const { createElement } = await import("react");
   const { renderToStaticMarkup } = await import("react-dom/server");
   const { IphoneConnect } = await import("../components/iphone-connect");

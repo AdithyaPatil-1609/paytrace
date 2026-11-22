@@ -39,7 +39,7 @@ export const CHALLENGE =
   /\b(?:wrong|incorrect|not (?:right|correct|true)|mistake|missing|left out|forgot|forgotten|explain|breakdown|break (?:it|that) down|how did you (?:get|calculate|work)|show (?:me )?(?:the )?(?:working|maths?|math|calculation|details))\b/i;
 
 export const SOURCES_NOTE =
-  "Paytrace counts only payments found in your synced Gmail and bank SMS. If one is still missing, use Rescan last 12 months in your account menu, then ask again.";
+  "Paytrace counts only payments found in your synced Gmail and bank SMS. If one is still missing, use Rescan last 12 months under Sync Gmail at the top, then ask again.";
 
 export const DEMO_SOURCES_NOTE = "This demo reads one made-up person's bank statement and notices, so only their payments are counted.";
 

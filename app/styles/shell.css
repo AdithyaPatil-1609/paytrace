@@ -300,3 +300,22 @@
 .statement-password input { min-height: 44px; padding: 8px 12px; border: 1px solid var(--rule-firm); border-radius: 8px; font-size: calc(16px * var(--text-scale)); background: var(--paper); color: var(--ink); }
 .statement-password-actions { display: flex; justify-content: flex-end; gap: 12px; align-items: center; }
 .statement-password-actions .account-button { width: auto; margin-top: 0; }
+
+/* Top bar dropdowns, Sync Gmail and Add phone (components/chrome/bar-menu.tsx). A click outside closes them. */
+.bar-menu { position: relative; }
+.bar-actions .bar-import { white-space: nowrap; }
+.bar-menu-trigger[aria-expanded="true"] { border-color: var(--marigold-bright); background: var(--paper); }
+.bar-menu-panel { width: min(340px, calc(100vw - 32px)); padding: 18px; border: 1px solid var(--rule-firm); border-radius: 14px; box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.35); text-align: left; }
+.bar-menu-panel[hidden] { display: none; }
+.bar-menu-panel .account-button { width: 100%; }
+.phone-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; margin: 4px 0 14px; border: 1px solid var(--rule-firm); border-radius: 12px; background: var(--paper); }
+.phone-choice-option { min-height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--ink-soft); font: 600 calc(14px * var(--text-scale))/1 var(--sans); cursor: pointer; }
+.phone-choice-option:hover { color: var(--ink); }
+.phone-choice-option[aria-pressed="true"] { background: var(--paper-lift); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), inset 0 0 0 1px var(--rule-firm); }
+.phone-choice-option:focus-visible { outline: 2px solid var(--marigold); outline-offset: 2px; }
+.phone-choice-body[hidden] { display: none; }
+/* On phones the bar wraps, so the dropdown spans the bar's width instead of hanging off its button. */
+@media (max-width: 660px) {
+  .bar-menu { position: static; }
+  .bar-menu-panel { left: 16px; right: 16px; width: auto; }
+}

@@ -129,7 +129,7 @@ export default function PrivacyPage() {
       <h2>8. Your choices</h2>
       <ul>
         <li>
-          <strong>Stop Gmail access:</strong> use Disconnect Gmail in your account menu, or remove Paytrace at{" "}
+          <strong>Stop Gmail access:</strong> use Disconnect Gmail under Sync Gmail at the top of your dashboard, or remove Paytrace at{" "}
           <a href="https://myaccount.google.com/permissions" rel="noreferrer">
             myaccount.google.com/permissions
           </a>
@@ -141,8 +141,8 @@ export default function PrivacyPage() {
           revoked at Google.
         </li>
         <li>
-          <strong>Sign out everywhere, or unpair phones:</strong> both are in your account menu. Unpaired phones
-          can no longer send messages.
+          <strong>Sign out everywhere, or unpair phones:</strong> Sign out on every device is in your account menu;
+          Remove all paired phones is under Add phone → Android at the top. Unpaired phones can no longer send messages.
         </li>
       </ul>
 
