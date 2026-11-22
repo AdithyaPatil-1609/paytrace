@@ -242,19 +242,7 @@ export function Landing({
 
         {/* Right Column: How it Works & Preview Widgets */}
         <div className="landing-right">
-          <p className="landing-eyebrow">HOW IT WORKS</p>
-
-          <div className="landing-steps">
-            {steps.map((step) => (
-              <div className="step-row" key={step.n}>
-                <span className="step-num">{step.n}</span>
-                <div className="step-content">
-                  <strong className="step-title">{step.title}</strong>
-                  <p className="step-text">{step.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <p className="landing-eyebrow">WHAT YOU GET</p>
 
           {/* Cards Grid: Subscribers Dashboard + Private by design */}
           <div className="landing-cards-grid">
@@ -314,6 +302,28 @@ export function Landing({
             </article>
           </div>
         </div>
+      </section>
+
+      {/* ── How it works: three big steps, each with a small picture ── */}
+      <section className="landing-how" aria-labelledby="how-title">
+        <div className="how-head">
+          <p className="landing-eyebrow">HOW IT WORKS</p>
+          <h2 id="how-title">Three steps, about two minutes</h2>
+        </div>
+        <ol className="how-grid">
+          {steps.map((step) => (
+            <li className="how-card" key={step.n}>
+              <div className="how-card-top">
+                <span className="how-num">{step.n}</span>
+                <strong className="how-title">{step.title}</strong>
+              </div>
+              <p className="how-text">{step.text}</p>
+              <div className="how-visual" aria-hidden="true">
+                <StepVisual step={step.n} />
+              </div>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* ── Slide-in Sign-in Drawer (Right Side) ── */}
@@ -412,5 +422,63 @@ export function Landing({
         </div>
       )}
     </main>
+  );
+}
+
+/** A small picture for each How-it-works step, drawn with plain markup. */
+function StepVisual({ step }: { step: string }) {
+  if (step === "01")
+    return (
+      <div className="how-sources">
+        <span className="how-chip"><MailIcon /> Gmail</span>
+        <span className="how-chip"><PhoneIcon /> Bank SMS</span>
+        <span className="how-chip"><DocIcon /> Statement</span>
+        <span className="how-chip is-choice">You choose</span>
+      </div>
+    );
+  if (step === "02")
+    return (
+      <div className="how-read">
+        <span className="how-sms">Rs 649 debited… NETFLIX</span>
+        <span className="how-arrow">→</span>
+        <span className="how-fields">
+          <b>₹649</b>
+          <b>Netflix</b>
+          <b>Monthly</b>
+        </span>
+      </div>
+    );
+  return (
+    <div className="how-act">
+      <span className="how-price">
+        <s>₹119</s> <b>₹139</b> <em>↑ 17%</em>
+      </span>
+      <span className="how-stop">Stop it →</span>
+    </div>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+      <rect x="1.8" y="3.4" width="12.4" height="9.2" rx="1.6" />
+      <path d="m2.4 4.2 5.6 4.4 5.6-4.4" />
+    </svg>
+  );
+}
+function PhoneIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+      <rect x="4.2" y="1.6" width="7.6" height="12.8" rx="1.6" />
+      <path d="M7 12h2" />
+    </svg>
+  );
+}
+function DocIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+      <path d="M3.6 1.8h6l2.8 2.8v9.6H3.6V1.8Z" />
+      <path d="M6 7.4h4M6 10h4" />
+    </svg>
   );
 }
