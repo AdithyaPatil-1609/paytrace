@@ -14,8 +14,6 @@ import { ChargeSparkline } from "@/web/components/visualizations/charge-sparklin
 import { PaymentRadar } from "@/web/components/visualizations/payment-radar";
 import { formatINR } from "@/server/presentation/format";
 import { lastUsedLine } from "@/server/presentation/last-used";
-import { issueGroups, type IssueCategory } from "@/server/presentation/issue-cards";
-import { CueChip, CueIcon, MerchantMark, MoneyBar, toneOf, type CueKind } from "@/web/components/chrome/visual-cues";
 import type { Commitment, Mechanism } from "@/server/payments/types";
 
 const RAIL: Record<Mechanism, string | null> = {
@@ -36,25 +34,6 @@ const PER: Record<Commitment["cadence"], string> = {
   quarterly: "/qtr",
   annual: "/yr",
   irregular: " each time"
-};
-
-/** One picture per kind of problem, shared with the Issues screen. */
-export const CUE_FOR_GROUP: Record<IssueCategory, CueKind> = {
-  price: "price",
-  announced: "price",
-  unused: "unused",
-  trial: "trial",
-  new: "new",
-  unknown: "unknown"
-};
-
-const SHORT_GROUP: Record<IssueCategory, string> = {
-  price: "silent price rise",
-  announced: "price rise",
-  unused: "not used",
-  trial: "trial now paid",
-  new: "new autopay",
-  unknown: "unknown"
 };
 
 /** The docked panel shows only when the window is wide enough for three columns. */
@@ -93,7 +72,7 @@ export function AllPaymentsScreen({
 }) {
   // The same test the Issues screen uses, so both screens always agree.
   const flagged = new Set(issueItems(items, kept).map((item) => item.id));
-  const problems = issueGroups(items, kept).filter((group) => group.rows.length > 0);
+  const priceIncreases = items.filter((item) => priceRise(item) !== undefined).length;
   // The panel stays closed until the person clicks a payment.
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = items.find((item) => item.id === selectedId) ?? null;
@@ -106,33 +85,36 @@ export function AllPaymentsScreen({
   return (
     <div className={`ledger-split${selected ? " has-panel" : ""}`}>
       <div className="ledger-screen">
-        <header className="ledger-hero glance-hero">
-          <h1 className="visually-hidden">All payments</h1>
-          <p className="glance-total">
-            <strong>{formatINR(total / 12)}</strong>
-            <span>/ month</span>
-            <small>
-              {formatINR(total)} a year · {items.length} {items.length === 1 ? "payment" : "payments"}
-              {simulated && baseline !== total && (
-                <>
-                  {" "}
-                  (was <s>{formatINR(baseline)}</s>)
-                </>
-              )}
-            </small>
-          </p>
-          <MoneyBar items={items} flagged={flagged} onOpen={pick} />
-          <div className="glance-chips" aria-label="Problems found">
-            {problems.length === 0 && items.length > 0 ? (
-              <CueChip kind="ok" tone="calm">Nothing needs a look</CueChip>
-            ) : (
-              problems.map((group) => (
-                <CueChip key={group.id} kind={CUE_FOR_GROUP[group.id]} title={group.title}>
-                  <b>{group.rows.length}</b> {SHORT_GROUP[group.id]}
-                </CueChip>
-              ))
+        <header className="ledger-hero">
+          <h1>Every periodic payment, on one page</h1>
+          <p className="ledger-total">
+            <strong>{formatINR(total)}</strong> across {items.length} repeating{" "}
+            {items.length === 1 ? "payment" : "payments"}
+            {simulated && baseline !== total && (
+              <small>
+                {" "}
+                (was <s>{formatINR(baseline)}</s>)
+              </small>
             )}
-          </div>
+          </p>
+          <dl className="ledger-summary" aria-label="Recurring payment summary">
+            <div className="ledger-summary-card">
+              <dt>Recurring payments</dt>
+              <dd>{items.length}</dd>
+            </div>
+            <div className="ledger-summary-card">
+              <dt title="Projected annual cost divided by 12">Monthly recurring cost</dt>
+              <dd>{formatINR(total / 12)}</dd>
+            </div>
+            <div className="ledger-summary-card">
+              <dt>Projected annual cost</dt>
+              <dd>{formatINR(total)}</dd>
+            </div>
+            <div className="ledger-summary-card">
+              <dt title="Payments with a higher latest price">Price increases</dt>
+              <dd className={priceIncreases > 0 ? "has-increases" : undefined}>{priceIncreases}</dd>
+            </div>
+          </dl>
         </header>
 
         <PaymentRadar items={items} flagged={flagged} asOf={asOf} onOpen={pick} />
@@ -166,32 +148,28 @@ export function AllPaymentsScreen({
                 key={item.id}
                 onClick={() => pick(item.id)}
               >
-                <span className="ledger-merchant has-mark">
-                  <MerchantMark name={item.merchant} tone={toneOf(item, flagged)} />
-                  <span>
-                    <strong title={item.rawNarration}>
-                      {item.merchant}
-                      {!item.inDictionary && item.merchantIdentity?.status !== "confirmed" && (
-                        <i className="unknown-tag" title={item.merchantIdentity ? `AI suggests ${item.merchantIdentity.name}; confirm in payment details` : "Not in our merchant list"}>
-                          <CueIcon kind="unknown" size={12} />
-                        </i>
-                      )}
-                    </strong>
-                    {item.merchantIdentity?.status === "suggested" && <small>AI suggests {item.merchantIdentity.name} · review</small>}
-                    {item.merchantIdentity?.status === "confirmed" && <small>Identity confirmed by you</small>}
-                    {lastUsed && (
-                      <small className={`last-used${item.kind === "unused" ? " is-stale" : ""}`}>
-                        <CueIcon kind={item.kind === "unused" ? "unused" : "clock"} size={12} />
-                        {lastUsed}
-                      </small>
+                <span className="ledger-merchant">
+                  <strong>
+                    {item.merchant}
+                    {!item.inDictionary && item.merchantIdentity?.status !== "confirmed" && (
+                      <i
+                        className="unknown-tag"
+                        title={item.merchantIdentity ? `AI suggests ${item.merchantIdentity.name}; confirm in payment details` : "Not in our merchant list"}
+                      >
+                        unknown
+                      </i>
                     )}
-                  </span>
+                  </strong>
+                  <code>{item.rawNarration}</code>
+                  {item.merchantIdentity?.status === "suggested" && <small>AI suggests {item.merchantIdentity.name} · review</small>}
+                  {item.merchantIdentity?.status === "confirmed" && <small>Identity confirmed by you</small>}
+                  {lastUsed && <small className={`last-used${item.kind === "unused" ? " is-stale" : ""}`}>{lastUsed}</small>}
                 </span>
                 <span className="ledger-rail">
                   <span className="rail-tag">{rail}</span>
                   {item.basis === "notices" && (
                     <em className="notice-tag" title="Built from debit or renewal notices in Gmail. No bank debit confirms it yet.">
-                      Not confirmed
+                      From notices · not confirmed
                     </em>
                   )}
                 </span>
@@ -202,8 +180,8 @@ export function AllPaymentsScreen({
                     {formatINR(item.amount)}
                     <small>{PER[item.cadence]}</small>
                   </b>
-                  {rise !== undefined && <CueChip kind="price">+{rise}%</CueChip>}
-                  {warning && <CueChip kind={item.kind === "trial" ? "trial" : "unused"}>{warning}</CueChip>}
+                  {rise !== undefined && <em className="hike-tag">+{rise}% hike</em>}
+                  {warning && <em className="hike-tag">{warning}</em>}
                 </span>
               </button>
             );
@@ -212,8 +190,7 @@ export function AllPaymentsScreen({
 
         {subscriptionNotices}
 
-        <details className="exclusion-note">
-          <summary>What is not counted</summary>
+        <p className="exclusion-note">
           {personal ? (
             <>
               <strong>About this list:</strong> only detected recurring payments appear here. One-off payments and
@@ -225,7 +202,7 @@ export function AllPaymentsScreen({
               credit-card repayment, and YouTube&apos;s ₹1 authorisation. Open any row to see the rule that kept it.
             </>
           )}
-        </details>
+        </p>
       </div>
 
       {selected && (

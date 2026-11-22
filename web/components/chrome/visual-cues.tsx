@@ -1,10 +1,10 @@
 /**
  * Small pictures that stand in for sentences: a letter badge per merchant, one
- * icon per kind of problem, and a money bar that shows where the month goes.
+ * icon per kind of problem, and a coloured tone for each payment.
  * Mentor feedback was that the screens asked people to read too much.
  */
 import type { ReactNode } from "react";
-import { formatINR } from "@/server/presentation/format";
+import type { IssueCategory } from "@/server/presentation/issue-cards";
 import type { Commitment } from "@/server/payments/types";
 
 export type CueKind =
@@ -159,68 +159,12 @@ export function toneOf(item: Pick<Commitment, "id" | "bucket">, flagged: Set<str
   return "ok";
 }
 
-const TONE_LABEL: Record<Tone, string> = {
-  issue: "Need a look",
-  ok: "Fine",
-  fixed: "Bills & loans"
+/** One picture per kind of problem, used by the Issues screen. */
+export const CUE_FOR_GROUP: Record<IssueCategory, CueKind> = {
+  price: "price",
+  announced: "price",
+  unused: "unused",
+  trial: "trial",
+  new: "new",
+  unknown: "unknown"
 };
-
-/**
- * One bar for the whole year: each payment is a slice as wide as its share.
- * Red slices need a look, grey are bills and loans, navy are fine.
- */
-export function MoneyBar({
-  items,
-  flagged,
-  onOpen
-}: {
-  items: Commitment[];
-  flagged: Set<string>;
-  onOpen: (id: string) => void;
-}) {
-  const total = items.reduce((sum, item) => sum + item.annualCost, 0);
-  if (total <= 0) return null;
-  const order: Tone[] = ["issue", "ok", "fixed"];
-  const sorted = [...items].sort(
-    (a, b) =>
-      order.indexOf(toneOf(a, flagged)) - order.indexOf(toneOf(b, flagged)) || b.annualCost - a.annualCost
-  );
-  const sums = order.map((tone) => {
-    const rows = items.filter((item) => toneOf(item, flagged) === tone);
-    return { tone, count: rows.length, amount: rows.reduce((sum, item) => sum + item.annualCost, 0) };
-  });
-  return (
-    <figure className="money-bar" aria-label="Where the year's money goes">
-      <div className="money-bar-track">
-        {sorted.map((item) => {
-          const share = (item.annualCost / total) * 100;
-          const tone = toneOf(item, flagged);
-          return (
-            <button
-              type="button"
-              key={item.id}
-              className={`money-bar-slice slice-${tone}`}
-              style={{ flexGrow: Math.max(share, 0.8) }}
-              title={`${item.merchant}: ${formatINR(item.annualCost)} a year`}
-              aria-label={`${item.merchant}, ${formatINR(item.annualCost)} a year, ${TONE_LABEL[tone]}`}
-              onClick={() => onOpen(item.id)}
-            >
-              {share >= 7 && <span>{initials(item.merchant)}</span>}
-            </button>
-          );
-        })}
-      </div>
-      <figcaption className="money-bar-legend">
-        {sums
-          .filter((row) => row.count > 0)
-          .map((row) => (
-            <span key={row.tone} className={`legend-${row.tone}`}>
-              <i aria-hidden="true" />
-              <b>{row.count}</b> {TONE_LABEL[row.tone]}
-              <small>{formatINR(row.amount)}/yr</small>
-            </span>
-          ))}
-      </figcaption>
-    </figure>
-  );
-}

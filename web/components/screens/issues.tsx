@@ -1,7 +1,6 @@
 import { ScreenHeader } from "@/web/components/chrome/screen-header";
 import { WarningIcon } from "@/web/components/chrome/warning-tag";
-import { CueChip, CueIcon, MerchantMark } from "@/web/components/chrome/visual-cues";
-import { CUE_FOR_GROUP } from "@/web/components/screens/all-payments";
+import { CUE_FOR_GROUP, CueChip, CueIcon, MerchantMark } from "@/web/components/chrome/visual-cues";
 import { formatDate } from "@/server/presentation/format";
 import { cancelDestination, UpiCancelLink } from "@/web/components/detail/upi-cancel-link";
 import { formatINR } from "@/server/presentation/format";
@@ -29,12 +28,7 @@ export function IssuesScreen({
 }) {
   const groups = issueGroups(allItems, kept);
   const findings = groups.reduce((sum, group) => sum + group.rows.length, 0);
-  const paymentCount = new Set(groups.flatMap((group) => group.rows.map((item) => item.id))).size;
   const emptyGroups = groups.filter((group) => group.rows.length === 0);
-  const atStake = [...new Map(groups.flatMap((group) => group.rows).map((item) => [item.id, item])).values()].reduce(
-    (sum, item) => sum + item.annualCost,
-    0
-  );
   return (
     <>
       <ScreenHeader
@@ -43,37 +37,6 @@ export function IssuesScreen({
         title="Issues"
         help="These are the payments that need a look: price rises, services you don't use, debits coming up and charges after you cancelled. One payment can show up in more than one list. Tap any of them to see the proof."
       />
-      <nav className="issue-tiles" aria-label={`${paymentCount} payments need a look, ${formatINR(atStake)} a year`}>
-        {findings === 0 ? (
-          <div className="issue-tile is-calm">
-            <span className="issue-tile-icon">
-              <CueIcon kind="ok" size={20} />
-            </span>
-            <b>0</b>
-            <span>All clear</span>
-          </div>
-        ) : (
-          groups
-            .filter((group) => group.rows.length > 0)
-            .map((group) => (
-              <button
-                type="button"
-                key={group.id}
-                className="issue-tile"
-                onClick={() =>
-                  document.getElementById(`issue-category-${group.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
-                }
-              >
-                <span className="issue-tile-icon">
-                  <CueIcon kind={CUE_FOR_GROUP[group.id]} size={20} />
-                </span>
-                <b>{group.rows.length}</b>
-                <span>{group.title}</span>
-                <small>{formatINR(group.rows.reduce((sum, item) => sum + item.annualCost, 0))}/yr</small>
-              </button>
-            ))
-        )}
-      </nav>
       {findings === 0 && (
         <p className="issue-empty" role="status">
           Nothing needs review in the available records. Payments you chose to keep are not flagged

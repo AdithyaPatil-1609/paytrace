@@ -9,6 +9,7 @@ import type { Commitment } from "@/server/payments/types";
 import { useState } from "react";
 import { CancellationDrawer } from "@/web/components/detail/cancellation-drawer";
 import { CueIcon, MerchantMark } from "@/web/components/chrome/visual-cues";
+import { cancelStrip } from "@/server/presentation/cancel-strip";
 
 export function CancelPathsScreen({
   items,
@@ -85,30 +86,26 @@ export function CancelPathsScreen({
                     Loan: talk to the lender
                   </p>
                 ) : (
-                  <ol
-                    className="path-steps"
-                    aria-label="Three steps"
-                    title="Follow the service and payment-provider steps, keep confirmation, and check what to do if charges continue."
-                  >
-                    <li>
-                      <span className="path-step-icon">
-                        <CueIcon kind="app" size={18} />
-                      </span>
-                      Stop service
-                    </li>
-                    <li>
-                      <span className="path-step-icon">
-                        <CueIcon kind="bank" size={18} />
-                      </span>
-                      Stop money
-                    </li>
-                    <li>
-                      <span className="path-step-icon">
-                        <CueIcon kind="receipt" size={18} />
-                      </span>
-                      Keep proof
-                    </li>
-                  </ol>
+                  <>
+                    {item.nextCharge && (
+                      <p className="path-next">
+                        <CueIcon kind="clock" size={15} />
+                        {item.cancelMode === "normal"
+                          ? `Next ${formatINR(item.amount)} on ${formatDate(item.nextCharge)}: stop it before then`
+                          : `Next ${formatINR(item.amount)} due ${formatDate(item.nextCharge)}`}
+                      </p>
+                    )}
+                    <ol className="path-steps" aria-label={`How to stop ${item.merchant}`}>
+                      {cancelStrip(item).map((step) => (
+                        <li key={step.label} title={step.hint}>
+                          <span className="path-step-icon">
+                            <CueIcon kind={step.icon} size={18} />
+                          </span>
+                          {step.label}
+                        </li>
+                      ))}
+                    </ol>
+                  </>
                 )}
                 {isKept && (
                   <p className="kept-note">

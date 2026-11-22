@@ -1,28 +1,20 @@
 /**
- * The landing page's moving backdrop: two banks of soft paper bars, like a
- * ledger's bar chart, with a slow wave passing through them. Pure CSS (no
- * script, no clicks); it stands still for people who ask for reduced motion.
+ * The landing page's moving backdrop: a row of tall paper doors that swing
+ * open from the middle outward, pause, and close again, on a slow loop.
+ * Pure CSS (no script, no clicks); it stands still under reduced motion.
  */
-const BARS = 13;
-
-function Bank({ side }: { side: "left" | "right" }) {
-  return (
-    <div className={`motion-bank motion-bank-${side}`}>
-      {Array.from({ length: BARS }, (_, i) => {
-        // i = 0 is the outermost bar: tallest at the edge, stepping down toward the middle.
-        const height = 94 - i * 4.6;
-        return <i key={i} style={{ ["--i" as string]: i, ["--h" as string]: `${height}%` }} />;
-      })}
-    </div>
-  );
-}
+const DOORS = 14;
+const MIDDLE = (DOORS - 1) / 2;
 
 export function LandingMotion() {
   return (
     <div className="motion-field" aria-hidden="true">
-      <Bank side="left" />
-      <Bank side="right" />
-      <div className="motion-sheen" />
+      {Array.from({ length: DOORS }, (_, i) => {
+        // Doors nearest the middle move first; each step outward starts a little later.
+        const step = Math.abs(i - MIDDLE) - 0.5;
+        const side = i < DOORS / 2 ? "left" : "right";
+        return <div key={i} className={`motion-door motion-door-${side}`} style={{ ["--step" as string]: step }} />;
+      })}
     </div>
   );
 }
