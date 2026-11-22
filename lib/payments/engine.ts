@@ -171,13 +171,15 @@ type Group = {
 };
 
 /**
- * A payment the person sends by hand: a UPI, IMPS, NEFT or RTGS transfer with no
- * mandate word in it. Auto debits say ACH, NACH, ECS, AUTOPAY, MANDATE or SI.
+ * A payment the person sends by hand (rent, a person, an IMPS/NEFT/RTGS transfer)
+ * with no mandate word in it. Auto debits say ACH, NACH, ECS, AUTOPAY, MANDATE or SI.
  */
 export function isManualTransfer(narration: string) {
   const text = narration.toUpperCase();
   if (/\b(ACH|NACH|ECS|AUTOPAY|AUTO PAY|MANDATE|SI|STANDING)\b/.test(text)) return false;
-  return /^(UPI|IMPS|NEFT|RTGS)\b/.test(text) || /\bRENT\b/.test(text);
+  // Rent, or money to a person (Mr, Mrs, Ms…) or by IMPS/NEFT/RTGS. A UPI payment to a shop stays,
+  // so the recurring check (lib/payments/recurring-check.ts) can still decide about it.
+  return /\bRENT\b/.test(text) || /^(IMPS|NEFT|RTGS)\b/.test(text) || (/^UPI\b/.test(text) && /\b(MR|MRS|MS|SHRI|SMT|KUMARI)\b/.test(text));
 }
 
 /** The channel of a dated row built from a debit or renewal notice, not from a bank debit. */

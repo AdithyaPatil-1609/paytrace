@@ -6,8 +6,9 @@
  * - MLX runs Qwen3 8B with the fine-tuned alert adapter for Job 3 (read a
  *   pasted bank alert): npm run ai:alerts.
  *
- * Both must be on this machine. A URL that points anywhere else is refused,
- * so a payment question is never sent off the laptop.
+ * Both run on this machine. With PAYTRACE_ALLOW_LAN_MODEL=true they may run on
+ * a teammate's laptop on the same private network (10.x, 192.168.x, 172.16-31.x);
+ * any public address is still refused, so payment text never leaves our own machines.
  */
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -20,10 +21,15 @@ export const RECURRING_MODEL = "Qwen3 8B + Paytrace recurring adapter";
 
 const TIMEOUT_MS = 90_000;
 
+/** A teammate's laptop on the same Wi-Fi: only private network addresses, and only when switched on. */
+const PRIVATE_LAN = /^(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/;
+
 function local(base: string) {
   const url = new URL(base);
-  if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) {
-    throw new Error("Model servers must run on this machine.");
+  const onThisMachine = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  const onOurLan = process.env.PAYTRACE_ALLOW_LAN_MODEL === "true" && PRIVATE_LAN.test(url.hostname);
+  if (!onThisMachine && !onOurLan) {
+    throw new Error("Model servers must run on this machine or, if allowed, a laptop on the same private network.");
   }
   return url.origin;
 }
