@@ -220,7 +220,7 @@ export function AssistantWidget({ scope, onOpen }: { scope: "demo" | "demo-stati
               />
               <path d="M8.5 8.5h7M8.5 11.5h4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
-            <span>Ask AI · Qwen</span>
+            <span>Ask AI</span>
           </>
         )}
       </button>

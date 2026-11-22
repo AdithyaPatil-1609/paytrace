@@ -43,7 +43,7 @@ export function CancelPathsScreen({
         eyebrow="HOW TO STOP EACH ONE"
         title="A cancel path for every autopay"
         copy="Follow the steps for your service and payment provider, then keep the confirmation."
-        help="Cancelling a service and stopping its payment permission can be separate steps. Each guide includes follow-up instructions if charges continue. Bills, insurance and loans can remain due even when automatic payments stop; the loan has no revoke control. PayTrace only records your report."
+        help="Pick a payment to see how to stop it, step by step. Cancelling the service and stopping the payment are sometimes two separate steps, and we show both. Bills, insurance and loans still have to be paid even if you turn off autopay."
       />
       {saved > 0 && (
         <p className="revoke-banner">

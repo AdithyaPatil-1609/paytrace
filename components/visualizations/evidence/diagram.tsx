@@ -8,13 +8,12 @@ import type { Commitment, DictionaryEntry } from "@/lib/payments/types";
 export function PaymentDiagram({
   item,
   dictionary,
-  live,
-  personal,
   onOpen
 }: {
   item: Commitment;
   dictionary: DictionaryEntry[];
-  live: boolean;
+  /** Kept for callers; the diagram reads the same way for demo and live data. */
+  live?: boolean;
   personal?: boolean;
   onOpen: () => void;
 }) {
@@ -28,9 +27,7 @@ export function PaymentDiagram({
   return (
     <section className="payment-diagram-panel" aria-label={`Evidence for ${item.merchant}`}>
       <p className="evidence-source-note">
-        {personal ? "Your imported Neo4j records · derived evidence diagram" : live
-          ? "Records from Neo4j analysis"
-          : "CSV fixture · evidence diagram, not a live Neo4j query"}
+        The proof behind this payment: its bank debits, messages and autopay permission.
       </p>
       <div className="evidence-graph-controls" role="group" aria-label="Graph controls">
         <div>

@@ -246,18 +246,21 @@ body {
 .ledger-hero h1 {
   margin: 0;
   color: var(--ink);
-  font: 500 clamp(30px, 2.9vw, 48px) / 1.1 var(--serif);
-  letter-spacing: -0.02em;
+  font: 600 clamp(28px, 2.6vw, 42px) / 1.12 var(--serif);
+  letter-spacing: -0.025em;
 }
 
 .ledger-total {
   margin: 10px 0 0;
-  color: var(--ink);
-  font: 400 clamp(20px, 2vw, 28px) / 1.3 var(--sans);
+  font: 400 clamp(18px, 1.6vw, 22px) / 1.4 var(--serif);
+  color: var(--ink-soft);
 }
 
 .ledger-total strong {
-  font: 500 1.15em var(--serif);
+  color: var(--ink);
+  font: 600 1.15em var(--serif);
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 .ledger-total small {
@@ -433,9 +436,10 @@ body {
   white-space: nowrap;
   padding: 10px 6px;
   border-bottom: 1px solid var(--rule-firm);
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 500;
+  color: var(--ink-faint);
+  font: 600 11px/1 var(--sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .ledger-head span:last-child,
@@ -470,14 +474,17 @@ body {
 
 .ledger-merchant strong {
   display: block;
-  font: 400 22px/1.25 var(--sans);
+  font: 600 20px/1.25 var(--serif);
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 
 .ledger-merchant code {
   display: block;
   margin-top: 4px;
   color: var(--ink-soft);
-  font: 400 15px/1.4 var(--mono);
+  font: 400 12.5px/1.4 var(--mono);
+  letter-spacing: 0.02em;
   overflow-wrap: anywhere;
 }
 
@@ -521,12 +528,16 @@ body {
 }
 
 .ledger-amount b {
-  font: 500 22px/1.1 var(--sans);
+  font: 600 20px/1.1 var(--sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
   white-space: nowrap;
 }
 
 .ledger-amount b small {
-  font: 400 17px var(--sans);
+  font: 400 13px var(--sans);
+  color: var(--ink-soft);
+  margin-left: 2px;
 }
 
 .hike-tag {
@@ -592,14 +603,17 @@ body {
 
 .ledger-panel-body > h2 {
   margin: 0;
-  font: 500 24px/1.2 var(--sans);
+  font: 600 26px/1.2 var(--serif);
+  letter-spacing: -0.015em;
+  color: var(--ink);
 }
 
 .ledger-panel-body > code {
   display: block;
-  margin-top: 2px;
+  margin-top: 4px;
   color: var(--ink-soft);
-  font: 400 14px var(--mono);
+  font: 400 12.5px var(--mono);
+  letter-spacing: 0.02em;
 }
 
 .ledger-panel-more {
@@ -933,7 +947,7 @@ body {
 
   .ledger-merchant strong,
   .ledger-amount b {
-    font-size: 19px;
+    font-size: 17px;
   }
 
   .ledger-merchant code {

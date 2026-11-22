@@ -39,7 +39,7 @@ export function AnnualScreen({
         eyebrow="THE YEAR"
         title="The next twelve months, on one screen"
         copy="See what your recurring payments could cost over the next twelve months."
-        help="The estimate groups recurring payments by their status. Review unused services before treating their cost as potential savings. Bills and loan repayments remain obligations; estimated spending is not a confirmed future bill."
+        help="This is what your repeating payments cost in a year. Services you no longer use are money you could save. Bills, insurance and loans still have to be paid, so they are not savings. Amounts that change, like electricity, are our best guess."
       />
       <section className="annual-headline">
         <article className="annual-figure">

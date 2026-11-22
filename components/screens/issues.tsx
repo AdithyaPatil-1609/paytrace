@@ -37,7 +37,7 @@ export function IssuesScreen({
         eyebrow="PAYMENTS WORTH A LOOK"
         title="Issues"
         copy={`${findings} ${findings === 1 ? "finding" : "findings"} across ${paymentCount} ${paymentCount === 1 ? "payment" : "payments"} worth reviewing.`}
-        help="One payment may appear in more than one section. These findings use the supplied payment history, messages and usage records; review the evidence before deciding what to change. Categories with no findings are collapsed below."
+        help="These are the payments that need a look: price rises, services you don't use, debits coming up and charges after you cancelled. One payment can show up in more than one list. Tap any of them to see the proof."
       />
       {findings > 0 && (
         <div className="issue-alert" role="alert">
@@ -144,7 +144,7 @@ export function IssuesScreen({
         })}
       {emptyGroups.length > 0 && (
         <details className="empty-issue-categories">
-          <summary>Other categories · no findings ({emptyGroups.length})</summary>
+          <summary>Other categories ({emptyGroups.length}) · no findings</summary>
           <ul>
             {emptyGroups.map((group) => (
               <li key={group.id}>

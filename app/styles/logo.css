@@ -1,8 +1,8 @@
 /* PayTrace logo lockup. Uses <b>/<i> because some screens hide ".wordmark span". */
 .pt-logo { display: inline-flex; align-items: center; gap: 10px; font-weight: inherit; }
-.pt-logo .pt-mark { flex: 0 0 auto; display: block; filter: drop-shadow(0 2px 4px rgb(22 32 90 / 0.18)); }
-.pt-word { font: 700 24px/1 var(--sans); letter-spacing: -0.03em; color: #1E2A6E; }
-.pt-word i { font-style: normal; color: #4A5BE0; }
+.pt-logo .pt-mark { flex: 0 0 auto; display: block; filter: drop-shadow(0 2px 4px rgb(27 36 51 / 0.18)); }
+.pt-word { font: 700 24px/1 var(--sans); letter-spacing: -0.03em; color: var(--ink); }
+.pt-word i { font-style: normal; color: #3E6A9A; }
 @media (max-width: 640px) {
   .pt-logo { gap: 8px; }
   .pt-logo .pt-mark { width: 28px; height: 28px; }
@@ -17,6 +17,8 @@
 
 /* Landing page: big logo and the "what it finds" list. */
 .landing-logo { margin-bottom: 26px; }
-.landing-finds { list-style: none; padding: 0; margin: 6px 0 26px; display: grid; gap: 8px; max-width: 460px; }
-.landing-finds li { position: relative; padding-left: 22px; font-size: 15px; color: var(--ink); }
-.landing-finds li::before { content: ""; position: absolute; left: 2px; top: 7px; width: 9px; height: 9px; border-radius: 3px; background: #4A5BE0; }
+.login-ledger .landing-finds { list-style: none; padding: 0; margin: 4px 0 28px; display: grid; gap: 10px; max-width: 460px; }
+.login-ledger .landing-finds li { display: flex; align-items: center; gap: 12px; margin: 0; padding: 0; font-size: 15px; line-height: 1.4; color: var(--ink); }
+.login-ledger .landing-finds li::before { content: ""; flex: 0 0 20px; width: 20px; height: 20px; border-radius: 50%; background: #E3EAF3 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6 10.4l2.6 2.6L14 7.4' fill='none' stroke='%232C4A6E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 20px no-repeat; }
+.login-ledger .login-options .demo-choice { margin-top: 40px; }
+@media (max-width: 850px) { .login-ledger .login-options .demo-choice { margin-top: 28px; } }

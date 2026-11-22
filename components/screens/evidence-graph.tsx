@@ -30,7 +30,7 @@ export function EvidenceGraphScreen({
         eyebrow="THE EVIDENCE GRAPH"
         title="Why each payment is here, drawn as a graph"
         copy="Pick a payment to see the charges, messages and permission behind it."
-        help="The centre is a detected recurring payment. Around it are the debits grouped into it, related messages, any available payment permission and its matching merchant pattern. Select a record to inspect it; use the zoom controls for a closer look."
+        help="Each circle in the middle is one of your repeating payments. Around it are the bank debits, messages and autopay permissions that prove it. Click anything to see the original message or debit."
       />
       <PaymentEvidenceExplorer
         items={items}
@@ -111,12 +111,9 @@ export function EvidenceGraphScreen({
         </details>
       ) : (
         <details className="evidence-live-details">
-          <summary>About this evidence source</summary>
-          <p>{source.note ?? "Neo4j is not configured."}</p>
-          <p>{source.personal ? "The diagram uses your imported payment, message and merchant evidence from Neo4j. Recurring commitments are calculated from these records; the diagram is not a database-wide graph census." : <>
-            The diagram above is built from the CSV fixture and its detected payments. Live graph
-            queries and database relationship counts are available only when Neo4j is connected.</>}
-          </p>
+          <summary>Where this comes from</summary>
+          {source.note && <p>{source.note}</p>}
+          <p>Each repeating payment is linked to the bank debits, SMS, emails and autopay permissions that prove it. Click any of them to see the original.</p>
         </details>
       )}
       <div className="graph-handoff">

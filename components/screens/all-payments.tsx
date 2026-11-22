@@ -70,10 +70,9 @@ export function AllPaymentsScreen({
 }) {
   // The same test the Issues screen uses, so both screens always agree.
   const flagged = new Set(issueItems(items, kept).map((item) => item.id));
-  // Start on the first price rise, so the panel opens on something worth seeing.
-  const firstPick = items.find((item) => priceRise(item) !== undefined) ?? items[0];
-  const [selectedId, setSelectedId] = useState<string | null>(firstPick?.id ?? null);
-  const selected = items.find((item) => item.id === selectedId) ?? firstPick ?? null;
+  // The panel stays closed until the person clicks a payment.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = items.find((item) => item.id === selectedId) ?? null;
 
   function pick(id: string) {
     if (window.matchMedia(DOCKED).matches) setSelectedId(id);
@@ -101,10 +100,10 @@ export function AllPaymentsScreen({
 
         <section className="ledger-table" aria-label="Every repeating payment">
           <div className="ledger-head" aria-hidden="true">
-            <span>Merchant &amp; Raw Bank Text</span>
-            <span>Payment Rail Tags</span>
-            <span>Inline Mini Sparklines</span>
-            <span>Indian Rupee Amounts</span>
+            <span>Merchant</span>
+            <span>Paid by</span>
+            <span>Last 12 months</span>
+            <span>Amount</span>
           </div>
 
           {personal && items.length === 0 && (
