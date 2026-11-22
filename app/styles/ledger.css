@@ -61,7 +61,7 @@ body {
   gap: 10px;
 }
 
-.export-csv {
+.bar-import {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -70,7 +70,7 @@ body {
   color: var(--ink);
 }
 
-.export-csv:hover {
+.bar-import:hover {
   border-color: var(--rule-firm);
   background: var(--paper);
 }

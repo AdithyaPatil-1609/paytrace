@@ -76,7 +76,7 @@
 @media (max-width: 480px) { .personal-menu-trigger { gap: 5px; } .personal-menu-trigger b { display: none; } }
 
 .simulate-button,
-.export-csv {
+.bar-import {
   border: 1px solid var(--rule-firm);
   border-radius: var(--r-sm);
   padding: 8px 13px;
@@ -92,7 +92,7 @@
 }
 
 .simulate-button:hover:not(:disabled),
-.export-csv:hover {
+.bar-import:hover {
   border-color: var(--marigold);
   color: var(--marigold-deep);
 }
@@ -285,3 +285,18 @@
 .heads-up-item span { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
 .heads-up-price_rise_ahead strong { color: var(--ember, #a3262a); }
 .heads-up > small { font-size: 12px; color: var(--ink-faint); }
+
+/* Top bar "Import CSV/PDF" (components/statement-import.tsx): its result note and the PDF password prompt. */
+.bar-import { display: inline-flex; align-items: center; gap: 7px; }
+.bar-import:disabled { cursor: wait; opacity: 0.65; }
+.bar-import-note { position: fixed; top: calc(var(--chrome-h, 72px) + 8px); right: 16px; z-index: 60; display: flex; gap: 10px; align-items: flex-start; max-width: min(420px, calc(100vw - 32px)); padding: 10px 12px; border: 1px solid var(--rule-firm); border-radius: var(--r-sm, 10px); background: var(--paper-lift); color: var(--ink); font-size: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); }
+.bar-import-note.is-error { border-color: var(--ember-edge); background: var(--ember-skin); color: var(--ember-deep); }
+.bar-import-note .link-button { font-size: 18px; line-height: 1; padding: 0 2px; }
+.statement-password-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 16px; background: rgba(15, 20, 30, 0.45); }
+.statement-password { display: grid; gap: 10px; width: min(420px, 100%); padding: 20px; border-radius: 14px; background: var(--paper-lift); color: var(--ink); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25); }
+.statement-password h2 { margin: 0; font-size: 18px; }
+.statement-password p { margin: 0; font-size: 14px; color: var(--ink-soft); }
+.statement-password .statement-password-error { color: var(--ember-deep); }
+.statement-password input { min-height: 44px; padding: 8px 12px; border: 1px solid var(--rule-firm); border-radius: 8px; font-size: 16px; background: var(--paper); color: var(--ink); }
+.statement-password-actions { display: flex; justify-content: flex-end; gap: 12px; align-items: center; }
+.statement-password-actions .account-button { width: auto; margin-top: 0; }

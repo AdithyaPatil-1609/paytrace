@@ -335,7 +335,7 @@ summary:focus-visible {
     gap: 8px;
   }
   .simulate-button,
-  .export-csv {
+  .bar-import {
     padding: 9px 8px;
     min-height: 44px;
     white-space: nowrap;

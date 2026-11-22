@@ -69,6 +69,12 @@ export default function PrivacyPage() {
         token. Only a fingerprint (hash) of the token is stored; <strong>Disconnect iPhone</strong> stops it at
         once. The same rules apply: registered senders only, OTP messages dropped, SMS text not stored.
       </p>
+      <p>
+        <strong>Bank statements (optional).</strong> You can import a statement downloaded from net banking
+        as CSV or PDF. A PDF is opened in your browser; if it is password protected, the password is used
+        there only and is never sent or saved. Only each line&apos;s date, description and amount are sent, with
+        reference and account numbers removed, and the file itself is not stored.
+      </p>
 
       <h2>4. How messages are read</h2>
       <p>

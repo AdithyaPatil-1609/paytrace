@@ -23,10 +23,13 @@ export const STATEMENT_LIMITS = {
   maxBytes: 512 * 1024,
   maxLines: 3000,
   minLines: 3,
-  headerSearchRows: 30
+  headerSearchRows: 30,
+  /** A PDF is read in the browser; only the debit lines it yields are sent. */
+  maxPdfBytes: 8 * 1024 * 1024,
+  maxPdfPages: 60
 } as const;
 
-const NAMES = {
+export const NAMES = {
   date: ["txndate", "transactiondate", "trandate", "date", "postingdate", "txndt", "valuedate", "valuedt"],
   narration: ["narration", "description", "particulars", "transactiondetails", "details", "remarks", "transactionremarks", "merchant", "payee"],
   debit: ["debit", "withdrawal", "withdrawals", "withdrawalamt", "withdrawalamount", "debitamount", "debitamt", "dr", "debitinr", "withdrawalinr"],
@@ -36,7 +39,7 @@ const NAMES = {
   reference: ["refno", "chqrefno", "reference", "referenceno", "referencenumber", "ref", "utr", "chequeno", "transactionid", "txnid"]
 } as const;
 
-const key = (value: string) => value.toLowerCase().replace(/[^a-z]/g, "");
+export const key = (value: string) => value.toLowerCase().replace(/[^a-z]/g, "");
 
 /** Splits CSV text into rows, honouring quotes. Comma, semicolon or tab, whichever the header uses. */
 export function csvRows(text: string): string[][] {

@@ -69,7 +69,7 @@ body {
 }
 
 .simulate-button,
-.export-csv {
+.bar-import {
   min-height: 40px;
   border-radius: 999px;
   padding: 8px 16px;
@@ -93,13 +93,13 @@ body {
   transform: translateY(-1px);
 }
 
-.export-csv {
+.bar-import {
   border-color: var(--glass-edge);
   background: var(--paper-lift);
   color: var(--marigold-deep);
 }
 
-.export-csv:hover {
+.bar-import:hover {
   border-color: var(--marigold-bright);
 }
 
