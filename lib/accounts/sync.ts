@@ -1,5 +1,5 @@
 import { gmailDateFilter, type GmailHistoryDays } from "./gmail-history";
-import { claimSync, finishSync, renewSyncLease } from "@/db/neo4j/accounts";
+import { claimSync, finishSync, recordSyncProgress, renewSyncLease } from "@/db/neo4j/accounts";
 import { ingestLiveEvent, ignoreSubscriptionCandidates } from "@/db/neo4j/live";
 import { isSensitiveFinancialEmail, normalizeReceiptText, parseFinancialEmail } from "@/lib/ingestion/email";
 import { gmailPaymentQuery, isAllowedSender, parseAllowedDomains } from "@/lib/ingestion/gmail-filter";
@@ -146,13 +146,25 @@ export async function syncAccount(sub: string, history=false,historyDays:GmailHi
     // Explicit local AI opt-in. Bound inference time and never block sync if the model is unavailable.
     let semanticBudget=process.env.PAYTRACE_EMAIL_AI_ENABLED==="true"?12:0;
     const accessGrant={sub:grant.sub,grantId:grant.grantId,lease:grant.lease};
+    // Live progress for the sign-up progress bar. Best effort: a failed write never stops the sync.
+    let estimate=0,lastReport=0;
+    const report=async(force=false)=>{
+      if(!force&&Date.now()-lastReport<1200)return;
+      lastReport=Date.now();
+      try{await recordSyncProgress(grant.sub,grant.lease,{scanned,accepted,estimate:Math.max(estimate,scanned)});}catch{/* progress only */}
+    };
+    await report(true);
     do {
       stage="neo4j"; await renewSyncLease(grant.sub,grant.lease); stage="google";
       const params=new URLSearchParams({q:query,maxResults:"100",...(page?{pageToken:page}:{})});
-      const list=await gmailGet(access,`messages?${params}`) as {messages?:{id:string}[];nextPageToken?:string};
+      const list=await gmailGet(access,`messages?${params}`) as {messages?:{id:string}[];nextPageToken?:string;resultSizeEstimate?:number};
+      if(!page)estimate=Math.max(Number(list.resultSizeEstimate)||0,list.messages?.length??0);
+      else estimate=Math.max(estimate,scanned+(list.messages?.length??0));
+      await report(true);
       const rejected:string[]=[];
       for (const {id} of list.messages??[]) {
         scanned++;
+        await report();
         stage="google";
         let mail:{payload?:Part;internalDate?:string;labelIds?:string[]};
         // Pace reads: the per-user Gmail limit is shared with every other device reading this mailbox.
@@ -194,6 +206,7 @@ export async function syncAccount(sub: string, history=false,historyDays:GmailHi
       if(rejected.length){stage="neo4j";ignored+=await ignoreSubscriptionCandidates(grant.profile,rejected,accessGrant);}
       page=list.nextPageToken;
     } while (page);
+    estimate=scanned; await report(true);
     state="ready";
     return {status:"ready",accepted,skipped,scanned,duplicates,registrations,renewals,candidates,subscriptionSkipped,senderSkipped,marketingSkipped,ignored};
   } catch (error) {

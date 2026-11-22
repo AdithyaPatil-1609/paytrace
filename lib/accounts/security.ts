@@ -74,7 +74,18 @@ export function open(value: string, aad: string) {
   for (const { key } of keys) { try { return decrypt(key, iv, tag, data, aad); } catch { /* try the next key */ } }
   throw new Error("Invalid encrypted value");
 }
-export type Flow = { mode: "login" | "link"; state: string; nonce: string; verifier: string; expires: number; sub?: string; sessionHash?: string };
+/**
+ * signup: return to /signup after Google, not /account.
+ * fullName: the name typed on the sign-up page (login mode only).
+ * other: link mode for a Gmail address that is not the sign-in account.
+ */
+export type Flow = { mode: "login" | "link"; state: string; nonce: string; verifier: string; expires: number; sub?: string; sessionHash?: string; signup?: boolean; fullName?: string; other?: boolean };
+/** A typed full name: letters (any script), spaces, dots, apostrophes and hyphens, 2 to 80 characters. */
+export function cleanFullName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const name = value.normalize("NFC").replace(/\s+/g, " ").trim();
+  return /^[\p{L}\p{M}][\p{L}\p{M} .'-]{1,79}$/u.test(name) ? name : null;
+}
 export function readFlow(value: string, state: string): Flow {
   const flow = JSON.parse(open(value, "oauth-flow")) as Flow;
   if (!flow.state || !equals(flow.state, state) || flow.expires < Date.now() || !["login", "link"].includes(flow.mode)) throw new Error("Invalid or expired OAuth flow");

@@ -24,6 +24,7 @@
     "ai:read": "node --import tsx scripts/read-message.ts"
   },
   "dependencies": {
+    "firebase": "^12.19.0",
     "google-auth-library": "^11.3.4",
     "neo4j-driver": "6.0.1",
     "next": "^16.4.6",
