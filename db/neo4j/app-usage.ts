@@ -26,6 +26,10 @@ export async function recordAppUsage(profile: string, apps: AppUsage[], windowSt
   const session = getNeo4jDriver().session({ database: neo4jDatabase });
   try {
     return await session.executeWrite(async tx => {
+      // The whole report is also kept on the profile, so a payment built only from
+      // Gmail notices (no subscription chain yet) can still show its last use.
+      const report = apps.map(app => ({ merchant: app.merchant, lastUsed: app.lastUsed, noUseSince: app.lastUsed ? null : windowStart }));
+      await tx.run(`MATCH (u:LiveProfile {id:$profile}) SET u.appUsageReport = $report, u.appUsageReportedAt = $today`, { profile, report: JSON.stringify(report), today });
       const subs = await tx.run(`MATCH (:LiveProfile {id:$profile})-[:HAS_SUBSCRIPTION]->(s:LiveSubscription) RETURN s.id AS id, s.merchant AS merchant`, { profile });
       const updates: { id: string; app: AppUsage }[] = [];
       for (const record of subs.records) {

@@ -407,7 +407,8 @@ function unusedWarning(row: Record<string, unknown>, today: string): UnusedWarni
   const noUseSince = last == null ? ((row.noUseSince as string | null) ?? null) : null;
   const minutes = row.minutes30d == null ? null : Number(row.minutes30d);
   const daysSince = last ? days(last, today) : noUseSince ? days(noUseSince, today) : null;
-  const unused = daysSince != null && daysSince >= L.unusedDays;
+  // "More than 2 months", the same test as the payment cards (RULES.zombieDays in lib/payments/engine.ts).
+  const unused = daysSince != null && daysSince > L.unusedDays;
   const savings = annualPaise(amountPaise, gap);
   const onPhone = row.usageSource === "android_usage_stats" && minutes != null ? ` ${minutes} minute${minutes === 1 ? "" : "s"} of use in the last 30 days on your phone.` : "";
   const why = noUseSince

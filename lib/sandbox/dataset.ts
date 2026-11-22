@@ -7,6 +7,7 @@
  */
 import { loadFixtures } from "@/data/fixtures";
 import { detectCommitments, matchDictionary } from "@/lib/payments/engine";
+import { RULES } from "@/lib/payments/rules";
 import { isLateDebitNotice, LATE_NOTICE_MESSAGE } from "@/lib/payments/notice-timing";
 import type { Dataset, DictionaryEntry, MandateRow, NotificationRow, StatementRow } from "@/lib/payments/types";
 import type { Sandbox, SandboxEvent } from "./store";
@@ -125,7 +126,7 @@ export function sandboxView(box: Sandbox | null): SandboxView {
         alerts.push({ n, kind: "after_cancel", title: `Charged after cancelling: ${brand}`, detail: `${rupees(event.amountPaise)} was taken on ${event.date}, after the autopay was cancelled on ${cancelledOn}. Raise a dispute with the bank; the evidence is in the graph.` });
       }
       const used = usage.find(row => row.brand === brand);
-      if (used?.lastOpened && used.lastOpened < addDays(event.date, -90)) {
+      if (used?.lastOpened && used.lastOpened < addDays(event.date, -RULES.zombieDays)) {
         alerts.push({ n, kind: "unused", title: `Unused: ${brand}`, detail: `Charged ${rupees(event.amountPaise)}. Your last use was ${used.lastOpened} (as you told PayTrace), while payments continue.` });
       }
     } else if (event.kind === "mandate_created") {

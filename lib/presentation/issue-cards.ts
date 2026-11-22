@@ -100,7 +100,10 @@ export function issueDescription(item: Commitment, category: IssueCategory) {
       ? item.evidenceRows.filter((row) => row.date > item.lastOpened!)
       : item.evidenceRows;
     const paid = charges.reduce((sum, row) => sum + row.amount, 0);
-    return `${item.lastOpened ? `Last recorded use: ${formatDate(item.lastOpened)}.` : "No recent use was recorded."} ${charges.length} recorded ${charges.length === 1 ? "charge" : "charges"}${item.lastOpened ? " since then" : " in the supplied history"}, totalling ${formatINR(paid)}. Missing usage does not prove the service is unwanted.`;
+    const lastUse = item.lastOpened
+      ? `Last recorded use: ${formatDate(item.lastOpened)}${item.usageSource === "phone" ? " (phone screen time)" : ""}.`
+      : item.notOpenedSince ? `Not opened on the phone since at least ${formatDate(item.notOpenedSince)}.` : "No recent use was recorded.";
+    return `${lastUse} ${charges.length} recorded ${charges.length === 1 ? "charge" : "charges"}${item.lastOpened ? " since then" : " in the supplied history"}, totalling ${formatINR(paid)}. Missing usage does not prove the service is unwanted.`;
   }
   if (category === "trial") {
     const notice = item.notices.find((entry) => entry.eventType === "trial_ending");

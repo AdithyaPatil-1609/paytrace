@@ -107,8 +107,14 @@ export type NotificationRow = {
 export type UsageRow = {
   brand: string;
   lastOpened?: string;
+  /** Not opened at all since this day (the phone's window start): a lower bound, never a made-up last use. */
+  notOpenedSince?: string;
   opensLast12Months: number;
+  /** Where the date came from: the person's Android screen time, or the person themself. */
+  source?: UsageSource;
 };
+
+export type UsageSource = "phone" | "you";
 
 export type MandateRow = {
   mandateId: string;
@@ -171,6 +177,10 @@ export type Commitment = {
   nextCharge?: string;
   lastOpened?: string;
   lastOpenedMonthsAgo?: number;
+  /** Set only when the phone saw no use at all since this day; lastOpened is then empty. */
+  notOpenedSince?: string;
+  /** Where lastOpened or notOpenedSince came from. Absent means the demo's own usage file. */
+  usageSource?: UsageSource;
   opensLast12Months?: number;
   kind: CommitmentKind;
   bucket: Bucket;

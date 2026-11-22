@@ -7,11 +7,11 @@
  * Cypher query receives RULES as the $rules parameter, so a change here moves
  * both. tests/cypher/cypher.test.ts asserts the two engines then agree field by field.
  */
-import type { AmountPattern, Cadence, CommitmentKind, Instrument, Mechanism, Signal } from "./types";
+import type { AmountPattern, Cadence, CommitmentKind, Instrument, Mechanism, Signal, UsageSource } from "./types";
 
 export const RULES = {
-  /** A service unopened for longer than this is a zombie. */
-  zombieDays: 90,
+  /** A service unopened for longer than this (about 2 months) is a zombie. */
+  zombieDays: 60,
   noticeWindowDays: 45,
   /** Gaps scattering by more than this share of their median make a row irregular. */
   irregularSpread: 0.35,
@@ -99,16 +99,22 @@ export function describeRecurring(context: {
 
 export function describeIssue(
   signals: Signal[],
-  context: { lastOpened?: string; previous?: number; latest: number; openedDaysAgo?: number }
+  context: { lastOpened?: string; notOpenedSince?: string; usageSource?: UsageSource; previous?: number; latest: number; openedDaysAgo?: number }
 ) {
   if (signals.includes("silent_hike")) {
     return `₹${context.previous ?? context.latest} became ₹${context.latest}. Debit messages exist. A price-change message does not.`;
   }
   if (signals.includes("trial_converted")) return "A trial-ending notice, then the paid price. The ₹1 hold is not the price.";
   if (signals.includes("zombie")) {
-    return context.lastOpened
-      ? `Your last use was ${context.lastOpened}, about ${Math.floor((context.openedDaysAgo ?? 0) / 30)} months ago (as you told PayTrace), while payments continue.`
-      : "PayTrace has no record of when you last used it. Review whether you still use it.";
+    const months = Math.floor((context.openedDaysAgo ?? 0) / 30);
+    if (context.lastOpened) {
+      const told = context.usageSource === "phone" ? "from your phone's screen time" : "as you told PayTrace";
+      return `Your last use was ${context.lastOpened}, about ${months} months ago (${told}), while payments continue.`;
+    }
+    if (context.notOpenedSince) {
+      return `Not opened on your phone since at least ${context.notOpenedSince}, about ${months} months (from your phone's screen time), while payments continue.`;
+    }
+    return "PayTrace has no record of when you last used it. Review whether you still use it.";
   }
   return undefined;
 }
@@ -168,8 +174,8 @@ export const GRAPH_WARNING_LIMITS = {
   noticeLeadDays: 60,
   /** Emails about a merchant needed before a missing notice suggests a silent rise. */
   emailsForSilent: 2,
-  /** Verified days without use before a subscription counts as unused. */
-  unusedDays: 90,
+  /** Verified days without use beyond which a subscription counts as unused. Same as RULES.zombieDays. */
+  unusedDays: 60,
   /** Days ahead an upcoming debit is warned about. */
   upcomingWindowDays: 7,
   /** Days ahead a debit is pushed to the person as a heads-up (phone notification and banner). */
