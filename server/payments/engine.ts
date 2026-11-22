@@ -261,11 +261,27 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
     // Rent, a maid or a friend paid by UPI, IMPS or NEFT is sent by hand each time: not an auto debit.
     if (!entry && !mandate && isManualTransfer(group.narration)) continue;
 
-    const dates = rows.map((row) => row.date);
-    const amounts = rows.map((row) => row.debit ?? 0);
+    // Multiple commitments can fall on the same day. Without plan/mandate IDs,
+    // display their combined cycle total rather than inventing separate plans
+    // or treating a zero-day gap as a weekly charge. Keep every evidence row.
+    const cycleTotals = new Map<string, { amount: number; count: number }>();
+    for (const row of rows) {
+      const cycle = cycleTotals.get(row.date) ?? { amount: 0, count: 0 };
+      cycle.amount += Math.round((row.debit ?? 0) * 100);
+      cycle.count++;
+      cycleTotals.set(row.date, cycle);
+    }
+    const dates = [...cycleTotals.keys()];
+    if (dates.length < 2 && !mandate) continue;
+    const cycles = [...cycleTotals.values()];
+    const combinedCycle = cycles.some(cycle => cycle.count > 1);
+    const amounts = cycles.map(cycle => cycle.amount / 100);
     const gaps = foldMissedCycles(dates.slice(1).map((date, index) => days(dates[index], date)));
     const { cadence } = cadenceFromGaps(gaps, mandate?.frequency);
-    const { pattern, previous } = amountShape(amounts);
+    // A changed number of component records may mean missing evidence, not a hike.
+    const { pattern, previous } = combinedCycle && (new Set(cycles.map(cycle => cycle.count)).size > 1 || new Set(amounts).size > 1)
+      ? { pattern: "variable" as const, previous: undefined }
+      : amountShape(amounts);
     const latest = amounts[amounts.length - 1];
     const headline = pattern === "variable" ? settledPrice(amounts) ?? Math.round(median(amounts)) : latest;
     const annualCost = projectYear(cadence, pattern, amounts, latest);
@@ -315,7 +331,7 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
     if (pattern === "variable") signals.push("variable_amount");
     if (cadence === "irregular") signals.push("irregular_interval");
     if (entry?.cancelMode === "warn" || entry?.cancelMode === "block") signals.push("obligation");
-    if (rows.length === 1 && mandate) signals.push("new");
+    if (dates.length === 1 && mandate) signals.push("new");
     if (signals.length === 0) signals.push("none");
 
     const kind: CommitmentKind =
@@ -340,16 +356,18 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
 
     const sources = new Set(notices.map((notice) => notice.channel));
     const whyRecurring = describeRecurring({
-      count: rows.length,
+      count: dates.length,
       cadence,
       pattern,
       gapCentre: gaps.length ? Math.round(median(gaps)) : 0,
       gapMin: gaps.length ? Math.min(...gaps) : undefined,
       gapMax: gaps.length ? Math.max(...gaps) : undefined,
       mandate: Boolean(mandate)
-    });
+    }) + (combinedCycle ? " Multiple records on the same day are combined into one cycle total; individual plans are not established." : "");
     const issue = describeIssue(signals, { lastOpened, notOpenedSince, usageSource: usageRow?.source, previous, latest, openedDaysAgo });
 
+    const identity = entry ? undefined : dataset.merchantIdentities?.find(item => usageKey(item.descriptor) === usageKey(group.narration));
+    const confirmed = identity?.status === "confirmed";
     commitments.push({
       id: commitmentId(
         entry?.brand ?? group.narration,
@@ -358,9 +376,9 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
         ambiguousBrands.has(entry?.brand ?? group.narration)
       ),
       rawNarration: group.narration,
-      merchant: entry?.brand ?? group.narration,
-      product: entry?.product ?? "Not in the dictionary yet",
-      category: entry?.category ?? "unknown",
+      merchant: entry?.brand ?? (confirmed ? identity.name : group.narration),
+      product: entry?.product ?? (identity ? `${identity.name}${confirmed ? "" : " · AI suggestion"}` : "Not in the dictionary yet"),
+      category: entry?.category ?? (confirmed ? identity.category : "unknown"),
       instrument: instrumentByMechanism[mechanism],
       mechanism,
       cadence,
@@ -394,7 +412,7 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
       cancelMode: entry?.cancelMode ?? "normal",
       cancellationPath: entry ? `${entry.stopTheService} ${entry.stopTheMoney}` : undefined,
       source: sources.has("email") ? "SMS and email" : "SMS",
-      plainDescription: entry?.oneLiner ?? "This string is not in the dictionary yet. Name it by hand.",
+      plainDescription: entry?.oneLiner ?? (identity ? `${confirmed ? "You confirmed" : "Local AI suggests"} ${identity.name} (${identity.category}). No provider-specific cancellation instructions have been verified.` : "This string is not in the dictionary yet. Name it by hand."),
       issue,
       stopService: entry?.stopTheService ?? "Not in the dictionary yet.",
       stopMoney: entry?.stopTheMoney ?? "Not in the dictionary yet.",
@@ -402,10 +420,12 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
       trap: entry?.trap || undefined,
       mandateRef: mandate?.mandateRef,
       mandateStatus: mandate?.status,
-      spendGroup: spendGroupFor(mechanism, entry?.category ?? ""),
+      spendGroup: spendGroupFor(mechanism, entry?.category ?? (confirmed ? identity.category : "")),
       dateConfidence: confidenceFor(cadence, pattern),
-      priceSeries: rows.map((row) => ({ date: row.date, amount: row.debit ?? 0 })),
-      inDictionary: Boolean(entry)
+      priceSeries: dates.map((date, index) => ({ date, amount: amounts[index] })),
+      inDictionary: Boolean(entry),
+      ...(identity ? { merchantIdentity: identity } : {}),
+      ...(combinedCycle ? { combinedCycle: true } : {})
     });
   }
 

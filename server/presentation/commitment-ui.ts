@@ -8,8 +8,7 @@ import type { Commitment } from "@/server/payments/types";
 export function monthlyCost(item: Commitment) {
   if (item.cadence === "annual") return "once a year";
   if (item.cadence === "irregular") return `${formatINR(item.amount)} each time`;
-  if (item.amountPattern === "variable") return `about ${formatINR(item.amount)}`;
-  return `${formatINR(item.amount)} / month`;
+  return `${item.amountPattern === "variable" ? "about " : ""}${formatINR(item.amount)} / ${{ weekly: "week", monthly: "month", quarterly: "quarter" }[item.cadence]}`;
 }
 
 export function modeLabel(item: Commitment) {

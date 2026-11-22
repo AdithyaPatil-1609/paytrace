@@ -51,7 +51,7 @@ export function PaymentEvidenceExplorer({
             >
               <strong>{item.merchant}</strong>
               <span>
-                {formatINR(item.amount)} · {item.evidenceRows.length} debits · {item.notices.length}{" "}
+                {formatINR(item.amount)} · {item.evidenceRows.length} {item.basis === "notices" ? "notices" : "records"} · {item.notices.length}{" "}
                 messages
               </span>
               {items.filter((entry) => entry.merchant === item.merchant).length > 1 && (

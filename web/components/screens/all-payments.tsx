@@ -171,12 +171,14 @@ export function AllPaymentsScreen({
                   <span>
                     <strong title={item.rawNarration}>
                       {item.merchant}
-                      {!item.inDictionary && (
-                        <i className="unknown-tag" title="Not in our merchant list">
+                      {!item.inDictionary && item.merchantIdentity?.status !== "confirmed" && (
+                        <i className="unknown-tag" title={item.merchantIdentity ? `AI suggests ${item.merchantIdentity.name}; confirm in payment details` : "Not in our merchant list"}>
                           <CueIcon kind="unknown" size={12} />
                         </i>
                       )}
                     </strong>
+                    {item.merchantIdentity?.status === "suggested" && <small>AI suggests {item.merchantIdentity.name} · review</small>}
+                    {item.merchantIdentity?.status === "confirmed" && <small>Identity confirmed by you</small>}
                     {lastUsed && (
                       <small className={`last-used${item.kind === "unused" ? " is-stale" : ""}`}>
                         <CueIcon kind={item.kind === "unused" ? "unused" : "clock"} size={12} />

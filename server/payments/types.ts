@@ -143,6 +143,15 @@ export type DictionaryEntry = {
   ifTheyStaySilent: string;
 };
 
+/** A local AI suggestion is not a verified dictionary alias or a payment rail. */
+export type MerchantIdentity = {
+  id: string;
+  descriptor: string;
+  name: string;
+  category: string;
+  status: "suggested" | "confirmed";
+};
+
 export type Dataset = {
   asOf: string;
   statement: StatementRow[];
@@ -150,6 +159,7 @@ export type Dataset = {
   usage: UsageRow[];
   mandates: MandateRow[];
   dictionary: DictionaryEntry[];
+  merchantIdentities?: MerchantIdentity[];
 };
 
 export type Commitment = {
@@ -217,4 +227,7 @@ export type Commitment = {
   /** True once the simulated pause is taken: the money has not stopped. */
   paused?: boolean;
   inDictionary: boolean;
+  merchantIdentity?: MerchantIdentity;
+  /** True when multiple records on a date form one daily payment cycle. */
+  combinedCycle?: boolean;
 };

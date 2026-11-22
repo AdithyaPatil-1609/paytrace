@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { layoutEvidence, type EvidenceNode } from "./layout";
 import { formatDate, formatINR } from "@/server/presentation/format";
+import { NOTICE_CHANNEL } from "@/server/payments/engine";
 import type { Commitment, DictionaryEntry } from "@/server/payments/types";
 
 export function PaymentDiagram({
@@ -27,7 +28,7 @@ export function PaymentDiagram({
   return (
     <section className="payment-diagram-panel" aria-label={`Evidence for ${item.merchant}`}>
       <p className="evidence-source-note">
-        The proof behind this payment: its bank debits, messages and autopay permission.
+        The proof behind this payment: its debit records, notices, messages and autopay permission.
       </p>
       <div className="evidence-graph-controls" role="group" aria-label="Graph controls">
         <div>
@@ -75,7 +76,7 @@ export function PaymentDiagram({
           style={{ width: `${zoom}%`, minWidth: `${6.2 * zoom}px` }}
           viewBox="0 0 900 750"
           role="group"
-          aria-label={`${item.merchant}: ${item.evidenceRows.length} debits, ${item.notices.length} messages${item.mandateRef ? ", a mandate" : ""}${pattern ? ", a merchant pattern" : ""}. Select a record to read its evidence.`}
+          aria-label={`${item.merchant}: ${item.evidenceRows.length} ${item.basis === "notices" ? "debit notices" : "payment records"}, ${item.notices.length} messages${item.mandateRef ? ", a mandate" : ""}${pattern ? ", a merchant pattern" : ""}. Select a record to read its evidence.`}
         >
           {nodes.map((node) => (
             <g
@@ -135,7 +136,7 @@ export function PaymentDiagram({
                 +{item.evidenceRows.length - debits.length}
               </text>
               <text x={160} y={84} textAnchor="middle">
-                debits
+                records
               </text>
             </g>
           )}
@@ -198,7 +199,7 @@ export function PaymentDiagram({
       </ul>
       <p className="evidence-sample-note">
         The centre is the detected recurring payment. Lines show how its evidence was grouped.{" "}
-        {debits.length} of {item.evidenceRows.length} debits and {messages.length} of{" "}
+        {debits.length} of {item.evidenceRows.length} {item.basis === "notices" ? "debit notices" : "records"} and {messages.length} of{" "}
         {item.notices.length} messages are drawn; all records remain available below.
       </p>
       <div className="evidence-node-detail" aria-live="polite">
@@ -215,7 +216,7 @@ export function PaymentDiagram({
       </div>
       <details className="evidence-records">
         <summary>All evidence for {item.merchant}</summary>
-        <h3>Statement debits ({item.evidenceRows.length})</h3>
+        <h3>{item.basis === "notices" ? "Unconfirmed debit notices" : item.evidenceRows.some(row => row.channel === NOTICE_CHANNEL) ? "Payment evidence" : "Statement debits"} ({item.evidenceRows.length})</h3>
         <ul>
           {item.evidenceRows.map((row) => (
             <li key={row.txnId}>

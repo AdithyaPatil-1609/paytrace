@@ -1,12 +1,12 @@
 /**
  * Side drawer for one commitment: facts, notices, statement proof, Evidence path.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EvidencePath } from "@/web/components/detail/evidence-path";
 import type { SourceInfo } from "@/neo4j/dataset";
 import { monthlyCost } from "@/server/presentation/commitment-ui";
 import { formatDate, formatINR } from "@/server/presentation/format";
-import type { Commitment } from "@/server/payments/types";
+import type { Commitment, MerchantIdentity } from "@/server/payments/types";
 import type { Dataset } from "@/server/payments/types";
 import { FindingChallenge } from "./finding-challenge";
 import { PriceHistory, ProofChain } from "./price-and-proof";
@@ -95,6 +95,7 @@ export function DetailPanel({
             <h2 id="transaction-title">{item.merchant}</h2>
             <code>{item.rawNarration}</code>
             <p>{item.plainDescription}</p>
+            {source.personal && item.merchantIdentity && <MerchantIdentityReview key={`${item.merchantIdentity.id}-${item.merchantIdentity.status}`} identity={item.merchantIdentity} />}
           </div>
         </header>
 
@@ -119,12 +120,12 @@ export function DetailPanel({
           <summary>Payment overview</summary>
           <section className="detail-facts">
             <Fact label="This year" value={formatINR(item.annualCost)} />
-            <Fact label="Each charge" value={monthlyCost(item)} />
+            <Fact label={item.combinedCycle ? "Combined cycle" : "Each charge"} value={monthlyCost(item)} />
             <Fact label="Rhythm" value={item.cadence} />
             <Fact label="Instrument" value={item.instrument} />
-            <Fact label="Debits seen" value={String(item.debitCount)} />
+            <Fact label={item.basis === "notices" ? "Debit notices seen" : "Evidence records"} value={String(item.debitCount)} />
             <Fact label="Paying since" value={formatDate(item.startedOn)} />
-            <Fact label="Spent so far" value={formatINR(item.spentToDate)} />
+            <Fact label={item.basis === "notices" ? "Reported total (unconfirmed)" : "Recorded total"} value={formatINR(item.spentToDate)} />
             <Fact label="Next charge" value={formatDate(item.nextCharge)} />
             <Fact
               label="Last used (you told us)"
@@ -185,7 +186,7 @@ export function DetailPanel({
         )}
 
         <details className="detail-accordion">
-          <summary>Evidence · {item.evidenceRows.length} statement lines</summary>
+          <summary>Evidence · {item.evidenceRows.length} {item.basis === "notices" ? "debit notices" : "records"}</summary>
           <div className="evidence-table">
             {item.evidenceRows.map((row) => (
               <div key={row.txnId}>
@@ -200,6 +201,28 @@ export function DetailPanel({
       </aside>
     </div>
   );
+}
+
+function MerchantIdentityReview({ identity }: { identity: MerchantIdentity }) {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  async function decide(decision: "confirmed" | "rejected") {
+    setBusy(true);
+    try {
+      const response = await fetch("/api/account/merchants/identity", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: identity.id, decision })
+      });
+      if (!response.ok) throw new Error();
+      setMessage("Saved. Your next dashboard refresh will show the change.");
+    } catch { setMessage("Could not save. Please retry."); setBusy(false); }
+  }
+  return <section className="drawer-block" aria-label="Merchant identity review">
+    <h3>{identity.status === "confirmed" ? "Identity confirmed by you" : "Review AI merchant suggestion"}</h3>
+    <p>{identity.name} · {identity.category}. This does not verify an autopay method or cancellation path.</p>
+    {identity.status === "suggested" && <button className="primary-button" disabled={busy} onClick={() => void decide("confirmed")}>Confirm identity</button>}{" "}
+    <button className="secondary-button" disabled={busy} onClick={() => void decide("rejected")}>{identity.status === "confirmed" ? "Undo confirmation" : "Not this merchant"}</button>
+    {message && <p role="status">{message}</p>}
+  </section>;
 }
 
 function Fact({ label, value }: { label: string; value: string }) {

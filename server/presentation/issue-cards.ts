@@ -71,8 +71,8 @@ export function issueGroups(items: Commitment[], kept: string[] = []) {
       id: "unknown",
       title: "Who is this?",
       badge: "UNKNOWN MERCHANT",
-      description: "Repeating charges we could not match to a merchant in the reference list.",
-      rows: available.filter((item) => !item.inDictionary)
+      description: "Repeating charges without a verified reference or user-confirmed AI identity.",
+      rows: available.filter((item) => !item.inDictionary && item.merchantIdentity?.status !== "confirmed")
     }
   ] satisfies {
     id: IssueCategory;
@@ -118,5 +118,5 @@ export function issueDescription(item: Commitment, category: IssueCategory) {
   }
   if (category === "new")
     return `This recurring payment began on ${formatDate(item.startedOn)}. Check the service and payment permission to confirm you meant to set it up.`;
-  return "Not in our merchant reference list. Review the original statement description and ask your payment provider to identify the merchant before deciding what to do.";
+  return item.merchantIdentity?.status === "suggested" ? `Local AI suggests ${item.merchantIdentity.name} (${item.merchantIdentity.category}). Check your evidence and confirm the identity in payment details. No cancellation instructions have been verified.` : "Not in our merchant reference list. Review the original statement description and ask your payment provider to identify the merchant before deciding what to do.";
 }
