@@ -74,7 +74,7 @@
   }
 
   .screen-header h1 {
-    font-size: 38px;
+    font-size: calc(38px * var(--text-scale));
   }
   .kpi-row {
     grid-template-columns: 1fr;
@@ -87,7 +87,7 @@
     height: 110px;
   }
   .month-col-label {
-    font-size: 13px;
+    font-size: calc(13px * var(--text-scale));
   }
   .year-banner,
   .simulation-card,

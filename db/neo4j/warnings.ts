@@ -9,6 +9,7 @@ import type { ManagedTransaction } from "neo4j-driver";
 import { getNeo4jDriver, neo4jDatabase } from "./client";
 import { ensureChains } from "./chains";
 import { GRAPH_WARNING_LIMITS as L } from "@/lib/payments/rules";
+import { isLateNotice, LATE_NOTICE_MESSAGE } from "@/lib/payments/notice-timing";
 import { corroboration, readTrust, type SourceTrust } from "@/lib/ingestion/trust";
 
 /** One stored message or statement line, with its trust level (older records read "unverified"). */
@@ -43,6 +44,8 @@ export type Frequency = "weekly" | "monthly" | "quarterly" | "half-yearly" | "ye
 export type UpcomingWarning = {
   merchant: string; subscriptionId: string | null; amountPaise: number | null; expectedOn: string; daysRemaining: number;
   frequency: Frequency; confidence: "high" | "medium" | "low"; confirmed: boolean; history: { date: string; amountPaise: number }[];
+  /** The notice arrived less than 24 hours before the debit (card G4). Estimated dates are never late. */
+  lateNotice: boolean;
   evidence: Evidence[]; why: string;
 };
 /**
@@ -59,7 +62,9 @@ export type QueryRun = {
 /** A higher price announced (price-change notice, pre-debit notice or renewal notice) that has not been charged yet. */
 export type PriceAheadWarning = {
   subscriptionId: string; merchant: string; currentPaise: number; lastPaidOn: string; newPaise: number; pctChange: number;
-  chargeOn: string | null; daysRemaining: number | null; dateConfirmed: boolean; evidence: Evidence[]; why: string;
+  chargeOn: string | null; daysRemaining: number | null; dateConfirmed: boolean;
+  /** The notice arrived less than 24 hours before the debit it announced (card G4). */
+  lateNotice: boolean; evidence: Evidence[]; why: string;
 };
 export type GraphWarnings = {
   asOf: string; price: PriceWarning[]; priceAhead: PriceAheadWarning[]; mandate: MandateWarning[]; mandateUnknown: string[];
@@ -232,7 +237,7 @@ export const UPCOMING_NOTICE_QUERY = `
 MATCH (u:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent)-[:ABOUT]->(m:LiveMerchant)
 WHERE e.kind IN ['debit_scheduled', 'subscription_renewal'] AND coalesce(e.status, '') <> 'ignored'
   AND coalesce(e.renewalDate, e.date) >= $today AND coalesce(e.renewalDate, e.date) <= $until
-RETURN m.key AS merchantKey, e.merchant AS merchant, coalesce(e.renewalDate, e.date) AS day, toInteger(e.amountPaise) AS amountPaise,
+RETURN m.key AS merchantKey, e.merchant AS merchant, coalesce(e.renewalDate, e.date) AS day, e.date AS sentOn, e.renewalDate AS dueOn, toInteger(e.amountPaise) AS amountPaise,
   e.renewalFrequency AS frequency, e {.id, .source, .kind, .date, .sourceTrust, .trustReason} AS evidence
 ORDER BY day`;
 
@@ -343,12 +348,13 @@ export function priceAheadWarnings(found: Record<string, unknown>[], today: stri
     const daysRemaining = chargeOn ? days(today, chargeOn) : null;
     const pct = Math.round(((newPaise - currentPaise) * 1000) / currentPaise) / 10;
     const kind = String(notice.kind).replaceAll("_", " ");
+    const late = Boolean(announced) && isLateNotice(String(notice.date ?? ""), announced);
     const when = chargeOn ? `${announced ? "on" : "around"} ${chargeOn}${daysRemaining != null ? ` (in ${daysRemaining} ${daysRemaining === 1 ? "day" : "days"})` : ""}` : "at the next renewal";
     out.push({
       subscriptionId: id, merchant: String(row.merchant), currentPaise, lastPaidOn: String(row.latestDate), newPaise, pctChange: pct,
-      chargeOn, daysRemaining, dateConfirmed: Boolean(announced),
+      chargeOn, daysRemaining, dateConfirmed: Boolean(announced), lateNotice: late,
       evidence: [toEvidence(notice)],
-      why: `A ${kind} ${String(notice.source) === "sms" ? "SMS" : "email"} dated ${notice.date} says ${row.merchant} will charge ${rupees(newPaise)}. You last paid ${rupees(currentPaise)} on ${row.latestDate} (+${pct}%). The higher amount is expected ${when}.`
+      why: `A ${kind} ${String(notice.source) === "sms" ? "SMS" : "email"} dated ${notice.date} says ${row.merchant} will charge ${rupees(newPaise)}. You last paid ${rupees(currentPaise)} on ${row.latestDate} (+${pct}%). The higher amount is expected ${when}.${late ? ` ${LATE_NOTICE_MESSAGE}` : ""}`
     });
   }
   return out.sort((a, b) => (a.chargeOn ?? "9999").localeCompare(b.chargeOn ?? "9999"));
@@ -366,14 +372,14 @@ export function headsUp(w: Pick<GraphWarnings, "priceAhead" | "upcoming">, withi
     const when = p.chargeOn ? `${p.dateConfirmed ? "on" : "around"} ${p.chargeOn}` : "at the next renewal";
     out.push({ id: `price:${p.subscriptionId}:${p.evidence[0]?.id ?? ""}`, kind: "price_rise_ahead", merchant: p.merchant, date: p.chargeOn, daysRemaining: p.daysRemaining, amountPaise: p.newPaise,
       title: `${p.merchant} is going up to ${rupees(p.newPaise)}`,
-      body: `You pay ${rupees(p.currentPaise)} now (+${p.pctChange}%). The new price will be taken ${when}. If it is not worth it, cancel before then: PayTrace shows how.` });
+      body: `You pay ${rupees(p.currentPaise)} now (+${p.pctChange}%). The new price will be taken ${when}. If it is not worth it, cancel before then: PayTrace shows how.${p.lateNotice ? ` ${LATE_NOTICE_MESSAGE}` : ""}` });
   }
   for (const u of w.upcoming) {
     if (u.daysRemaining < 0 || u.daysRemaining > withinDays || priced.has(u.merchant)) continue;
     const day = u.daysRemaining === 0 ? "today" : u.daysRemaining === 1 ? "tomorrow" : `in ${u.daysRemaining} days`;
     out.push({ id: `due:${u.merchant}:${u.expectedOn}`, kind: "debit_due", merchant: u.merchant, date: u.expectedOn, daysRemaining: u.daysRemaining, amountPaise: u.amountPaise,
       title: `${u.merchant}: ${u.amountPaise == null ? "a debit" : rupees(u.amountPaise)} ${day}`,
-      body: `${u.confirmed ? "Your bank or the merchant has announced it" : "Expected from your past payments"} for ${u.expectedOn}. Keep enough in the account, or cancel before then if you no longer want it.` });
+      body: `${u.confirmed ? "Your bank or the merchant has announced it" : "Expected from your past payments"} for ${u.expectedOn}. Keep enough in the account, or cancel before then if you no longer want it.${u.lateNotice ? ` ${LATE_NOTICE_MESSAGE}` : ""}` });
   }
   return out.sort((a, b) => (a.date ?? "9999").localeCompare(b.date ?? "9999"));
 }
@@ -428,7 +434,7 @@ function cancelWarning(row: Record<string, unknown>): CancelWarning {
   return { ...base, kind: "UNCONFIRMED_CANCELLATION", cancelledWhat: "subscription", effectiveOn: null, cancellationEvidence: userEvidence, why: `${rupees(payment.amountPaise)} was debited on ${payment.date}, after you asked to cancel on ${requestedOn}, but the cancellation is not confirmed. Check with the merchant that it went through.` };
 }
 
-function upcomingWarnings(cycles: Record<string, unknown>[], notices: Record<string, unknown>[], today: string, until: string): UpcomingWarning[] {
+export function upcomingWarnings(cycles: Record<string, unknown>[], notices: Record<string, unknown>[], today: string, until: string): UpcomingWarning[] {
   const out: UpcomingWarning[] = [];
   const confirmedKeys = new Set<string>();
   const byKey = new Map(cycles.map((row) => [String(row.merchantKey), row]));
@@ -439,7 +445,9 @@ function upcomingWarnings(cycles: Record<string, unknown>[], notices: Record<str
     const cycle = byKey.get(key);
     const gap = cycle ? median((cycle.gaps as unknown[]).map(Number)) : null;
     const day = String(notice.day);
-    out.push({ merchant: String(cycle?.merchant ?? notice.merchant), subscriptionId: cycle ? String(cycle.subscriptionId) : null, amountPaise: n(notice.amountPaise), expectedOn: day, daysRemaining: days(today, day), frequency: gap != null ? frequencyOf(gap) : ((notice.frequency as Frequency | null) ?? "unknown"), confidence: "high", confirmed: true, history: (cycle?.history as { date: string; amountPaise: number }[] | undefined)?.map((h) => ({ date: h.date, amountPaise: Number(h.amountPaise) })) ?? [], evidence: [toEvidence(notice.evidence)], why: `A ${String((notice.evidence as Evidence).kind).replaceAll("_", " ")} notice says ${notice.amountPaise == null ? "a debit" : rupees(Number(notice.amountPaise))} is due on ${day}.` });
+    // Only a stated due date can show a late notice; a notice with no date says nothing about timing.
+    const late = isLateNotice(notice.sentOn as string | null, notice.dueOn as string | null);
+    out.push({ merchant: String(cycle?.merchant ?? notice.merchant), subscriptionId: cycle ? String(cycle.subscriptionId) : null, amountPaise: n(notice.amountPaise), expectedOn: day, daysRemaining: days(today, day), frequency: gap != null ? frequencyOf(gap) : ((notice.frequency as Frequency | null) ?? "unknown"), confidence: "high", confirmed: true, lateNotice: late, history: (cycle?.history as { date: string; amountPaise: number }[] | undefined)?.map((h) => ({ date: h.date, amountPaise: Number(h.amountPaise) })) ?? [], evidence: [toEvidence(notice.evidence)], why: `A ${String((notice.evidence as Evidence).kind).replaceAll("_", " ")} notice says ${notice.amountPaise == null ? "a debit" : rupees(Number(notice.amountPaise))} is due on ${day}.${late ? ` ${LATE_NOTICE_MESSAGE}` : ""}` });
   }
   for (const cycle of cycles) {
     if (confirmedKeys.has(String(cycle.merchantKey))) continue;
@@ -451,7 +459,7 @@ function upcomingWarnings(cycles: Record<string, unknown>[], notices: Record<str
     const expected = nextDate(latestDate, gap);
     if (expected < today || expected > until) continue;
     const steady = gaps.length >= 3 && gaps.every((g) => Math.abs(g - gap) <= gap * 0.15);
-    out.push({ merchant: String(cycle.merchant), subscriptionId: String(cycle.subscriptionId), amountPaise: Number(cycle.amountPaise), expectedOn: expected, daysRemaining: days(today, expected), frequency: frequencyOf(gap), confidence: steady ? "high" : gaps.length >= 2 ? "medium" : "low", confirmed: false, history: (cycle.history as { date: string; amountPaise: number }[]).map((h) => ({ date: h.date, amountPaise: Number(h.amountPaise) })), evidence: [], why: `Estimated from ${gaps.length + 1} payments about ${gap} days apart; the last was ${latestDate}. No notice confirms the date yet.` });
+    out.push({ merchant: String(cycle.merchant), subscriptionId: String(cycle.subscriptionId), amountPaise: Number(cycle.amountPaise), expectedOn: expected, daysRemaining: days(today, expected), frequency: frequencyOf(gap), confidence: steady ? "high" : gaps.length >= 2 ? "medium" : "low", confirmed: false, lateNotice: false, history: (cycle.history as { date: string; amountPaise: number }[]).map((h) => ({ date: h.date, amountPaise: Number(h.amountPaise) })), evidence: [], why: `Estimated from ${gaps.length + 1} payments about ${gap} days apart; the last was ${latestDate}. No notice confirms the date yet.` });
   }
   return out.sort((a, b) => a.expectedOn.localeCompare(b.expectedOn));
 }

@@ -59,7 +59,7 @@ body {
 }
 
 .product-bar > p {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale));
   font-weight: 500;
   letter-spacing: 0.22em;
 }
@@ -226,7 +226,7 @@ body {
 }
 
 .screen-header h1 {
-  font-size: clamp(38px, 4.6vw, 60px);
+  font-size: clamp(calc(38px * var(--text-scale)), 4.6vw, calc(60px * var(--text-scale)));
   line-height: 1.04;
   letter-spacing: -0.035em;
   text-wrap: balance;
@@ -284,7 +284,7 @@ body {
 }
 
 .year-banner strong {
-  font-size: clamp(44px, 5vw, 60px);
+  font-size: clamp(calc(44px * var(--text-scale)), 5vw, calc(60px * var(--text-scale)));
   line-height: 1.05;
   letter-spacing: -0.035em;
   color: var(--ink);
@@ -307,7 +307,7 @@ body {
 
 .table-caption {
   background: var(--brand-tint);
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale));
   font-weight: 600;
   color: var(--marigold-deep);
 }
@@ -386,7 +386,7 @@ body {
   border-radius: 999px;
   background: var(--ember-deep);
   color: #fff;
-  font: 600 11px/1.6 var(--sans);
+  font: 600 calc(11px * var(--text-scale))/1.6 var(--sans);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   vertical-align: 2px;

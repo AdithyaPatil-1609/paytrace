@@ -17,7 +17,7 @@
 
 .annual-figure span {
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   letter-spacing: 0.18em;
 }
 
@@ -25,7 +25,7 @@
   display: block;
   margin: 12px 0 8px;
   color: var(--ink);
-  font: 700 clamp(30px, 3.6vw, 42px)/1 var(--serif);
+  font: 700 clamp(calc(30px * var(--text-scale)), 3.6vw, calc(42px * var(--text-scale)))/1 var(--serif);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.045em;
 }
@@ -34,7 +34,7 @@
   display: block;
   max-width: 34ch;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.55;
 }
 
@@ -77,7 +77,7 @@
 .kpi span {
   display: block;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   letter-spacing: 0.16em;
 }
 
@@ -85,14 +85,14 @@
   display: block;
   margin-top: 10px;
   color: var(--ink);
-  font: 600 27px var(--serif);
+  font: 600 calc(27px * var(--text-scale)) var(--serif);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
 }
 
 .kpi.lead strong {
   color: var(--marigold-deep);
-  font-size: 31px;
+  font-size: calc(31px * var(--text-scale));
 }
 
 .kpi.alarm strong {
@@ -126,7 +126,7 @@ figcaption {
   gap: 10px;
   margin-bottom: 16px;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -165,13 +165,13 @@ figcaption {
 
 .donut-centre {
   fill: var(--ink);
-  font: 600 22px var(--serif);
+  font: 600 calc(22px * var(--text-scale)) var(--serif);
   text-anchor: middle;
 }
 
 .donut-sub {
   fill: var(--ink-faint);
-  font: 400 13px var(--sans);
+  font: 400 calc(13px * var(--text-scale)) var(--sans);
   letter-spacing: 0.14em;
   text-anchor: middle;
 }
@@ -195,7 +195,7 @@ figcaption {
   padding: 7px 8px;
   background: transparent;
   text-align: left;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   color: var(--ink-soft);
   cursor: pointer;
 }
@@ -263,7 +263,7 @@ figcaption {
   border-radius: 3px;
   background: var(--paper-lift);
   color: var(--ink);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   opacity: 0;
@@ -278,7 +278,7 @@ figcaption {
 .month-col-label {
   margin-top: 8px;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   letter-spacing: 0.04em;
 }
 
@@ -286,7 +286,7 @@ figcaption {
   margin: 16px 0 0;
   max-width: 66ch;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.55;
 }
 
@@ -296,7 +296,7 @@ figcaption {
   border: 1px dashed var(--rule-firm);
   border-radius: var(--r-lg);
   color: var(--ink-faint);
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
 }
 
 .viz-link {
@@ -306,7 +306,7 @@ figcaption {
   padding: 9px 13px;
   background: transparent;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   cursor: pointer;
 }
 
@@ -332,14 +332,14 @@ figcaption {
 
 .slice-drill strong {
   color: var(--ink);
-  font: 600 16px var(--serif);
+  font: 600 calc(16px * var(--text-scale)) var(--serif);
 }
 
 .slice-drill header button {
   border: 0;
   background: none;
   color: var(--marigold-deep);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   text-decoration: underline;
   cursor: pointer;
 }

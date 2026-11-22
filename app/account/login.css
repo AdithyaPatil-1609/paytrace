@@ -6,42 +6,42 @@
 .login-ledger .account-header .wordmark { color: var(--marigold); }
 .login-ledger .account-welcome { max-width: 1160px; padding: clamp(38px,6vw,82px) 28px; gap: clamp(28px,5vw,76px); align-items: start; }
 .login-ledger .login-intro { padding-top: 26px; }
-.login-ledger .login-intro h1 { font-size: clamp(40px,5vw,66px); line-height: 1.04; color: var(--ink); margin: 18px 0; }
-.login-ledger .login-intro > p:not(.account-eyebrow) { font-size: 17px; line-height: 1.6; max-width: 440px; }
+.login-ledger .login-intro h1 { font-size: clamp(calc(40px * var(--text-scale)),5vw,calc(66px * var(--text-scale))); line-height: 1.04; color: var(--ink); margin: 18px 0; }
+.login-ledger .login-intro > p:not(.account-eyebrow) { font-size: calc(17px * var(--text-scale)); line-height: 1.6; max-width: 440px; }
 .login-proof { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 18px 14px; margin-top: 36px; align-items: start; }
-.login-proof > span { font-family: var(--mono); font-size: 12px; padding: 5px 0; color: var(--marigold); border-bottom: 1px solid var(--rule-firm); }
-.login-proof strong { color: var(--ink); font-size: 15px; }
-.login-proof p { font-size: 13px; line-height: 1.5; }
-.login-options > h2 { font-size: 32px; margin: 8px 0 18px; }
+.login-proof > span { font-family: var(--mono); font-size: calc(12px * var(--text-scale)); padding: 5px 0; color: var(--marigold); border-bottom: 1px solid var(--rule-firm); }
+.login-proof strong { color: var(--ink); font-size: calc(15px * var(--text-scale)); }
+.login-proof p { font-size: calc(13px * var(--text-scale)); line-height: 1.5; }
+.login-options > h2 { font-size: calc(32px * var(--text-scale)); margin: 8px 0 18px; }
 .login-ledger .login-choice { border-radius: 12px; margin-bottom: 12px; box-shadow: none; padding: 23px; }
-.login-choice h3 { font: 600 23px/1.2 var(--serif); color: var(--ink); margin: 10px 0 8px; }
-.login-choice > p:not(.account-eyebrow) { font-size: 14px; line-height: 1.5; }
-.login-ledger .login-choice .account-button { font-size: 14px; min-height: 46px; margin-top: 18px; }
+.login-choice h3 { font: 600 calc(23px * var(--text-scale))/1.2 var(--serif); color: var(--ink); margin: 10px 0 8px; }
+.login-choice > p:not(.account-eyebrow) { font-size: calc(14px * var(--text-scale)); line-height: 1.5; }
+.login-ledger .login-choice .account-button { font-size: calc(14px * var(--text-scale)); min-height: 46px; margin-top: 18px; }
 .login-ledger .google-button span { color: var(--paper-lift); }
 .login-ledger .demo-choice { border-color: var(--rule-firm); background: var(--paper-lift); }
 .login-ledger .demo-button { display: flex; justify-content: space-between; align-items: center; text-decoration: none; border-color: var(--marigold); color: var(--marigold); background: transparent; }
 .login-ledger .demo-button:hover { background: var(--marigold-skin); }
-.login-ledger .login-footnote { font-size: 12px; text-align: center; margin-top: 16px; }
+.login-ledger .login-footnote { font-size: calc(12px * var(--text-scale)); text-align: center; margin-top: 16px; }
 @media (max-width:850px) { .login-ledger .account-welcome { padding: 30px 20px; gap: 30px; } .login-ledger .login-intro { padding-top: 0; } .login-proof { margin-top: 24px; } }
 .landing-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
-.landing-actions .account-button { width: auto; margin-top: 0; min-height: 46px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+.landing-actions .account-button { width: auto; margin-top: 0; min-height: 46px; font-size: calc(14px * var(--text-scale)); display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
 .login-ledger .landing-note { text-align: left; max-width: 440px; }
 .landing-link { display: inline-block; margin-top: 14px; color: var(--marigold); font-weight: 600; }
 .signin-wrap { max-width: 520px; margin: 0 auto; padding: clamp(32px,6vw,72px) 20px; }
-.signin-card h1 { font: 600 30px/1.15 var(--serif); color: var(--ink); margin: 10px 0 8px; }
+.signin-card h1 { font: 600 calc(30px * var(--text-scale))/1.15 var(--serif); color: var(--ink); margin: 10px 0 8px; }
 .signin-card form { margin-top: 6px; }
-.signin-limit { font-size: 13px; line-height: 1.5; margin: 18px 0 4px; padding: 10px 12px; border-left: 3px solid var(--marigold); background: var(--paper-lift); }
+.signin-limit { font-size: calc(13px * var(--text-scale)); line-height: 1.5; margin: 18px 0 4px; padding: 10px 12px; border-left: 3px solid var(--marigold); background: var(--paper-lift); }
 .login-ledger .signin-card .demo-button { margin-top: 12px; }
 .account-banner-error { border-color: #a3262a; }
 .privacy-wrap { max-width: 760px; margin: 0 auto; padding: clamp(28px,5vw,64px) 22px; }
 .privacy-section h2 { margin-top: 28px; }
 .privacy-section ul { margin: 10px 0; }
-.pairing-code { font-family: var(--mono); font-size: 18px; letter-spacing: 2px; color: var(--ink); }
+.pairing-code { font-family: var(--mono); font-size: calc(18px * var(--text-scale)); letter-spacing: 2px; color: var(--ink); }
 .consent-points { display: grid; gap: 14px; margin: 26px 0; }
-.consent-points dt { font-weight: 700; color: var(--ink); font-size: 14px; }
-.consent-points dd { margin: 4px 0 0; color: var(--ink-soft); font-size: 14px; line-height: 1.55; }
+.consent-points dt { font-weight: 700; color: var(--ink); font-size: calc(14px * var(--text-scale)); }
+.consent-points dd { margin: 4px 0 0; color: var(--ink-soft); font-size: calc(14px * var(--text-scale)); line-height: 1.55; }
 .consent-form { border-top: 1px solid var(--rule-firm); padding-top: 18px; }
-.consent-check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: var(--ink); }
+.consent-check { display: flex; gap: 10px; align-items: flex-start; font-size: calc(14px * var(--text-scale)); line-height: 1.5; color: var(--ink); }
 .consent-check input { margin-top: 4px; width: 18px; height: 18px; flex-shrink: 0; }
 a.account-button { text-decoration: none; }
 .statement-upload { position: relative; cursor: pointer; }
@@ -109,7 +109,7 @@ a.account-button { text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 16px;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale));
   font-weight: 500;
   letter-spacing: 2.4px;
   color: var(--ink-faint);
@@ -121,7 +121,7 @@ a.account-button { text-decoration: none; }
 }
 
 .landing-signin-link {
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   font-weight: 600;
   color: var(--ink);
   text-decoration: none;
@@ -153,7 +153,7 @@ a.account-button { text-decoration: none; }
 
 .landing-eyebrow {
   color: #7b8898;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale));
   font-weight: 700;
   letter-spacing: 2px;
   margin: 0 0 16px;
@@ -162,7 +162,7 @@ a.account-button { text-decoration: none; }
 
 .landing-title {
   font-family: var(--serif);
-  font-size: clamp(38px, 4.8vw, 62px);
+  font-size: clamp(calc(38px * var(--text-scale)), 4.8vw, calc(62px * var(--text-scale)));
   font-weight: 400;
   line-height: 1.05;
   letter-spacing: -0.035em;
@@ -177,7 +177,7 @@ a.account-button { text-decoration: none; }
 
 .integrations-label {
   display: block;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   font-weight: 500;
   color: #556272;
   margin-bottom: 12px;
@@ -212,13 +212,13 @@ a.account-button { text-decoration: none; }
 
 .partner-badge.text-glyph b {
   font-family: var(--serif);
-  font-size: 18px;
+  font-size: calc(18px * var(--text-scale));
   font-weight: 700;
 }
 
 .partner-badge.text-glyph small {
   font-family: var(--sans);
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale));
   font-weight: 700;
   letter-spacing: -0.5px;
 }
@@ -240,7 +240,7 @@ a.account-button { text-decoration: none; }
   min-height: 44px;
   padding: 0 22px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -274,7 +274,7 @@ a.account-button { text-decoration: none; }
 
 /* Footnote */
 .landing-footnote {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale));
   line-height: 1.6;
   color: #727e8d;
   max-width: 480px;
@@ -302,7 +302,7 @@ a.account-button { text-decoration: none; }
 
 .step-num {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale));
   font-weight: 600;
   color: #2c4a6e;
   padding-top: 2px;
@@ -316,14 +316,14 @@ a.account-button { text-decoration: none; }
 
 .step-title {
   display: block;
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale));
   font-weight: 600;
   color: #18212f;
   margin-bottom: 4px;
 }
 
 .step-text {
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.55;
   color: #556272;
   margin: 0;
@@ -361,7 +361,7 @@ a.account-button { text-decoration: none; }
 }
 
 .card-top strong {
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   font-weight: 600;
   color: #1a2432;
 }
@@ -370,7 +370,7 @@ a.account-button { text-decoration: none; }
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale));
   font-weight: 600;
   color: #166534;
   background: #ecfdf5;
@@ -388,7 +388,7 @@ a.account-button { text-decoration: none; }
   grid-template-columns: 24px 1fr auto auto;
   gap: 9px;
   align-items: center;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale));
   padding: 2px 0;
 }
 
@@ -400,7 +400,7 @@ a.account-button { text-decoration: none; }
   color: #ffffff;
   display: grid;
   place-items: center;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale));
   font-weight: 700;
 }
 
@@ -421,13 +421,13 @@ a.account-button { text-decoration: none; }
 }
 
 .sub-cadence {
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale));
   color: #7b8898;
 }
 
 .sub-price {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale));
   font-weight: 500;
   color: #334155;
   text-align: right;
@@ -438,7 +438,7 @@ a.account-button { text-decoration: none; }
   display: inline-block;
   padding: 3px 9px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale));
   font-weight: 600;
   background: #f1f5f9;
   color: #475569;
@@ -453,7 +453,7 @@ a.account-button { text-decoration: none; }
 }
 
 .trend-spark {
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
 }
 
 /* Privacy Card */
@@ -463,7 +463,7 @@ a.account-button { text-decoration: none; }
 }
 
 .card-eyebrow {
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale));
   font-weight: 700;
   letter-spacing: 1.6px;
   color: #7b8898;
@@ -472,7 +472,7 @@ a.account-button { text-decoration: none; }
 
 .privacy-card h3 {
   font-family: var(--serif);
-  font-size: 20px;
+  font-size: calc(20px * var(--text-scale));
   font-weight: 600;
   color: #18212f;
   margin: 0 0 12px;
@@ -492,24 +492,24 @@ a.account-button { text-decoration: none; }
   grid-template-columns: 18px 1fr;
   gap: 8px;
   align-items: start;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale));
   line-height: 1.45;
   color: #4b5563;
 }
 
 .icon-lock {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale));
 }
 
 .icon-check {
   font-weight: 700;
   color: #15803d;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1;
 }
 
 .privacy-link {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale));
   font-weight: 600;
   color: var(--marigold);
   text-decoration: none;
@@ -620,7 +620,7 @@ a.account-button { text-decoration: none; }
 }
 
 .drawer-eyebrow {
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale));
   font-weight: 700;
   letter-spacing: 1.8px;
   color: #7b8898;
@@ -636,7 +636,7 @@ a.account-button { text-decoration: none; }
   place-items: center;
   cursor: pointer;
   color: #475569;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   font-weight: 700;
   transition: all 0.15s ease;
 }
@@ -654,7 +654,7 @@ a.account-button { text-decoration: none; }
 
 .drawer-body h2 {
   font-family: var(--serif);
-  font-size: 28px;
+  font-size: calc(28px * var(--text-scale));
   font-weight: 600;
   color: #18212f;
   margin: 0 0 10px;
@@ -662,7 +662,7 @@ a.account-button { text-decoration: none; }
 }
 
 .drawer-subtitle {
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
   line-height: 1.55;
   color: #556272;
   margin: 0 0 24px;
@@ -680,7 +680,7 @@ a.account-button { text-decoration: none; }
   width: 100%;
   min-height: 48px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
   font-weight: 600;
   background: #182232;
   color: #ffffff;
@@ -696,7 +696,7 @@ a.account-button { text-decoration: none; }
 }
 
 .drawer-google-btn .google-icon {
-  font-size: 18px;
+  font-size: calc(18px * var(--text-scale));
   font-weight: 700;
   color: #4285f4;
   margin-right: 2px;
@@ -707,7 +707,7 @@ a.account-button { text-decoration: none; }
   padding: 12px 14px;
   border-left: 3px solid #2c4a6e;
   background: #f1f5f9;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.5;
   color: #475569;
   border-radius: 0 8px 8px 0;
@@ -727,7 +727,7 @@ a.account-button { text-decoration: none; }
   text-decoration: none;
   padding: 12px 18px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
   font-weight: 600;
   transition: all 0.15s ease;
 }
@@ -744,7 +744,7 @@ a.account-button { text-decoration: none; }
 }
 
 .drawer-footer .login-footnote {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale));
   color: #7b8898;
 }
 
@@ -757,9 +757,9 @@ a.account-button { text-decoration: none; }
 
 /* Sign in / Sign up switch and the name field inside the landing drawer. */
 .drawer-tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; gap: 4px; border-radius: 10px; background: var(--paper-sink); margin-bottom: 18px; }
-.drawer-tabs button { border: 0; background: transparent; padding: 10px; border-radius: 8px; font: 600 14px var(--sans); color: var(--ink-soft); cursor: pointer; }
+.drawer-tabs button { border: 0; background: transparent; padding: 10px; border-radius: 8px; font: 600 calc(14px * var(--text-scale)) var(--sans); color: var(--ink-soft); cursor: pointer; }
 .drawer-tabs button.active { background: var(--paper-lift); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .drawer-form.signup-form { display: grid; gap: 12px; }
-.drawer-form .signup-field { display: grid; gap: 6px; font-size: 14px; font-weight: 600; color: var(--ink); }
-.drawer-form .signup-field input { font: inherit; font-weight: 400; font-size: 16px; padding: 11px 12px; border: 1px solid var(--rule-firm); border-radius: 6px; background: var(--paper-lift); color: var(--ink); }
+.drawer-form .signup-field { display: grid; gap: 6px; font-size: calc(14px * var(--text-scale)); font-weight: 600; color: var(--ink); }
+.drawer-form .signup-field input { font: inherit; font-weight: 400; font-size: calc(16px * var(--text-scale)); padding: 11px 12px; border: 1px solid var(--rule-firm); border-radius: 6px; background: var(--paper-lift); color: var(--ink); }
 .drawer-form .signup-field input:focus { outline: 2px solid var(--marigold); outline-offset: 1px; }

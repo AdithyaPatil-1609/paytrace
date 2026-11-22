@@ -22,7 +22,7 @@
   align-items: center;
   gap: 9px;
   color: var(--ink);
-  font: 700 25px/1 var(--serif);
+  font: 700 calc(25px * var(--text-scale))/1 var(--serif);
   letter-spacing: -0.035em;
 }
 
@@ -34,13 +34,13 @@
   border-radius: 8px 8px 8px 2px;
   background: var(--marigold);
   color: var(--paper-lift);
-  font: 700 16px/1 var(--sans);
+  font: 700 calc(16px * var(--text-scale))/1 var(--sans);
 }
 
 .product-bar > p {
   margin: 0;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   letter-spacing: 0.22em;
 }
 
@@ -55,24 +55,24 @@
   gap: 16px;
 }
 
-.account-link { color: var(--ink-soft); font-size: 13px; white-space: nowrap; text-decoration: underline; text-underline-offset: 4px; }
+.account-link { color: var(--ink-soft); font-size: calc(13px * var(--text-scale)); white-space: nowrap; text-decoration: underline; text-underline-offset: 4px; }
 
 /* The personal view shares the original product chrome, not a new dashboard. */
 .personal-menu { position: relative; }
 .personal-menu-trigger { cursor: pointer; padding: 7px 9px; min-height: 44px; border: 1px solid var(--rule-firm); border-radius: var(--r-sm); background: var(--paper-lift); list-style: none; }
 .personal-menu-trigger::-webkit-details-marker { display: none; }
 .personal-menu-trigger:focus-visible { outline: 2px solid var(--marigold); outline-offset: 2px; }
-.gmail-status { font-size: 11px; font-weight: 650; white-space: nowrap; color: var(--marigold-deep); }
+.gmail-status { font-size: calc(11px * var(--text-scale)); font-weight: 650; white-space: nowrap; color: var(--marigold-deep); }
 .gmail-status.linked { color: var(--sage); }
 .personal-menu-panel { position: absolute; right: 0; top: calc(100% + 10px); width: min(340px, calc(100vw - 32px)); max-height: calc(100vh - 96px); overflow-y: auto; z-index: 50; color: var(--ink); background: var(--paper-lift); }
-.personal-menu-panel .account-eyebrow { font-size: 11px; letter-spacing: 1.4px; color: var(--ink-faint); margin: 0 0 8px; }
-.personal-menu-panel .account-note, .personal-email { font-size: 13px; color: var(--ink-soft); line-height: 1.5; overflow-wrap: anywhere; }
+.personal-menu-panel .account-eyebrow { font-size: calc(11px * var(--text-scale)); letter-spacing: 1.4px; color: var(--ink-faint); margin: 0 0 8px; }
+.personal-menu-panel .account-note, .personal-email { font-size: calc(13px * var(--text-scale)); color: var(--ink-soft); line-height: 1.5; overflow-wrap: anywhere; }
 .personal-menu-panel hr { border: 0; border-top: 1px solid var(--rule); margin: 14px 0; }
-.personal-status { margin: 0; min-height: 38px; padding: 8px clamp(16px, 5vw, 76px); background: var(--marigold-skin); border-bottom: 1px solid var(--rule-firm); font-size: 13px; color: var(--ink-soft); }
+.personal-status { margin: 0; min-height: 38px; padding: 8px clamp(16px, 5vw, 76px); background: var(--marigold-skin); border-bottom: 1px solid var(--rule-firm); font-size: calc(13px * var(--text-scale)); color: var(--ink-soft); }
 .personal-activity { margin-top: 26px; border: 1px solid var(--rule-firm); border-radius: var(--r-sm); padding: 18px; background: var(--paper-lift); }
 .personal-activity summary { cursor: pointer; font-weight: 600; }
 .personal-activity summary small { display: inline-block; margin-left: 12px; color: var(--ink-faint); font-weight: 400; }
-.personal-activity p, .personal-empty { padding: 12px; font-size: 14px; color: var(--ink-soft); }
+.personal-activity p, .personal-empty { padding: 12px; font-size: calc(14px * var(--text-scale)); color: var(--ink-soft); }
 @media (max-width: 480px) { .personal-menu-trigger { gap: 5px; } .personal-menu-trigger b { display: none; } }
 
 .simulate-button,
@@ -83,7 +83,7 @@
   min-height: 44px;
   background: var(--paper-lift);
   color: var(--ink);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   font-weight: 500;
   cursor: pointer;
   transition:
@@ -112,7 +112,7 @@
   border-bottom: 1px solid var(--rule-firm);
   background: var(--marigold-skin);
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.5;
 }
 
@@ -121,7 +121,7 @@
   align-items: center;
   gap: 9px;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
 }
 
 .persona b {
@@ -132,7 +132,7 @@
   border-radius: 50%;
   background: var(--ink);
   color: var(--paper);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
 }
 
 /* --- frame --------------------------------------------------- */
@@ -155,7 +155,7 @@
 .side-nav > p {
   margin: 0 0 16px 12px;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   letter-spacing: 0.2em;
 }
 
@@ -171,7 +171,7 @@
   background: transparent;
   color: var(--ink-soft);
   text-align: left;
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale));
   cursor: pointer;
   transition:
     color 0.14s,
@@ -180,7 +180,7 @@
 
 .side-nav > button span {
   color: var(--ink-faint);
-  font: 500 13px var(--mono);
+  font: 500 calc(13px * var(--text-scale)) var(--mono);
 }
 
 .side-nav > button:hover {
@@ -204,7 +204,7 @@
   padding: 16px 12px;
   border-top: 1px solid var(--rule-firm);
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.55;
 }
 
@@ -233,7 +233,7 @@
 .screen-header > p {
   margin: 0 0 14px;
   color: var(--marigold-deep);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   letter-spacing: 0.2em;
 }
 
@@ -244,7 +244,7 @@
 .screen-header h1 {
   margin: 0;
   color: var(--ink);
-  font: 700 clamp(38px, 6vw, 68px)/0.98 var(--serif);
+  font: 700 clamp(calc(38px * var(--text-scale)), 6vw, calc(68px * var(--text-scale)))/0.98 var(--serif);
   letter-spacing: -0.04em;
 }
 
@@ -252,7 +252,7 @@
   max-width: 64ch;
   margin-top: 18px;
   color: var(--ink-soft);
-  font-size: 16px;
+  font-size: calc(16px * var(--text-scale));
   line-height: 1.65;
 }
 
@@ -261,42 +261,42 @@
   padding-top: 18px;
   border-top: 1px solid var(--rule-firm);
   color: var(--ink);
-  font: 600 25px var(--serif);
+  font: 600 calc(25px * var(--text-scale)) var(--serif);
   letter-spacing: -0.025em;
 }
 
 /* Connect iPhone: the one-time token and the Shortcut steps. */
-.iphone-setup .iphone-token { display: block; font-size: 12px; padding: 8px; margin: 8px 0; background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; overflow-wrap: anywhere; user-select: all; }
-.iphone-steps { font-size: 13px; color: var(--ink-soft); line-height: 1.5; padding-left: 18px; margin: 0 0 12px; }
+.iphone-setup .iphone-token { display: block; font-size: calc(12px * var(--text-scale)); padding: 8px; margin: 8px 0; background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; overflow-wrap: anywhere; user-select: all; }
+.iphone-steps { font-size: calc(13px * var(--text-scale)); color: var(--ink-soft); line-height: 1.5; padding-left: 18px; margin: 0 0 12px; }
 .iphone-steps li { margin-bottom: 6px; }
-.iphone-steps code { font-size: 12px; overflow-wrap: anywhere; }
+.iphone-steps code { font-size: calc(12px * var(--text-scale)); overflow-wrap: anywhere; }
 .link-button { background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; cursor: pointer; font: inherit; }
 
 /* Warnings from the payment graph: one row per warning, plus a small form for user-confirmed facts. */
 .graph-warnings { margin: 0 0 22px; }
 .graph-warnings .account-table small { display: block; }
 .graph-fact { display: flex !important; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
-.graph-fact select, .graph-fact input { font: inherit; font-size: 12px; padding: 2px 4px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); color: var(--ink); }
+.graph-fact select, .graph-fact input { font: inherit; font-size: calc(12px * var(--text-scale)); padding: 2px 4px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); color: var(--ink); }
 
 /* Heads-up: what will happen in the next few days, before the money leaves. */
 .heads-up { margin: 0 0 18px; padding: 16px 18px; border: 1px solid var(--rule-firm); border-left: 4px solid var(--ink); border-radius: 12px; background: var(--paper-lift); display: grid; gap: 10px; }
 .heads-up-item { display: grid; gap: 3px; }
-.heads-up-item strong { font: 600 15px/1.3 var(--sans); color: var(--ink); }
-.heads-up-item span { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.heads-up-item strong { font: 600 calc(15px * var(--text-scale))/1.3 var(--sans); color: var(--ink); }
+.heads-up-item span { font-size: calc(13.5px * var(--text-scale)); line-height: 1.5; color: var(--ink-soft); }
 .heads-up-price_rise_ahead strong { color: var(--ember, #a3262a); }
-.heads-up > small { font-size: 12px; color: var(--ink-faint); }
+.heads-up > small { font-size: calc(12px * var(--text-scale)); color: var(--ink-faint); }
 
 /* Top bar "Import CSV/PDF" (components/statement-import.tsx): its result note and the PDF password prompt. */
 .bar-import { display: inline-flex; align-items: center; gap: 7px; }
 .bar-import:disabled { cursor: wait; opacity: 0.65; }
-.bar-import-note { position: fixed; top: calc(var(--chrome-h, 72px) + 8px); right: 16px; z-index: 60; display: flex; gap: 10px; align-items: flex-start; max-width: min(420px, calc(100vw - 32px)); padding: 10px 12px; border: 1px solid var(--rule-firm); border-radius: var(--r-sm, 10px); background: var(--paper-lift); color: var(--ink); font-size: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); }
+.bar-import-note { position: fixed; top: calc(var(--chrome-h, 72px) + 8px); right: 16px; z-index: 60; display: flex; gap: 10px; align-items: flex-start; max-width: min(420px, calc(100vw - 32px)); padding: 10px 12px; border: 1px solid var(--rule-firm); border-radius: var(--r-sm, 10px); background: var(--paper-lift); color: var(--ink); font-size: calc(14px * var(--text-scale)); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); }
 .bar-import-note.is-error { border-color: var(--ember-edge); background: var(--ember-skin); color: var(--ember-deep); }
-.bar-import-note .link-button { font-size: 18px; line-height: 1; padding: 0 2px; }
+.bar-import-note .link-button { font-size: calc(18px * var(--text-scale)); line-height: 1; padding: 0 2px; }
 .statement-password-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 16px; background: rgba(15, 20, 30, 0.45); }
 .statement-password { display: grid; gap: 10px; width: min(420px, 100%); padding: 20px; border-radius: 14px; background: var(--paper-lift); color: var(--ink); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25); }
-.statement-password h2 { margin: 0; font-size: 18px; }
-.statement-password p { margin: 0; font-size: 14px; color: var(--ink-soft); }
+.statement-password h2 { margin: 0; font-size: calc(18px * var(--text-scale)); }
+.statement-password p { margin: 0; font-size: calc(14px * var(--text-scale)); color: var(--ink-soft); }
 .statement-password .statement-password-error { color: var(--ember-deep); }
-.statement-password input { min-height: 44px; padding: 8px 12px; border: 1px solid var(--rule-firm); border-radius: 8px; font-size: 16px; background: var(--paper); color: var(--ink); }
+.statement-password input { min-height: 44px; padding: 8px 12px; border: 1px solid var(--rule-firm); border-radius: 8px; font-size: calc(16px * var(--text-scale)); background: var(--paper); color: var(--ink); }
 .statement-password-actions { display: flex; justify-content: flex-end; gap: 12px; align-items: center; }
 .statement-password-actions .account-button { width: auto; margin-top: 0; }
