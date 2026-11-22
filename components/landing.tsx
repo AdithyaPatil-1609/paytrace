@@ -51,6 +51,8 @@ export function Landing({
   initialOpen?: boolean;
 }) {
   const [signInOpen, setSignInOpen] = useState(initialOpen);
+  // One drawer for both: "Sign in" for an existing account, "Sign up" starts the sign-up steps.
+  const [authTab, setAuthTab] = useState<"signin" | "signup">("signin");
 
   // Close drawer on Escape key
   useEffect(() => {
@@ -171,9 +173,7 @@ export function Landing({
           <span className="dot-sep">·</span>
           <span>CONTROL</span>
         </nav>
-        <Link className="landing-signin-link" href={AUTH_PATH} onClick={openSignIn}>
-          Sign in / Sign up <span aria-hidden="true">→</span>
-        </Link>
+        <span aria-hidden="true" />
       </header>
 
       {/* ── Main Two-Column Hero ── */}
@@ -350,10 +350,15 @@ export function Landing({
           </header>
 
           <div className="drawer-body">
-            <h2 id="drawer-title">Sign in to Paytrace</h2>
+            <div className="signup-tabs drawer-tabs" role="tablist" aria-label="Sign in or sign up">
+              <button role="tab" type="button" aria-selected={authTab === "signin"} className={authTab === "signin" ? "active" : ""} onClick={() => setAuthTab("signin")}>Sign in</button>
+              <button role="tab" type="button" aria-selected={authTab === "signup"} className={authTab === "signup" ? "active" : ""} onClick={() => setAuthTab("signup")}>Sign up</button>
+            </div>
+            <h2 id="drawer-title">{authTab === "signin" ? "Sign in to Paytrace" : "Create your Paytrace account"}</h2>
             <p className="drawer-subtitle">
-              See your own recurring payments. After signing in, you choose whether
-              to connect Gmail (read-only) and your phone.
+              {authTab === "signin"
+                ? "See your own recurring payments. After signing in, you choose whether to connect Gmail (read-only) and your phone."
+                : "Takes about two minutes: your name, an optional phone check, Gmail (read-only), then Paytrace finds your recurring payments while you watch."}
             </p>
 
             {initialNotice && (
@@ -366,7 +371,19 @@ export function Landing({
               </div>
             )}
 
-            {configured ? (
+            {configured && authTab === "signup" ? (
+              <form action="/api/auth/google/start" method="post" className="drawer-form signup-form">
+                <input type="hidden" name="mode" value="login" />
+                <input type="hidden" name="next" value="signup" />
+                <label className="signup-field">Full name
+                  <input name="fullName" required minLength={2} maxLength={80} autoComplete="name" placeholder="As you want it shown" />
+                </label>
+                <button className="account-button primary google-button drawer-google-btn" type="submit">
+                  <span className="google-icon" aria-hidden="true">G</span>
+                  Sign up with Google
+                </button>
+              </form>
+            ) : configured ? (
               <form action="/api/auth/google/start" method="post" className="drawer-form">
                 <input type="hidden" name="mode" value="login" />
                 <button className="account-button primary google-button drawer-google-btn" type="submit">

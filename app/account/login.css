@@ -754,3 +754,12 @@ a.account-button { text-decoration: none; }
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* Sign in / Sign up switch and the name field inside the landing drawer. */
+.drawer-tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; gap: 4px; border-radius: 10px; background: var(--paper-sink); margin-bottom: 18px; }
+.drawer-tabs button { border: 0; background: transparent; padding: 10px; border-radius: 8px; font: 600 14px var(--sans); color: var(--ink-soft); cursor: pointer; }
+.drawer-tabs button.active { background: var(--paper-lift); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.drawer-form.signup-form { display: grid; gap: 12px; }
+.drawer-form .signup-field { display: grid; gap: 6px; font-size: 14px; font-weight: 600; color: var(--ink); }
+.drawer-form .signup-field input { font: inherit; font-weight: 400; font-size: 16px; padding: 11px 12px; border: 1px solid var(--rule-firm); border-radius: 6px; background: var(--paper-lift); color: var(--ink); }
+.drawer-form .signup-field input:focus { outline: 2px solid var(--marigold); outline-offset: 1px; }

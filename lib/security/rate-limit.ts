@@ -94,6 +94,11 @@ export const LIMITS = {
     { limit: 20, ms: 60_000 },
     { limit: 300, ms: 60 * 60_000 }
   ],
+  // Sign-up steps (phone code, consent answers): a person clicks a few times a minute at most.
+  signup: [
+    { limit: 15, ms: 60_000 },
+    { limit: 100, ms: 60 * 60_000 }
+  ],
   // Pairing a phone: a guessed pairing code gets very few tries.
   pairing: [
     { limit: 5, ms: 60_000 },
