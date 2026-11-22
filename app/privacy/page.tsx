@@ -103,6 +103,12 @@ export default function PrivacyPage() {
         Your account and payment fields are stored in Paytrace&apos;s database and are visible only to you
         when you are signed in. Each account&apos;s data is kept separate. Connections use HTTPS.
       </p>
+      <p>
+        <strong>Family View (optional).</strong> If you make an invite link and someone accepts it while signed
+        in, they can see a read-only list of your recurring payments: names, amounts, how often, next dates and
+        yearly totals. They never see your emails, SMS, statements, account numbers or Gmail access, and cannot
+        change anything. Access ends after 90 days, or at once when you remove it under Family access.
+      </p>
 
       <h2>7. Cookies</h2>
       <p>
