@@ -152,7 +152,7 @@ a.account-button { text-decoration: none; }
 }
 
 .landing-eyebrow {
-  color: #7b8898;
+  color: #5a6575;
   font-size: calc(11px * var(--text-scale));
   font-weight: 700;
   letter-spacing: 2px;
@@ -197,7 +197,7 @@ a.account-button { text-decoration: none; }
   height: 40px;
   border-radius: 10px;
   background: #f0eee8;
-  color: #768393;
+  color: #5a6575;
   border: 1px solid rgba(24, 33, 47, 0.08);
   transition: all 0.16s ease;
 }
@@ -422,7 +422,7 @@ a.account-button { text-decoration: none; }
 
 .sub-cadence {
   font-size: calc(10px * var(--text-scale));
-  color: #7b8898;
+  color: #5a6575;
 }
 
 .sub-price {
@@ -466,11 +466,11 @@ a.account-button { text-decoration: none; }
   font-size: calc(10px * var(--text-scale));
   font-weight: 700;
   letter-spacing: 1.6px;
-  color: #7b8898;
+  color: #5a6575;
   margin: 0 0 6px;
 }
 
-.privacy-card h3 {
+.privacy-card h2 {
   font-family: var(--serif);
   font-size: calc(20px * var(--text-scale));
   font-weight: 600;
@@ -623,7 +623,7 @@ a.account-button { text-decoration: none; }
   font-size: calc(10px * var(--text-scale));
   font-weight: 700;
   letter-spacing: 1.8px;
-  color: #7b8898;
+  color: #5a6575;
 }
 
 .drawer-close-btn {
@@ -745,7 +745,7 @@ a.account-button { text-decoration: none; }
 
 .drawer-footer .login-footnote {
   font-size: calc(12px * var(--text-scale));
-  color: #7b8898;
+  color: #5a6575;
 }
 
 .drawer-footer a {

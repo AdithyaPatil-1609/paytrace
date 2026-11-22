@@ -16,3 +16,4 @@
 .family-shares { margin: 12px 0 0; padding-left: 20px; font-size: calc(14px * var(--text-scale)); color: var(--ink-soft); }
 @media (max-width: 600px) { .family-totals { grid-template-columns: 1fr; } .family-link { flex-direction: column; } }
 .family-link .account-button, .family-list .account-button { width: auto; flex: 0 0 auto; margin-top: 0; }
+.account-shell h1.family-accept-title { font: 400 calc(27px * var(--text-scale))/1.2 var(--serif); letter-spacing: normal; margin: 8px 0; }
