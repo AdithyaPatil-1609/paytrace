@@ -7,14 +7,14 @@ import "../../scripts/load-env-local";
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { getNeo4jDriver, hasNeo4jConfig } from "../../db/neo4j/client";
-import { ingestLiveEvent, readLiveSummary } from "../../db/neo4j/live";
-import { deleteAllUserData } from "../../db/neo4j/delete-user";
-import { createSession } from "../../db/neo4j/accounts";
-import { profileFor } from "../../lib/accounts/security";
-import { parseStatementCsv } from "../../lib/statements/csv";
-import { generateStatement, statementCsv } from "../../lib/statements/generate";
-import { statementEvents } from "../../lib/statements/events";
+import { getNeo4jDriver, hasNeo4jConfig } from "../../neo4j/client";
+import { ingestLiveEvent, readLiveSummary } from "../../neo4j/live";
+import { deleteAllUserData } from "../../neo4j/delete-user";
+import { createSession } from "../../neo4j/accounts";
+import { profileFor } from "../../server/accounts/security";
+import { parseStatementCsv } from "../../server/statements/csv";
+import { generateStatement, statementCsv } from "../../server/statements/generate";
+import { statementEvents } from "../../server/statements/events";
 
 after(async () => { if (hasNeo4jConfig()) await getNeo4jDriver().close(); });
 

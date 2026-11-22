@@ -4,7 +4,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SESSION_IDLE_SECONDS, SESSION_ROTATE_SECONDS, SESSION_SECONDS } from "../../lib/accounts/security";
+import { SESSION_IDLE_SECONDS, SESSION_ROTATE_SECONDS, SESSION_SECONDS } from "../../server/accounts/security";
 
 const DAY = 24 * 60 * 60;
 

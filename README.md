@@ -1,45 +1,100 @@
-# PayTrace
+# Paytrace
 
-PayTrace brings recurring debits, merchant descriptions, messages and payment permissions together so a person can see what they pay for, why a charge was flagged and how to stop it. The demo uses synthetic records for Priya as of 22 October 2026.
+Paytrace finds every recurring payment a person makes (subscriptions, UPI AutoPay, card mandates, EMIs, SIPs and bills), shows why a charge was flagged, and explains how to stop it. It runs live at **[paytrace.co.in](https://paytrace.co.in)** on real accounts. A synthetic demo is available at `/demo`.
 
-## Run the prototype
+Paytrace reads from sources the person chooses to connect:
 
-Use Node.js 22 or newer. From this directory run `npm ci` and `npm run dev`, then open http://localhost:3000. The app opens on **All payments**. With no database credentials it reads the bundled CSV records.
+- **Gmail** (read-only): receipts, renewal and price-change notices.
+- **Bank SMS**: from the Android companion app, or an iPhone Shortcut.
+- **Bank statements**: CSV or PDF, read in the browser.
+- **App screen time** (Android): when each paid app was last opened.
 
-For live Neo4j, use a dedicated demo database. The seed replaces PayTrace-labelled records in the configured database. To start the bundled local database and load it, run:
+Payment fields are extracted by rules and by a local Qwen model. Message text is never stored, OTP/PIN/password messages never reach a model, and no data goes to an outside AI service.
 
-```sh
-cp .env.example .env.local
-docker compose up -d --wait
-npm run seed
-npm run dev
+## Project map
+
+One folder per technology. Everything for a technology lives in its folder.
+
+```
+paytrace/
+├── web/        Next.js + React: the website people use
+│   ├── app/          pages and API routes
+│   ├── components/   screens, charts, menus
+│   └── public/       images and icons
+├── server/     TypeScript logic behind the API (no UI)
+├── neo4j/      Neo4j: every Cypher query and database write
+├── ai/         local Qwen models: runtime code, training, evals
+├── android/    Kotlin: the Paytrace Companion phone app
+├── data/       made-up demo data and the merchant catalog
+├── scripts/    command-line tools: seed, Gmail sync, evals
+├── tests/      unit, security and live-graph tests
+└── docs/       setup guides and security reviews
 ```
 
-For Aura, set the connection values in `.env.local` to those of your demo instance before seeding. The header shows the active data source. Use `npm run build` and `npm start` for a production build.
+| Folder | Technology | What it holds | README |
+| --- | --- | --- | --- |
+| `web/` | Next.js, React, CSS | Pages, API routes, components, styles, images | [web/README.md](web/README.md) |
+| `server/` | TypeScript | Payment engine, ingestion, accounts, statements, security | [server/README.md](server/README.md) |
+| `neo4j/` | Neo4j, Cypher | Per-person graphs, queries, writes, warnings, Aura Agent | [neo4j/README.md](neo4j/README.md) |
+| `ai/` | Qwen (Ollama, MLX) | Model calls and OTP guard, LoRA training, evals | [ai/README.md](ai/README.md) |
+| `android/` | Kotlin | Companion app: bank SMS and screen time | [android/README.md](android/README.md) |
+| `data/` | CSV, JSON | Synthetic demo data and the merchant catalog | [data/README.md](data/README.md) |
+| `scripts/` | Node | Seeding, Gmail tools, evaluations | [scripts/README.md](scripts/README.md) |
+| `tests/` | Node test runner | Unit, security and Cypher tests | [tests/README.md](tests/README.md) |
+| `docs/` | Markdown | Setup guides, security reviews, design notes | [docs/README.md](docs/README.md) |
 
-For individually signed-in Google accounts, optional Gmail consent and background sync, see [Personal account setup](docs/ACCOUNT-GMAIL.md). The original synthetic demo remains available at `/?demo=1`.
+Imports use the `@/` prefix from the repo root, for example `@/server/payments/rules` or `@/neo4j/live`. Settings live in one `.env.local` at the repo root; `web/next.config.ts` loads it for the site.
 
-## Follow a finding through the code
+## Run it locally
 
-Start with Spotify in **Issues**. The recorded price changes from ₹119 to ₹139. PayTrace checks for a relevant notice and makes the supporting charges available in the payment drawer and on the **Evidence graph** page.
+Use Node.js 22 or newer.
 
-| Question | Where to look |
+```sh
+npm ci
+cp .env.example .env.local      # fill in your own values; never commit this file
+docker compose up -d --wait     # local Neo4j (optional)
+npm run seed                    # synthetic demo data into the demo database
+npm run dev                     # http://localhost:3000
+```
+
+Without database settings the app falls back to the bundled CSV demo. For Google sign-in, Gmail consent and background sync, see [docs/ACCOUNT-GMAIL.md](docs/ACCOUNT-GMAIL.md).
+
+### Local AI models (optional)
+
+| Model | Used for | Start it |
+| --- | --- | --- |
+| `qwen3:14b` on Ollama | Ask AI answers and optional email reading | `ollama serve` (port 11434) |
+| Qwen3 8B + alerts adapter | Reading a pasted bank alert | `npm run ai:alerts` (port 8080) |
+| Qwen3 8B + recurring adapter | Second check on recurring payments | `npm run ai:recurring` (port 8081) |
+
+The app only talks to models on the same machine. Details are in [ai/training/README.md](ai/training/README.md).
+
+## Commands
+
+| Command | What it does |
 | --- | --- |
-| Which data does the app load? | `app/page.tsx` selects live Neo4j data or the CSV fixture. `data/fixtures.ts` reads the five runtime CSVs in `data/raw/`. |
-| What counts as recurring, and when is a price rise flagged? | `lib/payments/rules.ts` holds shared thresholds. `lib/payments/engine.ts` applies them to fixture records. `lib/payments/types.ts` defines the commitment returned to the UI. |
-| How does the live graph reach the same decision? | `db/neo4j/queries/commitments.ts` contains the Cypher. `db/neo4j/analyze.ts` runs it, and `db/neo4j/commitment-record.ts` converts result columns into the shared commitment type. |
-| Where does a finding become visible? | `components/screens/issues.tsx` uses `lib/presentation/issue-cards.ts` to group findings. `components/detail/` displays evidence, previews and cancellation guidance. |
-| How is the evidence diagram built? | `components/visualizations/payment-evidence-graph.tsx` selects the payment. The adjacent `evidence/` folder separates record selection and coordinates from drawing and interaction. |
-| Where do simulations run? | `data/simulation.ts` supplies the new autopay. `lib/scenarios/` prepares what-if inputs and explains results. `app/api/` routes live requests to Neo4j transactions that roll back after analysis. |
+| `npm run dev` | Development server |
+| `npm run build` / `npm start` | Production build and server |
+| `npm run lint` / `npm run typecheck` | Static checks |
+| `npm test` | Unit and security tests (no database needed) |
+| `npm run test:cypher` | Live-graph tests against a seeded **test** Neo4j database |
+| `npm run seed` | Load synthetic demo data (refuses to write to the main database) |
+| `npm run agent:seed` | Load the shared merchant catalog into the Aura Agent database |
 
-## UI organization
+All checks run in CI on every pull request (`.github/workflows/ci.yml`).
 
-`components/dashboard.tsx` connects navigation to five screens, in order: All payments, Issues, Cancel paths, Annual and Evidence graph. `components/hooks/use-payment-review.ts` owns simulation state, user decisions and their effect on the annual estimate. `components/chrome/` holds shared navigation and headers.
+## How a finding travels through the code
 
-`app/globals.css` is the stylesheet entry point. It imports the files in `app/styles/` in cascade order. Each file covers a screen, shared layout or responsive rules.
+1. **Ingest:** `web/app/api/ingest/*` and `server/ingestion/` accept SMS, email and screen time. They check signatures and drop OTP messages.
+2. **Store:** `neo4j/live.ts` and `neo4j/write.ts` write payment events into the person's own graph.
+3. **Analyse:** `neo4j/queries/commitments.ts` groups charges into recurring payments, and `server/payments/rules.ts` holds the shared thresholds (price rise, unused, trial).
+4. **Show:** `web/components/dashboard.tsx` renders the five screens (All payments, Issues, Cancel paths, Annual, Evidence graph).
+5. **Act:** `server/presentation/cancel-links.ts` and `web/components/detail/` give the cancel steps and official links (NPCI UPI Help, bank e-mandate pages).
 
-The **Simulate a new Autopay** button previews a synthetic Headspace payment. In the **Try a what-if** flow, a matching price notice can clear Spotify’s warning, while an unrelated old notice leaves it flagged. The yearly estimate reflects the charges in both scenarios.
+## Working rules
 
-## Repository checks
-
-Run `npm test` for the payment engine, scenarios and evidence UI. With a seeded demo Neo4j database, run `npm run test:cypher` for live graph checks, output parity and rollback. Run `npm run lint` and `npm run typecheck` for static checks.
+- Never commit `.env.local`, real messages, statements, logs or models trained on real data. Real data stays in the product; tests and training use made-up data only.
+- OTP, PIN and password messages never reach a model. Only local models are used.
+- Cypher is always parameterized. Destructive tests and seeds never run against production.
+- Commit messages look like `area: change`. New files start with two or three lines on *why* they exist.
+- Open a pull request into `main`; CI must pass before merging.

@@ -5,10 +5,10 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { noticeRows } from "../db/neo4j/live";
-import { detectCommitments, NOTICE_CHANNEL } from "../lib/payments/engine";
+import { noticeRows } from "../neo4j/live";
+import { detectCommitments, NOTICE_CHANNEL } from "../server/payments/engine";
 import { readDictionary } from "../data/fixtures";
-import type { StatementRow } from "../lib/payments/types";
+import type { StatementRow } from "../server/payments/types";
 
 const ASOF = "2026-11-21";
 const notice = (id: string, date: string, extra: Record<string, unknown> = {}) => ({
@@ -60,4 +60,29 @@ test("one real debit among the rows makes it a debit-based payment", () => {
   const found = detectCommitments(dataset([...rows, paid]));
   assert.equal(found.length, 1);
   assert.equal(found[0].basis, "debits");
+});
+
+test("two same-day payments each month form a combined monthly cycle, not a weekly average", () => {
+  const rows = noticeRows([], [
+    notice("a", "2026-08-30", { merchant: "EXAMPLE INVEST", amountPaise: 100000 }),
+    notice("b", "2026-08-30", { merchant: "EXAMPLE INVEST", amountPaise: 25000 }),
+    notice("c", "2026-09-29", { merchant: "EXAMPLE INVEST", amountPaise: 25000 }),
+    notice("d", "2026-09-29", { merchant: "EXAMPLE INVEST", amountPaise: 100000 })
+  ], "p1", ASOF);
+  const [item] = detectCommitments(dataset(rows));
+  assert.equal(item.cadence, "monthly");
+  assert.equal(item.amount, 1250);
+  assert.equal(item.annualCost, 15000);
+  assert.equal(item.combinedCycle, true);
+  assert.equal(item.evidenceRows.length, 4);
+  assert.deepEqual(item.priceSeries.map(p => p.amount), [1250, 1250]);
+  assert.ok(!item.signals.includes("silent_hike"));
+  assert.equal(item.basis, "notices");
+  assert.equal(detectCommitments(dataset(rows.slice(0, 2))).length, 0);
+});
+
+test("an actual debit does not hide a different amount scheduled with that merchant", () => {
+  const paid = { txnId: "t1", persona: "p1", date: "2026-09-10", accountId: "x", accountType: "unknown", narration: "DEMOCLOUD", debit: 1000, reference: "", channel: "sms", txnKind: "debit_purchase" } as StatementRow;
+  const rows = noticeRows([paid], [notice("a", "2026-09-10", { amountPaise: 100000 }), notice("b", "2026-09-10", { amountPaise: 25000 })], "p1", ASOF);
+  assert.deepEqual(rows.map(r => r.debit), [250]);
 });

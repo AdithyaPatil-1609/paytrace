@@ -13,9 +13,9 @@ What was found, what we fixed, what is left and why. Findings and fixes only; ne
 
 | ID | Severity | Finding | Fix | Owner | Status |
 | --- | --- | --- | --- | --- | --- |
-| A1 | Low (seo) | Missing Open Graph description, image, title | Site-wide Open Graph and Twitter tags; a 1200×630 preview image | Hanish | Fixed: `app/layout.tsx`, `app/opengraph-image.tsx` |
-| A2 | Low (seo) | Missing canonical link | A canonical link on every public page; account page set to noindex | Hanish | Fixed: page `metadata` in `app/page.tsx`, `app/demo`, `app/signin`, `app/privacy` |
-| A3 | Low (seo) | No /sitemap.xml | `/sitemap.xml` with the four public pages; `/robots.txt` keeps `/api/` and `/account` out of search | Hanish | Fixed: `app/sitemap.ts`, `app/robots.ts` |
+| A1 | Low (seo) | Missing Open Graph description, image, title | Site-wide Open Graph and Twitter tags; a 1200×630 preview image | Hanish | Fixed: `web/app/layout.tsx`, `web/app/opengraph-image.tsx` |
+| A2 | Low (seo) | Missing canonical link | A canonical link on every public page; account page set to noindex | Hanish | Fixed: page `metadata` in `web/app/page.tsx`, `web/app/demo`, `web/app/signin`, `web/app/privacy` |
+| A3 | Low (seo) | No /sitemap.xml | `/sitemap.xml` with the four public pages; `/robots.txt` keeps `/api/` and `/account` out of search | Hanish | Fixed: `web/app/sitemap.ts`, `web/app/robots.ts` |
 | A4 | Low (ux) | "paytrace" looks like two words run together | None: it is our brand wordmark | — | Accepted (intentional) |
 
 Nothing was found in the checks for exposed secrets, security headers, cookies, CORS, TLS, database or API exposure, or broken links. The free scan covers the public surface only; signed-in flows are covered by our own tests (`tests/security/`, `tests/cypher/`) and the manual checks below.
@@ -24,27 +24,27 @@ Nothing was found in the checks for exposed secrets, security headers, cookies, 
 
 | ID | Threat | Fix | Where | Test |
 | --- | --- | --- | --- | --- |
-| F1 | Fake phone or stolen shared code sends SMS | Each phone pairs with a one-time code and signs every request with its Android Keystore P-256 key | `lib/ingestion/signature.ts`, `lib/ingestion/device-auth.ts`, `app/api/devices/*` | `tests/security/device-signature.test.ts` |
-| F2 | Replay of a captured request | Time within 5 minutes plus a one-use number remembered for 10 minutes; a nonce is used only after the signature passes | `lib/ingestion/nonce-store.ts` | same |
-| F3 | One person's SMS seen by another | Signed SMS go to the phone owner's own profile, not a shared store | `app/api/ingest/sms/route.ts` | same |
-| F4 | Body tampering (e.g. Rs 199 → Rs 1,99,999) | The signature covers the exact body bytes | `lib/ingestion/signature.ts` | same |
-| F5 | AI makes up or is tricked into a value | Every field must appear word for word in the message, or it is removed | `lib/assistant/verify-fields.ts` | `tests/security/ai-reader-checks.test.ts` |
-| F6 | Prompt injection in a message | Messages giving orders to an AI are dropped before any model sees them | `lib/assistant/verify-fields.ts` | same |
-| F7 | Cross-site request forgery on Ask AI, Simulate, Challenge | Sec-Fetch-Site and Origin must be our own site | `lib/security/origin.ts` | `tests/security/web-checks.test.ts` |
-| F8 | Huge request bodies | Size checked from the header and again after reading, before parsing | `lib/security/body.ts` | same |
+| F1 | Fake phone or stolen shared code sends SMS | Each phone pairs with a one-time code and signs every request with its Android Keystore P-256 key | `server/ingestion/signature.ts`, `server/ingestion/device-auth.ts`, `web/app/api/devices/*` | `tests/security/device-signature.test.ts` |
+| F2 | Replay of a captured request | Time within 5 minutes plus a one-use number remembered for 10 minutes; a nonce is used only after the signature passes | `server/ingestion/nonce-store.ts` | same |
+| F3 | One person's SMS seen by another | Signed SMS go to the phone owner's own profile, not a shared store | `web/app/api/ingest/sms/route.ts` | same |
+| F4 | Body tampering (e.g. Rs 199 → Rs 1,99,999) | The signature covers the exact body bytes | `server/ingestion/signature.ts` | same |
+| F5 | AI makes up or is tricked into a value | Every field must appear word for word in the message, or it is removed | `ai/assistant/verify-fields.ts` | `tests/security/ai-reader-checks.test.ts` |
+| F6 | Prompt injection in a message | Messages giving orders to an AI are dropped before any model sees them | `ai/assistant/verify-fields.ts` | same |
+| F7 | Cross-site request forgery on Ask AI, Simulate, Challenge | Sec-Fetch-Site and Origin must be our own site | `server/security/origin.ts` | `tests/security/web-checks.test.ts` |
+| F8 | Huge request bodies | Size checked from the header and again after reading, before parsing | `server/security/body.ts` | same |
 | F9 | Script injection, framing, data in caches | Full Content Security Policy, frame-ancestors none, form-action limited to us and Google, no-store on every API answer | `next.config.ts` | same |
-| F10 | Stolen session cookie used elsewhere | "Sign out on every device" ends every session of the person | `app/api/auth/logout/route.ts`, `db/neo4j/accounts.ts` | manual (S10) |
-| F11 | Lost or sold phone | "Remove all paired phones" deletes their keys and clears this server's cache at once | `app/api/devices/remove/route.ts` | manual |
-| F12 | Encryption key leak or rotation | Sealed Gmail tokens carry a key version; a previous key is still read during rotation | `lib/accounts/security.ts` | `tests/security/token-keys.test.ts` |
+| F10 | Stolen session cookie used elsewhere | "Sign out on every device" ends every session of the person | `web/app/api/auth/logout/route.ts`, `neo4j/accounts.ts` | manual (S10) |
+| F11 | Lost or sold phone | "Remove all paired phones" deletes their keys and clears this server's cache at once | `web/app/api/devices/remove/route.ts` | manual |
+| F12 | Encryption key leak or rotation | Sealed Gmail tokens carry a key version; a previous key is still read during rotation | `server/accounts/security.ts` | `tests/security/token-keys.test.ts` |
 | F13 | Poisoned GitHub Action or package | Actions pinned to commit SHAs, read-only token, no persisted credentials, Gitleaks, OSV-Scanner and npm audit in CI | `.github/workflows/ci.yml` | CI |
 | F14 | Bad deploy | Pull-based deploy only of commits that passed CI; health check with automatic rollback; DEPLOY_FREEZE | `scripts/deploy/deploy.sh` | rehearsed rollback |
-| F16 | Data kept after the person leaves | "Delete my data" removes their payments, events, merchants, phones, sessions and account in one transaction, and revokes Gmail at Google | `db/neo4j/delete-user.ts`, `app/api/account/delete/route.ts` | `tests/cypher/devices-and-delete.test.ts` |
-| F15 | Brute-forcing pairing codes | 5 tries a minute, 20 an hour per address; 8 characters from 31; single use; 10 minutes | `lib/security/rate-limit.ts` | `eval/hostile.csv` H42 |
-| F17 | Gmail read without informed consent | A consent screen (purpose, what is read and kept, where, how long, how to stop) must be accepted before Google is even asked; the consent version and time are stored | `app/consent/gmail/page.tsx`, `lib/accounts/consent.ts` | `tests/security/consent.test.ts` |
-| F18 | Long-lived or stolen sessions | Sessions end 12 hours after sign-in and after 30 minutes idle (background refreshes do not count); the token is replaced every 2 hours with a one-minute grace | `lib/accounts/security.ts`, `db/neo4j/accounts.ts` | `tests/cypher/sessions.test.ts` |
-| F19 | Spoofed payment emails | Emails Gmail marks as not sent by the From domain (DKIM/DMARC fail) are never read; only Google's own Authentication-Results line is trusted | `lib/ingestion/dkim.ts`, `lib/accounts/sync.ts` | `tests/security/dkim.test.ts` |
-| F20 | Personal data left behind | Delete my data also removes subscriptions, profile-keyed payment chains and the Aura Agent mirror (mirror first, so a failure leaves a clean retry) | `db/neo4j/delete-user.ts` | `tests/cypher/devices-and-delete.test.ts` |
-| F21 | Slow iPhone token lookups under load | Index on the iPhone token hash | `db/neo4j/accounts.ts` | — |
+| F16 | Data kept after the person leaves | "Delete my data" removes their payments, events, merchants, phones, sessions and account in one transaction, and revokes Gmail at Google | `neo4j/delete-user.ts`, `web/app/api/account/delete/route.ts` | `tests/cypher/devices-and-delete.test.ts` |
+| F15 | Brute-forcing pairing codes | 5 tries a minute, 20 an hour per address; 8 characters from 31; single use; 10 minutes | `server/security/rate-limit.ts` | `ai/eval/hostile.csv` H42 |
+| F17 | Gmail read without informed consent | A consent screen (purpose, what is read and kept, where, how long, how to stop) must be accepted before Google is even asked; the consent version and time are stored | `web/app/consent/gmail/page.tsx`, `server/accounts/consent.ts` | `tests/security/consent.test.ts` |
+| F18 | Long-lived or stolen sessions | Sessions end 12 hours after sign-in and after 30 minutes idle (background refreshes do not count); the token is replaced every 2 hours with a one-minute grace | `server/accounts/security.ts`, `neo4j/accounts.ts` | `tests/cypher/sessions.test.ts` |
+| F19 | Spoofed payment emails | Emails Gmail marks as not sent by the From domain (DKIM/DMARC fail) are never read; only Google's own Authentication-Results line is trusted | `server/ingestion/dkim.ts`, `server/accounts/sync.ts` | `tests/security/dkim.test.ts` |
+| F20 | Personal data left behind | Delete my data also removes subscriptions, profile-keyed payment chains and the Aura Agent mirror (mirror first, so a failure leaves a clean retry) | `neo4j/delete-user.ts` | `tests/cypher/devices-and-delete.test.ts` |
+| F21 | Slow iPhone token lookups under load | Index on the iPhone token hash | `neo4j/accounts.ts` | — |
 
 Earlier fixes already in main: Next.js 16.4.6, request limits on every public route, size checks on SMS, same-origin checks on sign-in and Gmail routes, OAuth state + nonce + PKCE, Gmail tokens sealed with AES-256-GCM, HttpOnly Secure SameSite=Lax cookies, bank sender header (DLT) check, OTP filter, real data in `.gitignore`, full-history Gitleaks scan with no leaks.
 

@@ -4,8 +4,8 @@
  * Prints only the fields and the event, never stores anything. Use made-up
  * text here; real messages are tested on the phone, not pasted into logs.
  */
-import { readMessage } from "../lib/assistant/message-reader";
-import { eventFromFields } from "../lib/ingestion/from-reader";
+import { readMessage } from "../ai/assistant/message-reader";
+import { eventFromFields } from "../server/ingestion/from-reader";
 
 const [text, sender = "VM-HDFCBK-S"] = process.argv.slice(2);
 if (!text) {

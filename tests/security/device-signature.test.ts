@@ -6,11 +6,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync, randomBytes, sign } from "node:crypto";
-import { identifySmsSender, resetDeviceCache } from "../../lib/ingestion/device-auth";
-import { resetNonces, claimNonce } from "../../lib/ingestion/nonce-store";
-import { checkSignedHeaders, parseDevicePublicKey, signedBytes } from "../../lib/ingestion/signature";
-import { resetRateLimits } from "../../lib/security/rate-limit";
-import { DEVICE_LIMITS } from "../../lib/payments/rules";
+import { identifySmsSender, resetDeviceCache } from "../../server/ingestion/device-auth";
+import { resetNonces, claimNonce } from "../../server/ingestion/nonce-store";
+import { checkSignedHeaders, parseDevicePublicKey, signedBytes } from "../../server/ingestion/signature";
+import { resetRateLimits } from "../../server/security/rate-limit";
+import { DEVICE_LIMITS } from "../../server/payments/rules";
 
 const phone = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
 const publicKey = phone.publicKey.export({ format: "der", type: "spki" }).toString("base64");

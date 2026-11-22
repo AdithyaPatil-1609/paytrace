@@ -6,9 +6,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readDictionary } from "../data/fixtures";
-import { detectCommitments } from "../lib/payments/engine";
-import type { StatementRow } from "../lib/payments/types";
-import { ABOUT_PAYMENTS, factsFor, record, recordsFor } from "../lib/assistant/facts";
+import { detectCommitments } from "../server/payments/engine";
+import type { StatementRow } from "../server/payments/types";
+import { ABOUT_PAYMENTS, factsFor, record, recordsFor } from "../ai/assistant/facts";
 
 const ASOF = "2026-11-21";
 const row = (date: string, debit: number): StatementRow =>
@@ -40,7 +40,7 @@ test("'how much have I paid for it in total' covers everything so far, not 30 da
 });
 
 test("'since January' runs from 1 January to today, and a price rise carries its yearly cost", async () => {
-  const { parsePeriod } = await import("../lib/assistant/facts");
+  const { parsePeriod } = await import("../ai/assistant/facts");
   assert.deepEqual(parsePeriod("since January", ASOF, "past"), { label: "since 1 Jan 2026", start: "2026-01-01", end: ASOF });
   assert.equal((record(items[0]) as Record<string, unknown>).price_rise_per_year, "₹120");
 });
@@ -56,7 +56,7 @@ test("a skipped stretch is found in code, and a saving question asks what the pa
 
 test("a general question names a payment only by its own name, never by a word in its description", async () => {
   const { loadFixtures } = await import("../data/fixtures");
-  const { namedIn } = await import("../lib/assistant/facts");
+  const { namedIn } = await import("../ai/assistant/facts");
   const demo = detectCommitments(loadFixtures());
   assert.deepEqual(namedIn("which subscription costs me the most per year?", demo), []);
   assert.deepEqual(namedIn("when did the first spotify payment happen?", demo).map((item) => item.merchant), ["Spotify"]);

@@ -8,13 +8,13 @@ import "../../scripts/load-env-local";
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync, randomUUID } from "node:crypto";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { accountForSession, createSession, endAllSessions } from "../../db/neo4j/accounts";
-import { createPairingCode, deviceById, pairDevice, removeDevices } from "../../db/neo4j/devices";
-import { deleteAllUserData } from "../../db/neo4j/delete-user";
-import { ingestLiveEvent, readLiveSummary } from "../../db/neo4j/live";
-import { profileFor } from "../../lib/accounts/security";
-import type { PaymentEvent } from "../../lib/ingestion/event";
+import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/client";
+import { accountForSession, createSession, endAllSessions } from "../../neo4j/accounts";
+import { createPairingCode, deviceById, pairDevice, removeDevices } from "../../neo4j/devices";
+import { deleteAllUserData } from "../../neo4j/delete-user";
+import { ingestLiveEvent, readLiveSummary } from "../../neo4j/live";
+import { profileFor } from "../../server/accounts/security";
+import type { PaymentEvent } from "../../server/ingestion/event";
 
 const env = () => Object.assign(process.env, { GOOGLE_WEB_CLIENT_ID: "test-client", GOOGLE_WEB_CLIENT_SECRET: "test-secret", PAYTRACE_APP_URL: "http://localhost:3000", PAYTRACE_AUTH_KEY: "ab".repeat(32) });
 // A throwaway P-256 public key, made fresh for each run (never a fixed string in the code).

@@ -2,9 +2,9 @@ import "../../scripts/load-env-local";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { ingestLiveEvent, ignoreSubscriptionCandidates, readLiveSummary, LIVE_QUERIES } from "../../db/neo4j/live";
-import type { PaymentEvent } from "../../lib/ingestion/event";
+import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/client";
+import { ingestLiveEvent, ignoreSubscriptionCandidates, readLiveSummary, LIVE_QUERIES } from "../../neo4j/live";
+import type { PaymentEvent } from "../../server/ingestion/event";
 
 test("live graph writes, deduplicates and exposes recurring commitments in a scoped summary", { skip: !hasNeo4jConfig() }, async () => {
   const profile = `test-${randomUUID()}`;

@@ -7,9 +7,9 @@
  */
 import "./load-env-local";
 import neo4j from "neo4j-driver";
-import { getNeo4jDriver, neo4jDatabase } from "../db/neo4j/client";
-import { planSimilarLinks, refreshSimilarLinksFor, SIMILAR_MERCHANTS_QUERY } from "../db/neo4j/merchant-links";
-import { MERCHANT_MATCH } from "../lib/payments/rules";
+import { getNeo4jDriver, neo4jDatabase } from "../neo4j/client";
+import { planSimilarLinks, refreshSimilarLinksFor, SIMILAR_MERCHANTS_QUERY } from "../neo4j/merchant-links";
+import { MERCHANT_MATCH } from "../server/payments/rules";
 
 const args = new Set(process.argv.slice(2));
 const write = args.has("--write");

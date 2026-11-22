@@ -6,7 +6,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createCipheriv, randomBytes } from "node:crypto";
-import { open, seal } from "../../lib/accounts/security";
+import { open, seal } from "../../server/accounts/security";
 
 const OLD = "1".repeat(64), NEW = "2".repeat(64);
 function env(vars: Record<string, string | undefined>) {

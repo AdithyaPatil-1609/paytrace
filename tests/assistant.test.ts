@@ -1,19 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { hasSecret } from "../lib/assistant/secrets";
-import { ALERT_PROMPT, INTENT_PROMPT } from "../lib/assistant/prompts";
-import { factsFor, findPayments, parsePeriod, PRICE_QUESTION, priceChanges } from "../lib/assistant/facts";
-import { ask, BLOCKED_REPLY, grounded, looksLikeAlert, parseRouted } from "../lib/assistant/assistant";
-import { cleanEvent, parseEvent, readAlertWith } from "../lib/assistant/alert-reader";
+import { hasSecret } from "../ai/assistant/secrets";
+import { ALERT_PROMPT, INTENT_PROMPT } from "../ai/assistant/prompts";
+import { factsFor, findPayments, parsePeriod, PRICE_QUESTION, priceChanges } from "../ai/assistant/facts";
+import { ask, BLOCKED_REPLY, grounded, looksLikeAlert, parseRouted } from "../ai/assistant/assistant";
+import { cleanEvent, parseEvent, readAlertWith } from "../ai/assistant/alert-reader";
 import { loadFixtures } from "../data/fixtures";
-import { detectCommitments } from "../lib/payments/engine";
+import { detectCommitments } from "../server/payments/engine";
 
 const dataset = loadFixtures();
 const items = detectCommitments(dataset);
 const asOf = dataset.asOf;
 
-/* ---------------- secrets: the same cases as ml/test_secret_filter.py ---------------- */
+/* ---------------- secrets: the same cases as ai/training/test_secret_filter.py ---------------- */
 
 const SECRETS = [
   "123456 is your OTP for Autopay setup of Rs 299 with HEADSPACE.",
@@ -44,7 +44,7 @@ test("the secret filter keeps payment alerts that only mention OTPs or PINs", ()
 });
 
 test("the secret filter matches the Python cases word for word", () => {
-  const python = readFileSync("ml/test_secret_filter.py", "utf8");
+  const python = readFileSync("ai/training/test_secret_filter.py", "utf8");
   for (const message of [...SECRETS, ...NOT_SECRETS]) assert.ok(python.includes(JSON.stringify(message).slice(1, -1)), message);
 });
 
@@ -64,9 +64,9 @@ function pythonPrompt(file: string) {
   return match[1].trim();
 }
 
-test("the intent and alert prompts are the same as in ml/", () => {
-  assert.equal(INTENT_PROMPT, pythonPrompt("ml/intent.py"));
-  assert.equal(ALERT_PROMPT, pythonPrompt("ml/alerts.py"));
+test("the intent and alert prompts are the same as in ai/training/", () => {
+  assert.equal(INTENT_PROMPT, pythonPrompt("ai/training/intent.py"));
+  assert.equal(ALERT_PROMPT, pythonPrompt("ai/training/alerts.py"));
 });
 
 /* ---------------- dates ---------------- */

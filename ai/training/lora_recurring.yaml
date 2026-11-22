@@ -1,0 +1,27 @@
+# LoRA fine-tune of Qwen3 8B (4-bit, so QLoRA) for Job 4: a group of repeating debits ->
+# commitment or everyday spending. Same recipe as lora_alerts.yaml.
+#
+#   PYTHONUNBUFFERED=1 ai/training/.venv/bin/python -m mlx_lm lora -c ai/training/lora_recurring.yaml
+#
+# 503 training rows at batch size 2 is about 252 steps per pass; 400 steps is about 1.6 passes.
+# The loss is on the short JSON answer only (mask_prompt). A checkpoint is saved at every validation.
+model: mlx-community/Qwen3-8B-4bit
+train: true
+data: ai/training/data/mlx_recurring
+fine_tune_type: lora
+mask_prompt: true
+num_layers: 16
+batch_size: 2
+iters: 400
+learning_rate: 1.0e-4
+steps_per_report: 20
+steps_per_eval: 80
+val_batches: -1
+save_every: 80
+adapter_path: ai/training/adapters/qwen3-8b-recurring
+max_seq_length: 1024
+seed: 20261122
+lora_parameters:
+  rank: 8
+  scale: 20.0
+  dropout: 0.0

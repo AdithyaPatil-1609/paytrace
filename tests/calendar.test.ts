@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { nextMonthSchedule } from "@/lib/payments/calendar";
-import { detectCommitments } from "@/lib/payments/engine";
+import { nextMonthSchedule } from "@/server/payments/calendar";
+import { detectCommitments } from "@/server/payments/engine";
 import { loadFixtures } from "@/data/fixtures";
 
 const item = detectCommitments(loadFixtures())[0];

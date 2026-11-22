@@ -7,13 +7,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SubscriptionWatchlist } from "../components/subscription-watchlist";
-import { headsUp, priceAheadWarnings, upcomingWarnings } from "../db/neo4j/warnings";
-import { isLateDebitNotice, isLateNotice, LATE_NOTICE_MESSAGE, maxNoticeHours } from "../lib/payments/notice-timing";
-import { NOTICE_TIMING_LIMITS } from "../lib/payments/rules";
-import { sandboxView } from "../lib/sandbox/dataset";
-import type { Sandbox } from "../lib/sandbox/store";
-import type { NotificationRow } from "../lib/payments/types";
+import { SubscriptionWatchlist } from "../web/components/insights/subscription-watchlist";
+import { headsUp, priceAheadWarnings, upcomingWarnings } from "../neo4j/warnings";
+import { isLateDebitNotice, isLateNotice, LATE_NOTICE_MESSAGE, maxNoticeHours } from "../server/payments/notice-timing";
+import { NOTICE_TIMING_LIMITS } from "../server/payments/rules";
+import { sandboxView } from "../server/sandbox/dataset";
+import type { Sandbox } from "../server/sandbox/store";
+import type { NotificationRow } from "../server/payments/types";
 
 const TODAY = "2026-11-22";
 

@@ -7,10 +7,10 @@ import "../../scripts/load-env-local";
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { accountForSession, createSession, rotateSession } from "../../db/neo4j/accounts";
-import { deleteAllUserData } from "../../db/neo4j/delete-user";
-import { hash, profileFor } from "../../lib/accounts/security";
+import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/client";
+import { accountForSession, createSession, rotateSession } from "../../neo4j/accounts";
+import { deleteAllUserData } from "../../neo4j/delete-user";
+import { hash, profileFor } from "../../server/accounts/security";
 
 after(async () => { if (hasNeo4jConfig()) await getNeo4jDriver().close(); });
 const age = async (raw: string, set: string) => {

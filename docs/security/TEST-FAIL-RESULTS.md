@@ -2,7 +2,7 @@
 
 Run on 22 November 2026, after midnight, on `main` with the security and sandbox work merged.
 Automated suite: **203 tests pass, 0 fail** (`npm test`). The Neo4j tests in `tests/cypher/` run in CI's Cypher job, on a real Neo4j.
-Every case is also listed in `eval/hostile.csv`; most can be tried by hand in `/sandbox` → "Try to break it".
+Every case is also listed in `ai/eval/hostile.csv`; most can be tried by hand in `/sandbox` → "Try to break it".
 
 | # | Case | Expected | Result | Evidence |
 | --- | --- | --- | --- | --- |

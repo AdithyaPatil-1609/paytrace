@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { challengeChoices, challengeTakeaway } from "@/lib/scenarios/challenge-ui";
-import { runOfflineChallenge } from "@/lib/scenarios/challenge";
-import { detectCommitments } from "@/lib/payments/engine";
+import { challengeChoices, challengeTakeaway } from "@/server/scenarios/challenge-ui";
+import { runOfflineChallenge } from "@/server/scenarios/challenge";
+import { detectCommitments } from "@/server/payments/engine";
 import { loadFixtures } from "@/data/fixtures";
 
 const dataset = loadFixtures();

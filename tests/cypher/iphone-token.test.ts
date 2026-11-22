@@ -6,10 +6,10 @@ import "../../scripts/load-env-local";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { accountForSession, createSession, profileForIosToken, removeIosToken, setIosToken } from "../../db/neo4j/accounts";
-import { newIosToken } from "../../lib/ingestion/ios-token";
-import { profileFor } from "../../lib/accounts/security";
+import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/client";
+import { accountForSession, createSession, profileForIosToken, removeIosToken, setIosToken } from "../../neo4j/accounts";
+import { newIosToken } from "../../server/ingestion/ios-token";
+import { profileFor } from "../../server/accounts/security";
 
 test("an iPhone token reaches only its own account, and stops after disconnect or a new token",{skip:!hasNeo4jConfig()},async()=>{
   Object.assign(process.env,{GOOGLE_WEB_CLIENT_ID:"test-client",GOOGLE_WEB_CLIENT_SECRET:"test-secret",PAYTRACE_APP_URL:"http://localhost:3000",PAYTRACE_AUTH_KEY:"ab".repeat(32)});

@@ -6,13 +6,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { parseGmailReceipt } from "../lib/accounts/sync";
-import { parseStorePriceChange, parseStoreReceipt } from "../lib/ingestion/store-email";
-import { detectCommitments } from "../lib/payments/engine";
-import { issueGroups } from "../lib/presentation/issue-cards";
-import { SubscriptionWatchlist } from "../components/subscription-watchlist";
+import { parseGmailReceipt } from "../server/accounts/sync";
+import { parseStorePriceChange, parseStoreReceipt } from "../server/ingestion/store-email";
+import { detectCommitments } from "../server/payments/engine";
+import { issueGroups } from "../server/presentation/issue-cards";
+import { SubscriptionWatchlist } from "../web/components/insights/subscription-watchlist";
 import { readDictionary } from "../data/fixtures";
-import type { NotificationRow, StatementRow } from "../lib/payments/types";
+import type { NotificationRow, StatementRow } from "../server/payments/types";
 
 const mail = (subject: string, text: string) => ({ id: "store123", from: "Store <no_reply@example.com>", subject, date: "2026-11-09", payload: { mimeType: "text/plain", body: { data: Buffer.from(text).toString("base64url") } } });
 

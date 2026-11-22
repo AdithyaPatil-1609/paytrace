@@ -5,9 +5,9 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { bandOf, matchMerchant, normalizeDescriptor, similarity, similarPairs, wordCounts } from "../lib/payments/merchant-match";
+import { bandOf, matchMerchant, normalizeDescriptor, similarity, similarPairs, wordCounts } from "../server/payments/merchant-match";
 import { readDictionary } from "../data/fixtures";
-import { MERCHANT_MATCH } from "../lib/payments/rules";
+import { MERCHANT_MATCH } from "../server/payments/rules";
 
 const dictionary = readDictionary();
 const KNOWN = ["Spotify", "Google One", "Google Play", "YouTube", "Apple Music", "iCloud+", "Netflix", "Amazon Prime", "Amazon Pay", "GOOGLE CLOUD"];

@@ -2,9 +2,9 @@
 import "../../scripts/load-env-local";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { HIDDEN_MANDATES } from "../../db/neo4j/queries/hidden-mandates";
-import { MERCHANT_EVIDENCE } from "../../db/neo4j/queries/evidence";
+import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/client";
+import { HIDDEN_MANDATES } from "../../neo4j/queries/hidden-mandates";
+import { MERCHANT_EVIDENCE } from "../../neo4j/queries/evidence";
 
 const skip = !hasNeo4jConfig() ? "Neo4j is not configured" : false;
 

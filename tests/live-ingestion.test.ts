@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { eventKey, matchPayment, validateEvent } from "../lib/ingestion/event";
-import { parseFinancialEmail } from "../lib/ingestion/email";
-import { gmailPaymentQuery, isAllowedSender, parseAllowedDomains } from "../lib/ingestion/gmail-filter";
-import { GET } from "../app/api/live/summary/route";
+import { eventKey, matchPayment, validateEvent } from "../server/ingestion/event";
+import { parseFinancialEmail } from "../server/ingestion/email";
+import { gmailPaymentQuery, isAllowedSender, parseAllowedDomains } from "../server/ingestion/gmail-filter";
+import { GET } from "../web/app/api/live/summary/route";
 
 const sms = validateEvent({source:"sms",kind:"debit_posted",merchant:"Netflix",amountPaise:19900,date:"2026-11-15",reference:"ABC123"});
 const candidate = {id:"p1",reference:"ABC123",merchantKey:"NETFLIX",amountPaise:19900,date:"2026-11-15",sources:["sms"]};

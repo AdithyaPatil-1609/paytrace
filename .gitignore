@@ -14,14 +14,14 @@ work/
 .paytrace-gmail-token.json
 
 # model work: local environment, caches and training checkpoints
-ml/.venv/
+ai/training/.venv/
 __pycache__/
-ml/adapters/*/0*_adapters.safetensors
+ai/training/adapters/*/0*_adapters.safetensors
 
 # REAL messages and anything trained on them: never committed, the repo is public (plan S1, U6)
-ml/data/real/
-ml/adapters/real/
-ml/results/real/
+ai/training/data/real/
+ai/training/adapters/real/
+ai/training/results/real/
 # Exports, screenshots and logs of real data
 real-data/
 *.real.jsonl

@@ -4,11 +4,11 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { familyAlerts, familyPayments, familyTotals, firstName } from "../lib/accounts/family";
-import type { CancelWarning, Evidence, MandateWarning, PaymentRef, PriceAheadWarning, PriceWarning, UnusedWarning, UpcomingWarning } from "../db/neo4j/warnings";
-import { Token } from "../lib/accounts/family-route";
-import { randomToken } from "../lib/accounts/security";
-import { detectCommitments } from "../lib/payments/engine";
+import { familyAlerts, familyPayments, familyTotals, firstName } from "../server/accounts/family";
+import type { CancelWarning, Evidence, MandateWarning, PaymentRef, PriceAheadWarning, PriceWarning, UnusedWarning, UpcomingWarning } from "../neo4j/warnings";
+import { Token } from "../server/accounts/family-route";
+import { randomToken } from "../server/accounts/security";
+import { detectCommitments } from "../server/payments/engine";
 import { loadFixtures } from "../data/fixtures";
 
 test("a viewer gets only the allowlisted fields, never descriptors, accounts or evidence", () => {
