@@ -76,16 +76,19 @@ function Fact({ subscriptionId, onSaved }: { subscriptionId: string; onSaved: ()
 }
 
 export function GraphWarningsPanel() {
+  const [attempt, setAttempt] = useState(0);
   const [data, setData] = useState<GraphWarnings | null>(null);
   const [error, setError] = useState("");
   const load = useCallback(async () => {
     try {
       const response = await fetch("/api/account/warnings", { cache: "no-store" });
+      // A demo visitor's sample is still being written to Neo4j: try again shortly.
+      if (response.status === 409) { setTimeout(() => setAttempt((n) => n + 1), 3000); return; }
       if (!response.ok) throw Error();
       setData(await response.json()); setError("");
     } catch { setError("Warnings could not be loaded. Retry in a moment."); }
   }, []);
-  useEffect(() => { const first = setTimeout(() => void load(), 0); return () => clearTimeout(first); }, [load]);
+  useEffect(() => { const first = setTimeout(() => void load(), 0); return () => clearTimeout(first); }, [load, attempt]);
 
   if (error) return <section className="personal-activity"><p role="alert">{error}</p></section>;
   if (!data) return <section className="personal-activity"><p>Checking your payment graph…</p></section>;

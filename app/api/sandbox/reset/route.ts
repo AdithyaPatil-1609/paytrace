@@ -2,6 +2,7 @@
 import { cookies } from "next/headers";
 import { SANDBOX_COOKIE, validSandboxId } from "@/lib/sandbox/session";
 import { resetSandbox } from "@/lib/sandbox/store";
+import { dropSandboxGraph } from "@/db/neo4j/sandbox-graph";
 import { forbidden, fromOurSite } from "@/lib/security/origin";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
 
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
   if (!fromOurSite(request)) return forbidden();
   const jar = await cookies();
   const id = jar.get(SANDBOX_COOKIE)?.value;
-  if (validSandboxId(id)) resetSandbox(id);
+  if (validSandboxId(id)) { resetSandbox(id); await dropSandboxGraph(id).catch(() => undefined); }
   jar.delete(SANDBOX_COOKIE);
   return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -5,11 +5,10 @@
  * session cookie only; the browser cannot send Cypher or a profile id.
  */
 import { NextRequest } from "next/server";
-import { accountForSession } from "@/db/neo4j/accounts";
+import { graphProfileFor } from "@/lib/sandbox/graph-profile";
 import { readEvidenceTrust, TRUST_QUERIES } from "@/db/neo4j/evidence-trust";
 import { readSimilarLinks } from "@/db/neo4j/merchant-links";
 import { readGraphWarnings } from "@/db/neo4j/warnings";
-import { SESSION } from "@/lib/accounts/security";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
 
 const headers = { "Cache-Control": "no-store" };
@@ -18,8 +17,10 @@ export async function GET(request: NextRequest) {
   const hit = takeHit("graph-details", clientKey(request), LIMITS.graph);
   if (!hit.ok) return tooMany(hit.retryAfter);
   try {
-    const user = await accountForSession(request.cookies.get(SESSION)?.value);
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401, headers });
+    // The signed-in person's graph, or a demo visitor's own sandbox graph.
+    const reader = await graphProfileFor(request);
+    if (!reader.profile) return Response.json({ error: reader.kind === "syncing" ? "Your sample is still being written to Neo4j. Try again in a few seconds." : "Unauthorized" }, { status: reader.kind === "syncing" ? 409 : 401, headers });
+    const user = { profile: reader.profile };
     // Warnings first: it rebuilds chains and SIMILAR candidates when payments changed.
     const warnings = await readGraphWarnings(user.profile);
     const trust = await readEvidenceTrust(user.profile);

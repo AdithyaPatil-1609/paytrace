@@ -34,6 +34,8 @@ type DashboardProps = {
   account?: { name: string; controls: ReactNode; notice?: ReactNode; activity?: ReactNode; subscriptionAlerts?: ReactNode; graphWarnings?: ReactNode };
   /** Demo only: a button shown in the top bar, left of the profile menu. */
   demoAction?: ReactNode;
+  /** Demo only: the visitor's own Neo4j graph panels, once their sample is written there. */
+  demoGraph?: { warnings: ReactNode; graph: ReactNode };
 };
 type Screen = "graph" | "annual" | "list" | "issues" | "paths";
 
@@ -45,7 +47,7 @@ const screens: { id: Screen; number: string; label: string }[] = [
   { id: "graph", number: "05", label: "Evidence graph" }
 ];
 
-export function Dashboard({ dataset, source, commitments, graph, account, demoAction }: DashboardProps) {
+export function Dashboard({ dataset, source, commitments, graph, account, demoAction, demoGraph }: DashboardProps) {
   const [screen, setScreen] = useState<Screen>("list");
   const [openId, setOpenId] = useState<string | null>(null);
   const [challengeOpen, setChallengeOpen] = useState(false);
@@ -131,6 +133,7 @@ export function Dashboard({ dataset, source, commitments, graph, account, demoAc
         <section className={screen === "list" ? "main-stage is-ledger" : "main-stage"}>
           {screen === "graph" && (
             <EvidenceGraphScreen
+              visitorGraph={account ? undefined : demoGraph?.graph}
               graph={graph}
               source={source}
               items={active}
@@ -155,7 +158,7 @@ export function Dashboard({ dataset, source, commitments, graph, account, demoAc
             /></>
           )}
           {screen === "issues" && (
-            <>{account?.graphWarnings}<IssuesScreen
+            <>{account?.graphWarnings ?? demoGraph?.warnings}<IssuesScreen
               allItems={active}
               kept={kept}
               onOpen={openPayment}

@@ -14,12 +14,15 @@ export function EvidenceGraphScreen({
   dictionary,
   recordsLive,
   onOpen,
-  onContinue
+  onContinue,
+  visitorGraph
 }: {
   graph?: GraphFacts;
   source: SourceInfo;
   items: Commitment[];
   dictionary: DictionaryEntry[];
+  /** Demo: the visitor's own Neo4j graph panel, once their sample is written there. */
+  visitorGraph?: ReactNode;
   recordsLive?: boolean;
   onOpen: (id: string) => void;
   onContinue: () => void;
@@ -112,6 +115,8 @@ export function EvidenceGraphScreen({
         </details>
       ) : source.personal ? (
         <PersonalGraphPanel />
+      ) : visitorGraph ? (
+        visitorGraph
       ) : (
         <details className="evidence-live-details">
           <summary>Where this comes from</summary>

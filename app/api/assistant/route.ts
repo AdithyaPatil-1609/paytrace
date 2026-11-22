@@ -7,6 +7,7 @@
 import { NextRequest } from "next/server";
 import { accountForSession } from "@/db/neo4j/accounts";
 import { readLiveDashboard } from "@/db/neo4j/live";
+import { sandboxProfile } from "@/db/neo4j/sandbox-graph";
 import { SESSION } from "@/lib/accounts/security";
 import { ask, MAX_MESSAGE, parseRouted } from "@/lib/assistant/assistant";
 import { askAuraGuidance } from "@/lib/assistant/aura";
@@ -75,7 +76,11 @@ export async function POST(request: NextRequest) {
       // A demo visitor who loaded a sample statement or sent messages gets answers about that data.
       const id = request.cookies.get(SANDBOX_COOKIE)?.value;
       const box = validSandboxId(id) ? getSandbox(id) : null;
-      if (box && (box.statement || box.events.length)) {
+      if (box?.graph === "ready") {
+        // The visitor's own Neo4j graph: Ask AI answers from it the same way as for a signed-in person.
+        const { summary } = await readLiveDashboard(sandboxProfile(box.id));
+        data = { items: summary.commitments, asOf: summary.asOf };
+      } else if (box && (box.statement || box.events.length)) {
         const view = sandboxView(box);
         data = { items: detectCommitments(view.dataset), asOf: view.asOf };
       } else {

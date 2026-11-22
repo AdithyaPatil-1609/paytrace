@@ -62,17 +62,20 @@ function QueryDetails({ run, records }: { run: Pick<QueryRun, "name" | "purpose"
 }
 
 export function PersonalGraphPanel() {
+  const [attempt, setAttempt] = useState(0);
   const [data, setData] = useState<GraphDetails | null>(null);
   const [error, setError] = useState("");
   const load = useCallback(async () => {
     try {
       const response = await fetch("/api/account/graph", { cache: "no-store" });
-      if (response.status === 401) { setData(null); window.location.replace("/account?notice=session-expired"); return; }
+      // A demo visitor's sample is still being written to Neo4j: try again shortly.
+      if (response.status === 409) { setTimeout(() => setAttempt((n) => n + 1), 3000); return; }
+      if (response.status === 401) { setData(null); if (window.location.pathname.startsWith("/account")) window.location.replace("/account?notice=session-expired"); return; }
       if (!response.ok) throw Error();
       setData(await response.json()); setError("");
     } catch { setError("Graph details could not be loaded. Retry in a moment."); }
   }, []);
-  useEffect(() => { const first = setTimeout(() => void load(), 0); return () => clearTimeout(first); }, [load]);
+  useEffect(() => { const first = setTimeout(() => void load(), 0); return () => clearTimeout(first); }, [load, attempt]);
 
   if (error) return <section className="evidence-live-details"><p role="alert">{error}</p></section>;
   if (!data) return <section className="evidence-live-details"><p>Reading your payment graph…</p></section>;
