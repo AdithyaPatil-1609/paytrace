@@ -268,6 +268,40 @@ body {
   font-size: calc(15px * var(--text-scale));
 }
 
+.ledger-summary {
+  display: grid;
+  /* Two columns with room, one on a narrow screen or beside the detail panel. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, max(230px, 42%)), 1fr));
+  gap: 12px;
+  margin: 20px 0 0;
+}
+
+.ledger-summary-card {
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--rule-firm);
+  border-radius: 14px;
+  background: var(--paper-lift);
+}
+
+.ledger-summary-card dt {
+  color: var(--ink-soft);
+  font-size: calc(15px * var(--text-scale));
+  font-weight: 500;
+}
+
+.ledger-summary-card dd {
+  margin: 8px 0 0;
+  color: var(--ink);
+  font: 600 clamp(calc(24px * var(--text-scale)), 2vw, calc(32px * var(--text-scale))) / 1.2 var(--serif);
+  font-variant-numeric: lining-nums tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.ledger-summary-card dd.has-increases {
+  color: var(--ember);
+}
+
 /* The radar: one line, a dot on each due date. */
 
 .pay-radar {
