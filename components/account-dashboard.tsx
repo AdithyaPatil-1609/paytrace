@@ -15,7 +15,7 @@ import { accountErrorMessage } from "@/lib/accounts/errors";
 import { IphoneConnect } from "@/components/iphone-connect";
 import { GraphWarningsPanel } from "@/components/graph-warnings";
 import { PhonePairing } from "@/components/phone-pairing";
-import { StatementImport } from "@/components/statement-import";
+import { StatementImportButton } from "@/components/statement-import";
 
 type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
   linked: boolean; lastSync: string | null; syncStatus: string | null; syncError?:string|null; iphone?: boolean;
@@ -55,6 +55,8 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
     } catch {setError("Sync could not finish. Check Gmail connection and retry.");}
     finally {setSyncing(false);await refresh();}
   },[refresh]);
+  // Imported lines are stored in the background; refresh twice so they appear without a reload.
+  const afterImport=useCallback(()=>{ setTimeout(()=>void refresh(),5000); setTimeout(()=>void refresh(),20000); },[refresh]);
   useEffect(()=>{const initial=setTimeout(()=>void refresh(),0);const timer=setInterval(()=>void refresh(true),10000);return()=>{clearTimeout(initial);clearInterval(timer);};},[refresh]);
   useEffect(()=>{const initial=setTimeout(()=>{if(linked&&!lastSync&&!started.current){started.current=true;void sync();}},0);return()=>clearTimeout(initial);},[linked,lastSync,sync]);
 
@@ -86,8 +88,6 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       </>}
       {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
       <hr/>
-      <StatementImport onImported={()=>{ setTimeout(()=>void refresh(),5000); setTimeout(()=>void refresh(),20000); }}/>
-      <hr/>
       <IphoneConnect connected={snapshot?.iphone===true} onChange={()=>void refresh()}/>
       <PhonePairing/>
       <hr/>
@@ -112,5 +112,5 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
     {data?.recentEvents.length?<div className="account-table">{data.recentEvents.map(event=><div key={event.noticeId}><span><strong>{event.brand}</strong><small>{event.channel.toUpperCase()} · {event.eventType.replaceAll("_"," ")} · {event.sentOn}</small></span><strong>{event.amount===undefined?(event.planPrice===undefined?"Amount unknown":`${formatINR(event.planPrice)} reported`):formatINR(event.amount)}{["subscription_renewal","debit_scheduled"].includes(event.eventType)?" scheduled":""}</strong></div>)}</div>:<p>No imported financial messages yet.</p>}
   </details>;
 
-  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,notice:banner,activity,subscriptionAlerts:<>{watchlist}<EverydaySpending rows={data?.everydaySpending??[]} onChange={()=>void refresh()}/></>,graphWarnings:<GraphWarningsPanel/>}}/>;
+  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,importAction:<StatementImportButton onImported={afterImport}/>,notice:banner,activity,subscriptionAlerts:<>{watchlist}<EverydaySpending rows={data?.everydaySpending??[]} onChange={()=>void refresh()}/></>,graphWarnings:<GraphWarningsPanel/>}}/>;
 }

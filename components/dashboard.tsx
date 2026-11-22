@@ -22,7 +22,6 @@ import { withSimulatedAutopay } from "@/data/simulation";
 import type { SourceInfo } from "@/db/neo4j/dataset";
 import type { GraphFacts } from "@/db/neo4j/graph";
 import { usePaymentReview } from "./hooks/use-payment-review";
-import { downloadCommitmentsCsv } from "@/lib/presentation/commitment-ui";
 import type { Commitment, Dataset } from "@/lib/payments/types";
 import { AssistantWidget } from "@/components/assistant/assistant-widget";
 
@@ -31,7 +30,8 @@ type DashboardProps = {
   source: SourceInfo;
   commitments?: Commitment[];
   graph?: GraphFacts;
-  account?: { name: string; controls: ReactNode; notice?: ReactNode; activity?: ReactNode; subscriptionAlerts?: ReactNode; graphWarnings?: ReactNode };
+  /** importAction: the top bar's "Import CSV/PDF" button for the signed-in person. */
+  account?: { name: string; controls: ReactNode; importAction?: ReactNode; notice?: ReactNode; activity?: ReactNode; subscriptionAlerts?: ReactNode; graphWarnings?: ReactNode };
   /** Demo only: a button shown in the top bar, left of the profile menu. */
   demoAction?: ReactNode;
   /** Demo only: the visitor's own Neo4j graph panels, once their sample is written there. */
@@ -93,14 +93,7 @@ export function Dashboard({ dataset, source, commitments, graph, account, demoAc
             {account ? "Your data · private" : source.kind === "neo4j" ? "Live data" : "Sample data"}
           </span>
           <div className="bar-actions">
-            {account && (
-              <button className="export-csv" onClick={() => downloadCommitmentsCsv(active)}>
-                <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
-                  <path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M2.5 11.5v2h11v-2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Export CSV
-              </button>
-            )}
+            {account?.importAction}
             {!account && demoAction}
             {account ? account.controls : <ProfileMenu />}
           </div>
