@@ -1,6 +1,6 @@
 "use client";
 /**
- * "Connect iPhone" in the account menu (plan card U4). iOS lets no app read
+ * "Connect iPhone" under Add phone in the top bar (plan card U4). iOS lets no app read
  * SMS, so the person sets up a Shortcut automation that posts each bank SMS
  * with a personal token. The token is shown once here and never again.
  */

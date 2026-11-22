@@ -30,8 +30,8 @@ type DashboardProps = {
   source: SourceInfo;
   commitments?: Commitment[];
   graph?: GraphFacts;
-  /** importAction: the top bar's "Import CSV/PDF" button for the signed-in person. */
-  account?: { name: string; controls: ReactNode; importAction?: ReactNode; notice?: ReactNode; activity?: ReactNode; subscriptionAlerts?: ReactNode; graphWarnings?: ReactNode };
+  /** barActions: the top bar buttons for the signed-in person (Import CSV/PDF, Sync Gmail, Add phone). */
+  account?: { name: string; controls: ReactNode; barActions?: ReactNode; notice?: ReactNode; activity?: ReactNode; subscriptionAlerts?: ReactNode; graphWarnings?: ReactNode };
   /** Demo only: a button shown in the top bar, left of the profile menu. */
   demoAction?: ReactNode;
   /** Demo only: the visitor's own Neo4j graph panels, once their sample is written there. */
@@ -93,7 +93,7 @@ export function Dashboard({ dataset, source, commitments, graph, account, demoAc
             {account ? "Your data · private" : source.kind === "neo4j" ? "Live data" : "Sample data"}
           </span>
           <div className="bar-actions">
-            {account?.importAction}
+            {account?.barActions}
             {!account && demoAction}
             {account ? account.controls : <ProfileMenu />}
           </div>

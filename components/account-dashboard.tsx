@@ -13,9 +13,9 @@ import { SubscriptionWatchlist } from "@/components/subscription-watchlist";
 import { FamilyInviteWaiting } from "@/components/family-access";
 import { EverydaySpending } from "@/components/everyday-spending";
 import { accountErrorMessage } from "@/lib/accounts/errors";
-import { IphoneConnect } from "@/components/iphone-connect";
+import { AddPhoneMenu } from "@/components/add-phone";
+import { BarMenu, SyncIcon, useClickAway } from "@/components/chrome/bar-menu";
 import { GraphWarningsPanel } from "@/components/graph-warnings";
-import { PhonePairing } from "@/components/phone-pairing";
 import { StatementImportButton } from "@/components/statement-import";
 
 type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
@@ -31,6 +31,8 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
   const [syncing,setSyncing]=useState(false);
   const [syncResult,setSyncResult]=useState("");
   const started=useRef(false);
+  const [menuOpen,setMenuOpen]=useState(false);
+  const menuRef=useClickAway<HTMLDetailsElement>(menuOpen,()=>setMenuOpen(false));
   const refresh=useCallback(async(background=false)=>{
     try {
       // Background refreshes do not count as use, so an unattended page still signs out after 30 idle minutes.
@@ -68,7 +70,7 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
   const dataset: Dataset=snapshot?.dataset??{asOf,statement:[],notifications:[],mandates:[],usage:[],dictionary:[]};
   const source: SourceInfo={kind:"neo4j",personal:true,note:data?.note??"Loading your personal payment history from Neo4j.",counts:{payments:data?.counts.payments??0,messages:(data?.counts.email??0)+(data?.counts.sms??0),mandates:dataset.mandates.length,patterns:dataset.dictionary.length,commitments:data?.commitments.length??0}};
 
-  const controls=<details className="personal-menu">
+  const controls=<details ref={menuRef} className="personal-menu" open={menuOpen} onToggle={event=>setMenuOpen(event.currentTarget.open)}>
     <summary className="persona personal-menu-trigger">
       <b>{name[0]?.toUpperCase()??"U"}</b><span>{name.split(" ")[0]}</span>
       <Chevron/>
@@ -76,21 +78,6 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
     <div className="personal-menu-panel account-card">
       <p className="account-eyebrow">YOUR ACCOUNT</p>
       <strong>{name}</strong><p className="personal-email">{email}</p>
-      <hr/>
-      <p className="account-eyebrow">DATA CONNECTION · GMAIL</p>
-      <p className="account-note">{needsReconnect?"Permission expired. Reconnect to resume sync.":connected?"Connected · read-only":"Optional: read financial messages from the Gmail account you signed in with. Google will ask for permission; Paytrace never sends or deletes emails."}</p>
-      {!connected||needsReconnect?<Link className="account-button primary" href="/consent/gmail">{needsReconnect?"Reconnect Gmail":"Connect Gmail securely"}</Link>:<>
-        <p className="account-note">Last successful sync: {snapshot?.lastSync?new Date(snapshot.lastSync).toLocaleString():lastSync?new Date(lastSync).toLocaleString():"Waiting for first sync"}</p>
-        <button className="account-button primary" disabled={syncingNow} onClick={()=>void sync()}>{syncingNow?"Synchronizing…":"Sync now"}</button>
-        <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,90)}>Rescan last 90 days</button>
-        <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,365)}>Rescan last 12 months</button>
-        <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,730)}>Rescan last 2 years</button>
-        {syncResult&&<p className="account-note" role="status">{syncResult}</p>}
-      </>}
-      {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
-      <hr/>
-      <IphoneConnect connected={snapshot?.iphone===true} onChange={()=>void refresh()}/>
-      <PhonePairing/>
       <hr/>
       <p className="account-eyebrow">FAMILY ACCESS</p>
       <p className="account-note">Share a read-only view of your recurring payments with someone you choose, and remove it at any time.</p>
@@ -103,8 +90,21 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
       <Link className="account-demo-link" href="/demo">Explore synthetic demo</Link>
     </div>
   </details>;
+  const gmailMenu=<BarMenu label={syncingNow?"Syncing…":"Sync Gmail"} icon={SyncIcon} title="Sync, rescan or disconnect Gmail">
+    <p className="account-eyebrow">DATA CONNECTION · GMAIL</p>
+    <p className="account-note">{needsReconnect?"Permission expired. Reconnect to resume sync.":connected?"Connected · read-only":"Optional: read financial messages from the Gmail account you signed in with. Google will ask for permission; Paytrace never sends or deletes emails."}</p>
+    {!connected||needsReconnect?<Link className="account-button primary" href="/consent/gmail">{needsReconnect?"Reconnect Gmail":"Connect Gmail securely"}</Link>:<>
+      <p className="account-note">Last successful sync: {snapshot?.lastSync?new Date(snapshot.lastSync).toLocaleString():lastSync?new Date(lastSync).toLocaleString():"Waiting for first sync"}</p>
+      <button className="account-button primary" disabled={syncingNow} onClick={()=>void sync()}>{syncingNow?"Synchronizing…":"Sync now"}</button>
+      <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,90)}>Rescan last 90 days</button>
+      <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,365)}>Rescan last 12 months</button>
+      <button className="account-button" disabled={syncingNow} onClick={()=>void sync(true,730)}>Rescan last 2 years</button>
+      {syncResult&&<p className="account-note" role="status">{syncResult}</p>}
+    </>}
+    {connected&&<form action="/api/account/gmail/disconnect" method="post"><button className="account-button danger" type="submit">Disconnect Gmail</button></form>}
+  </BarMenu>;
   const persistedError=accountErrorMessage(snapshot?.syncError);
-  const message=loadError||error||(syncingNow?"Synchronizing financial emails…":persistedError|| (needsReconnect?"Reconnect Gmail from your account menu to resume imports.":!connected?noticeIsError&&notice?notice:"Connect Gmail from your account menu to import payments. Gmail access is optional.":!snapshot?"Loading your personal payment history…":notice?.includes("first sync")&&snapshot.lastSync?"Gmail connected. Your payment history is up to date.":noticeIsError&&notice?notice:"Gmail connected · read-only. Use your account menu to sync."));
+  const message=loadError||error||(syncingNow?"Synchronizing financial emails…":persistedError|| (needsReconnect?"Reconnect Gmail from Sync Gmail at the top to resume imports.":!connected?noticeIsError&&notice?notice:"Connect Gmail from Sync Gmail at the top to import payments. Gmail access is optional.":!snapshot?"Loading your personal payment history…":notice?.includes("first sync")&&snapshot.lastSync?"Gmail connected. Your payment history is up to date.":noticeIsError&&notice?notice:"Gmail connected · read-only. Use Sync Gmail at the top to sync."));
   const banner=<p className="personal-status" role={error||loadError||persistedError||noticeIsError?"alert":"status"}>{message}</p>;
   const watchlist=<SubscriptionWatchlist registrations={data?.subscriptionRegistrations??[]} renewals={data?.subscriptionRenewals??[]} candidates={data?.subscriptionCandidates??[]} scheduled={data?.scheduledDebits??[]} asOf={dataset.asOf} showEmpty={Boolean(snapshot)} exclude={(data?.commitments??[]).flatMap(item=>[item.merchant,item.rawNarration])}/>;
   const activity=<details className="personal-activity" open>
@@ -113,5 +113,5 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
     {data?.recentEvents.length?<div className="account-table">{data.recentEvents.map(event=><div key={event.noticeId}><span><strong>{event.brand}</strong><small>{event.channel.toUpperCase()} · {event.eventType.replaceAll("_"," ")} · {event.sentOn}</small></span><strong>{event.amount===undefined?(event.planPrice===undefined?"Amount unknown":`${formatINR(event.planPrice)} reported`):formatINR(event.amount)}{["subscription_renewal","debit_scheduled"].includes(event.eventType)?" scheduled":""}</strong></div>)}</div>:<p>No imported financial messages yet.</p>}
   </details>;
 
-  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,importAction:<StatementImportButton onImported={afterImport}/>,notice:<>{banner}<FamilyInviteWaiting/></>,activity,subscriptionAlerts:<>{watchlist}<EverydaySpending rows={data?.everydaySpending??[]} onChange={()=>void refresh()}/></>,graphWarnings:<GraphWarningsPanel/>}}/>;
+  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,barActions:<><StatementImportButton onImported={afterImport}/>{gmailMenu}<AddPhoneMenu iphoneConnected={snapshot?.iphone===true} onChange={()=>void refresh()}/></>,notice:<>{banner}<FamilyInviteWaiting/></>,activity,subscriptionAlerts:<>{watchlist}<EverydaySpending rows={data?.everydaySpending??[]} onChange={()=>void refresh()}/></>,graphWarnings:<GraphWarningsPanel/>}}/>;
 }

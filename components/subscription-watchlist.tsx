@@ -63,7 +63,7 @@ export function SubscriptionWatchlist({registrations,renewals=[],candidates=[],s
   return <details className="personal-activity watchlist">
     <summary>Subscription watchlist <small>{rows.length} {rows.length===1?"merchant":"merchants"} seen in Gmail, not yet repeating payments</small></summary>
     <p>From renewal notices, confirmations and scheduled debit emails. A merchant moves into the table once two charges or notices show it repeating. Nothing here is a confirmed charge.</p>
-    {!rows.length&&<p>No other subscription notices have been recognized. For older emails, choose Rescan last 2 years in your account menu.</p>}
+    {!rows.length&&<p>No other subscription notices have been recognized. For older emails, choose Rescan last 2 years under Sync Gmail at the top.</p>}
     <div className="account-table">
       {rows.map(({kind,item,count,latest})=>{
         const view = describe(kind,item,asOf);
