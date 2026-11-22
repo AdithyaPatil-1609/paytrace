@@ -72,6 +72,13 @@
   --r-lg: 18px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Large-text mode: every font size in the style sheets is a multiple of this. */
+  --text-scale: 1;
+}
+
+:root[data-text-size="large"] {
+  --text-scale: 1.25;
 }
 
 * {
@@ -83,7 +90,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 16px;
+  font-size: calc(16px * var(--text-scale));
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }

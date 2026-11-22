@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SITE } from "@/lib/site";
+import { RESTORE_TEXT_SIZE, TextSizeToggle } from "@/components/chrome/text-size-toggle";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,8 +14,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    // The restore script sets data-text-size before React loads, so the attribute is expected to differ.
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: RESTORE_TEXT_SIZE }} />
+      </head>
+      <body>
+        {children}
+        <TextSizeToggle />
+      </body>
     </html>
   );
 }

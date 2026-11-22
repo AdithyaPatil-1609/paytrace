@@ -28,13 +28,13 @@ summary:focus-visible {
   border-radius: var(--r-md);
   background: var(--marigold-skin);
   color: var(--ink);
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale));
   line-height: 1.8;
 }
 .exclusion-note > strong {
   display: block;
   margin-bottom: 5px;
-  font-size: 16px;
+  font-size: calc(16px * var(--text-scale));
 }
 .detail-accordion {
   margin-top: 14px;
@@ -48,14 +48,14 @@ summary:focus-visible {
   padding: 16px 0;
   cursor: pointer;
   font-weight: 650;
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale));
   color: var(--ink);
 }
 .detail-accordion[open] {
   padding-bottom: 16px;
 }
 .detail-accordion > p {
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale));
   line-height: 1.65;
 }
 .detail-accordion .detail-facts {
@@ -89,7 +89,7 @@ summary:focus-visible {
   margin: 9px 0 0;
   padding-left: 20px;
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
   line-height: 1.8;
 }
 .cancel-steps li + li {
@@ -150,12 +150,12 @@ summary:focus-visible {
   }
 
   .screen-header h1 {
-    font-size: clamp(30px, 8vw, 38px);
+    font-size: clamp(calc(30px * var(--text-scale)), 8vw, calc(38px * var(--text-scale)));
   }
   .year-banner strong,
   .annual-figure strong,
   .issue-metric > strong {
-    font-size: clamp(30px, 8vw, 44px);
+    font-size: clamp(calc(30px * var(--text-scale)), 8vw, calc(44px * var(--text-scale)));
   }
   .cancel-guide {
     padding: 0 14px;
@@ -221,7 +221,7 @@ summary:focus-visible {
 }
 .fridge-day .note span,
 .fridge-day .note i {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale));
 }
 @media (max-width: 660px) {
   .fridge-grid {
@@ -266,7 +266,7 @@ summary:focus-visible {
     gap: 8px;
   }
   .wordmark {
-    font-size: 22px;
+    font-size: calc(22px * var(--text-scale));
   }
   .mobile-menu {
     display: block;
@@ -315,7 +315,7 @@ summary:focus-visible {
     background: transparent;
     color: var(--ink);
     text-align: left;
-    font-size: 15px;
+    font-size: calc(15px * var(--text-scale));
     cursor: pointer;
   }
   .mobile-menu nav button[aria-current="page"] {

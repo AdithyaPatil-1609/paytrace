@@ -12,7 +12,7 @@
   padding: 6px 13px;
   background: transparent;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   cursor: pointer;
 }
 
@@ -34,7 +34,7 @@
 .badge {
   padding: 4px 9px;
   border-radius: 20px;
-  font: 700 13px var(--sans);
+  font: 700 calc(13px * var(--text-scale)) var(--sans);
   font-style: normal;
   letter-spacing: 0.08em;
 }
@@ -56,7 +56,7 @@
 
 .axis-label {
   fill: var(--ink-faint);
-  font: 400 13px var(--mono);
+  font: 400 calc(13px * var(--text-scale)) var(--mono);
 }
 
 .change-line {
@@ -67,7 +67,7 @@
 
 .change-label {
   fill: var(--ember);
-  font: 700 13px var(--sans);
+  font: 700 calc(13px * var(--text-scale)) var(--sans);
   letter-spacing: 0.06em;
 }
 
@@ -91,7 +91,7 @@
 
 .delta-label {
   fill: var(--ember);
-  font: 700 15px var(--sans);
+  font: 700 calc(15px * var(--text-scale)) var(--sans);
 }
 
 .hike-facts {
@@ -116,7 +116,7 @@
 .hike-facts strong {
   display: block;
   color: var(--ink);
-  font: 600 24px var(--serif);
+  font: 600 calc(24px * var(--text-scale)) var(--serif);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.035em;
 }
@@ -129,7 +129,7 @@
   display: block;
   margin-top: 7px;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.5;
 }
 
@@ -162,7 +162,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
   cursor: pointer;
 }
 
@@ -187,7 +187,7 @@
 
 .leak-row b {
   color: var(--ink);
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale));
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
@@ -196,7 +196,7 @@
   border: 0;
   background: none;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   text-align: right;
   text-decoration: underline;
   text-decoration-style: dotted;
@@ -223,7 +223,7 @@
 .whatif span {
   display: block;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
@@ -231,7 +231,7 @@
 .whatif strong {
   display: block;
   margin: 8px 0 7px;
-  font: 700 32px var(--serif);
+  font: 700 calc(32px * var(--text-scale)) var(--serif);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.045em;
 }
@@ -242,14 +242,14 @@
 
 .whatif-side strong {
   color: var(--ink);
-  font-size: 26px;
+  font-size: calc(26px * var(--text-scale));
 }
 
 .whatif small {
   display: block;
   max-width: 38ch;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.5;
 }
 
@@ -268,7 +268,7 @@
   padding: 6px 13px;
   background: transparent;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   cursor: pointer;
 }
 
@@ -305,14 +305,14 @@
 .renewal-month {
   margin: 22px 0 10px;
   color: var(--ink);
-  font: 600 22px/1.2 var(--serif);
+  font: 600 calc(22px * var(--text-scale))/1.2 var(--serif);
   letter-spacing: -0.02em;
 }
 
 .renewal-empty {
   margin: 0;
   color: var(--ink-faint);
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale));
 }
 
 .renewal-date {
@@ -325,19 +325,19 @@
 }
 
 .renewal-date span {
-  font: 700 13px var(--sans);
+  font: 700 calc(13px * var(--text-scale)) var(--sans);
   letter-spacing: 0.14em;
 }
 
 .renewal-date strong {
-  font: 600 20px var(--serif);
+  font: 600 calc(20px * var(--text-scale)) var(--serif);
   line-height: 1.1;
 }
 
 .renewal-body strong {
   display: block;
   color: var(--ink);
-  font: 600 17px var(--serif);
+  font: 600 calc(17px * var(--text-scale)) var(--serif);
   letter-spacing: -0.02em;
 }
 
@@ -345,13 +345,13 @@
   display: block;
   margin: 3px 0 7px;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
 }
 
 .stamp {
   padding: 3px 8px;
   border-radius: 20px;
-  font: 700 13px var(--sans);
+  font: 700 calc(13px * var(--text-scale)) var(--sans);
   font-style: normal;
   letter-spacing: 0.08em;
 }
@@ -368,7 +368,7 @@
 
 .renewal-row > b {
   color: var(--ink);
-  font: 600 17px var(--serif);
+  font: 600 calc(17px * var(--text-scale)) var(--serif);
   font-variant-numeric: tabular-nums;
 }
 
@@ -383,14 +383,14 @@
   display: block;
   margin-bottom: 6px;
   color: var(--ink);
-  font: 600 16px var(--serif);
+  font: 600 calc(16px * var(--text-scale)) var(--serif);
 }
 
 .undated p {
   margin: 0 0 12px;
   max-width: 68ch;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.55;
 }
 
@@ -403,7 +403,7 @@
   border-radius: 0 var(--r-sm) var(--r-sm) 0;
   background: rgba(79, 122, 98, 0.1);
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
   line-height: 1.55;
 }
 
@@ -444,7 +444,7 @@
 .bucket-card header strong {
   display: block;
   color: var(--ink);
-  font: 600 19px var(--serif);
+  font: 600 calc(19px * var(--text-scale)) var(--serif);
   letter-spacing: -0.02em;
 }
 
@@ -452,12 +452,12 @@
   display: block;
   margin-top: 4px;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
 }
 
 .bucket-card header b {
   color: var(--ink);
-  font: 600 21px var(--serif);
+  font: 600 calc(21px * var(--text-scale)) var(--serif);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.035em;
   white-space: nowrap;
@@ -501,7 +501,7 @@
   padding: 7px 13px;
   background: var(--paper-lift);
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   cursor: pointer;
   transition:
     border-color 0.12s,
@@ -521,5 +521,5 @@
 .bucket-empty {
   margin: 0;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
 }

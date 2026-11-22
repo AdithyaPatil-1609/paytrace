@@ -18,7 +18,7 @@
 .evidence-picker label {
   display: block;
   padding: 6px 10px 14px;
-  font: 400 11px var(--mono);
+  font: 400 calc(11px * var(--text-scale)) var(--mono);
   letter-spacing: 0.15em;
   color: var(--ink-soft);
 }
@@ -30,7 +30,7 @@
   border-radius: 6px;
   color: var(--ink);
   background: var(--paper-lift);
-  font: 400 13px var(--sans);
+  font: 400 calc(13px * var(--text-scale)) var(--sans);
   min-height: 44px;
 }
 .evidence-picker-list {
@@ -57,14 +57,14 @@
 .evidence-picker-list button strong {
   display: block;
   margin-bottom: 5px;
-  font: 700 15px/1.4 var(--sans);
+  font: 700 calc(15px * var(--text-scale))/1.4 var(--sans);
   overflow-wrap: anywhere;
 }
 .evidence-picker-list button span,
 .evidence-picker-list button small {
   display: block;
   color: var(--ink-soft);
-  font: 400 13px/1.7 var(--sans);
+  font: 400 calc(13px * var(--text-scale))/1.7 var(--sans);
   overflow-wrap: anywhere;
 }
 .evidence-picker-list button:hover:not(.selected) {
@@ -88,7 +88,7 @@
   padding: 18px;
 }
 .evidence-source-note {
-  font: 400 13px/1.6 var(--sans);
+  font: 400 calc(13px * var(--text-scale))/1.6 var(--sans);
   color: var(--ink-soft);
   margin: 0 0 10px;
 }
@@ -111,7 +111,7 @@
 }
 .payment-evidence-edge text {
   fill: var(--ink-soft);
-  font: 12px var(--mono);
+  font: calc(12px * var(--text-scale)) var(--mono);
   letter-spacing: 0.1em;
   paint-order: stroke;
   stroke: var(--paper-lift);
@@ -148,11 +148,11 @@
 }
 .evidence-node-label {
   fill: var(--ink);
-  font: 700 16px var(--sans);
+  font: 700 calc(16px * var(--text-scale)) var(--sans);
 }
 .evidence-node-caption {
   fill: var(--ink-soft);
-  font: 400 12px var(--mono);
+  font: 400 calc(12px * var(--text-scale)) var(--mono);
 }
 .payment-evidence-centre circle {
   fill: var(--ink);
@@ -161,11 +161,11 @@
 }
 .payment-evidence-centre text {
   fill: var(--paper-lift);
-  font: 700 18px var(--sans);
+  font: 700 calc(18px * var(--text-scale)) var(--sans);
 }
 .payment-evidence-centre .centre-amount {
   fill: #f4b546;
-  font: 400 12px var(--mono);
+  font: 400 calc(12px * var(--text-scale)) var(--mono);
 }
 .evidence-more-node circle {
   fill: none;
@@ -174,7 +174,7 @@
 }
 .evidence-more-node text {
   fill: var(--ink-soft);
-  font: 400 9px var(--mono);
+  font: 400 calc(9px * var(--text-scale)) var(--mono);
 }
 .payment-evidence-legend {
   list-style: none;
@@ -184,7 +184,7 @@
   gap: 12px 18px;
   margin: 14px 0;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
 }
 .payment-evidence-legend li {
   display: flex;
@@ -215,7 +215,7 @@
 }
 .evidence-sample-note {
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale));
   line-height: 1.7;
   border-top: 1px solid var(--rule-firm);
   padding-top: 16px;
@@ -224,7 +224,7 @@
   border-left: 2px solid var(--marigold);
   margin: 16px 0;
   padding: 10px 14px;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
@@ -232,7 +232,7 @@
   margin: 4px 0;
 }
 .evidence-records {
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.7;
   margin-bottom: 20px;
   overflow-wrap: anywhere;
@@ -279,7 +279,7 @@
 .screen-reading-help {
   margin: 10px 0 24px;
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
 }
 .screen-reading-help summary {
   width: fit-content;
@@ -324,7 +324,7 @@
   padding: 14px 0;
 }
 .empty-issue-categories li span {
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
 }
 .evidence-graph-controls {
   display: flex;
@@ -347,7 +347,7 @@
   min-width: 44px;
   background: var(--paper-lift);
   color: var(--ink);
-  font: 500 13px var(--sans);
+  font: 500 calc(13px * var(--text-scale)) var(--sans);
   cursor: pointer;
 }
 .evidence-graph-controls button:hover:not(:disabled) {
@@ -362,7 +362,7 @@
   min-width: 48px;
   text-align: center;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   font-variant-numeric: tabular-nums;
 }
 .payment-evidence-svg.has-selection .payment-evidence-node:not(.picked),

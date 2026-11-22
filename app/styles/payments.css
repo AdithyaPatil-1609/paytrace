@@ -18,21 +18,21 @@
 
 .year-banner span {
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   letter-spacing: 0.18em;
 }
 
 .year-banner strong {
   margin: 8px 0 4px;
   color: var(--ink);
-  font: 700 42px var(--serif);
+  font: 700 calc(42px * var(--text-scale)) var(--serif);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.045em;
 }
 
 .year-banner small {
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
 }
 
 .year-delta {
@@ -41,7 +41,7 @@
   gap: 9px;
   margin: 2px 0 6px;
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
 }
 
 .year-delta s {
@@ -65,13 +65,13 @@
 
 .year-note b {
   color: var(--ink);
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
 }
 
 .year-note p {
   margin: 5px 0 0;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.5;
 }
 
@@ -99,7 +99,7 @@
   border-bottom: 1px solid var(--rule-firm);
   background: var(--paper-sink);
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   letter-spacing: 0.14em;
 }
 
@@ -125,7 +125,7 @@
 
 .payment-row .raw-narration {
   color: var(--ink);
-  font: 500 13px var(--mono);
+  font: 500 calc(13px * var(--text-scale)) var(--mono);
   overflow-wrap: anywhere;
 }
 
@@ -139,13 +139,13 @@
 
 .payment-row .pay-plain strong {
   color: var(--ink);
-  font: 600 16px/1.2 var(--serif);
+  font: 600 calc(16px * var(--text-scale))/1.2 var(--serif);
   letter-spacing: -0.02em;
 }
 
 .payment-row .pay-plain em {
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   font-style: normal;
   line-height: 1.35;
 }
@@ -153,7 +153,7 @@
 .payment-row span,
 .payment-row b,
 .payment-row small {
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
 }
 
 .payment-row span,
@@ -190,7 +190,7 @@
   border-radius: 20px;
   background: var(--marigold);
   color: var(--paper-lift);
-  font: 700 13px var(--sans);
+  font: 700 calc(13px * var(--text-scale)) var(--sans);
   letter-spacing: 0.08em;
   vertical-align: middle;
 }
@@ -200,7 +200,7 @@
   margin: 14px 2px 0;
   max-width: 76ch;
   color: var(--ink-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   line-height: 1.6;
 }
 
@@ -225,14 +225,14 @@
 .simulation-card p {
   margin: 0;
   color: var(--marigold-deep);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   letter-spacing: 0.18em;
 }
 
 .simulation-card h2 {
   margin: 9px 0 8px;
   color: var(--ink);
-  font: 600 24px var(--serif);
+  font: 600 calc(24px * var(--text-scale)) var(--serif);
   letter-spacing: -0.025em;
 }
 
@@ -240,7 +240,7 @@
   display: block;
   max-width: 68ch;
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
   line-height: 1.6;
 }
 
@@ -249,7 +249,7 @@
   flex: 0 0 auto;
   border-radius: var(--r-sm);
   padding: 12px 18px;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.1s;
@@ -282,6 +282,6 @@
   border-radius: 4px;
   background: var(--paper-sink);
   color: var(--ink-faint);
-  font: 500 13px var(--mono);
+  font: 500 calc(13px * var(--text-scale)) var(--mono);
   font-style: normal;
 }

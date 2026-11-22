@@ -14,12 +14,12 @@
 .finding-challenge p,
 .finding-challenge li {
   line-height: 1.7;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
   overflow-wrap: anywhere;
 }
 .finding-challenge .challenge-demo-label {
   color: var(--marigold-deep);
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale));
   letter-spacing: 0.08em;
   font-weight: 700;
 }
@@ -42,7 +42,7 @@
   padding: 10px 0;
   cursor: pointer;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
 }
 .finding-challenge button {
   min-height: 44px;
@@ -51,7 +51,7 @@
   border-radius: 6px;
   background: var(--paper);
   color: var(--ink);
-  font: 600 13px/1.5 var(--sans);
+  font: 600 calc(13px * var(--text-scale))/1.5 var(--sans);
   cursor: pointer;
 }
 .finding-challenge button:hover:not(:disabled) {
@@ -70,7 +70,7 @@
   gap: 10px;
 }
 .challenge-merchant label {
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
   font-weight: 600;
 }
 .challenge-merchant input {
@@ -95,7 +95,7 @@
 }
 .challenge-result h3 {
   margin-top: 0;
-  font: 600 20px var(--serif);
+  font: 600 calc(20px * var(--text-scale)) var(--serif);
 }
 .challenge-result ul {
   padding-left: 20px;
@@ -118,7 +118,7 @@
 }
 .challenge-verdict h4 {
   margin: 0;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale));
 }
 .challenge-verdict ul {
   margin-bottom: 0;
