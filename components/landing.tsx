@@ -11,7 +11,6 @@ import Link from "next/link";
 
 const AUTH_PATH = "/signin";
 const DEMO_PATH = "/demo";
-const SANDBOX_PATH = "/sandbox";
 
 const steps = [
   {
@@ -236,15 +235,11 @@ export function Landing({
             <Link className="action-btn action-outline" href={DEMO_PATH}>
               Try the demo <span aria-hidden="true">→</span>
             </Link>
-            <Link className="action-btn action-outline" href={SANDBOX_PATH}>
-              Open the sandbox <span aria-hidden="true">→</span>
-            </Link>
           </div>
 
           <p className="landing-footnote">
             Gmail sign-in is open only to approved test accounts while Google reviews the app.
-            Evaluators: use the demo, or the sandbox to send your own SMS and emails.
-            Neither needs a sign-in.
+            Evaluators: use the demo, which needs no sign-in.
           </p>
         </div>
 
