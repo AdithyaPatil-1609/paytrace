@@ -9,7 +9,8 @@ export function ScreenHeader({
   number: string;
   eyebrow: string;
   title: string;
-  copy: string;
+  /** Left out where a picture already says it. */
+  copy?: string;
   help?: string;
 }) {
   return (
@@ -18,7 +19,7 @@ export function ScreenHeader({
         <span>SCREEN {number}</span> · {eyebrow}
       </p>
       <h1>{title}</h1>
-      <div>{copy}</div>
+      {copy && <div>{copy}</div>}
       {help && (
         <details className="screen-reading-help">
           <summary>How to read this</summary>

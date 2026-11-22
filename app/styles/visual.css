@@ -1,0 +1,433 @@
+/* ---------------------------------------------------------------
+   Visual cues: letter badges, problem icons, the money bar, issue
+   tiles and the three-step cancel strip. Loaded last so a glance at
+   a picture replaces a sentence on every screen.
+   Same colour rule as the rest: red means a problem, always with an
+   icon beside it.
+   --------------------------------------------------------------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.cue-icon {
+  flex: none;
+  vertical-align: -0.15em;
+}
+
+/* Icon + a few words */
+.cue-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font: 500 calc(14px * var(--text-scale)) / 1.2 var(--sans);
+  font-style: normal;
+  white-space: nowrap;
+}
+.cue-chip b {
+  font-weight: 700;
+}
+.cue-chip-problem {
+  background: var(--ember-skin);
+  color: var(--ember);
+  box-shadow: inset 0 0 0 1px var(--ember-edge);
+}
+.cue-chip-calm {
+  background: var(--sage-skin);
+  color: var(--sage);
+}
+.cue-chip-fixed {
+  background: var(--paper-sink);
+  color: var(--ink-soft);
+}
+
+/* Letter badge per merchant */
+.merchant-mark {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font: 700 calc(14px * var(--text-scale)) / 1 var(--sans);
+  letter-spacing: 0.02em;
+}
+.merchant-mark-ok {
+  background: var(--marigold-skin);
+  color: var(--marigold-deep);
+}
+.merchant-mark-fixed {
+  background: var(--paper-sink);
+  color: var(--ink-soft);
+}
+.merchant-mark-issue {
+  background: var(--ember-skin);
+  color: var(--ember);
+  box-shadow: inset 0 0 0 1.5px var(--ember-edge);
+}
+
+/* ---------- Screen 1: the glance header ---------- */
+
+.glance-hero {
+  display: grid;
+  gap: 16px;
+}
+.glance-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0;
+}
+.glance-total strong {
+  color: var(--ink);
+  font: 600 clamp(calc(40px * var(--text-scale)), 4vw, calc(56px * var(--text-scale))) / 1 var(--serif);
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -0.03em;
+}
+.glance-total > span {
+  color: var(--ink-soft);
+  font: 500 calc(20px * var(--text-scale)) var(--serif);
+}
+.glance-total small {
+  flex-basis: 100%;
+  color: var(--ink-faint);
+  font-size: calc(15px * var(--text-scale));
+}
+.glance-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* One bar, one slice per payment */
+.money-bar {
+  margin: 0;
+}
+.money-bar-track {
+  display: flex;
+  gap: 3px;
+  height: 44px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--paper-lift);
+  box-shadow: inset 0 0 0 1px var(--rule-firm);
+}
+.money-bar-slice {
+  display: grid;
+  place-items: center;
+  flex-basis: 0;
+  min-width: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  font: 700 calc(12px * var(--text-scale)) var(--sans);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.14s var(--ease-out), filter 0.14s var(--ease-out);
+}
+.money-bar-slice:hover,
+.money-bar-slice:focus-visible {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+.slice-issue {
+  background: var(--ember);
+  color: #fff;
+}
+.slice-ok {
+  background: var(--marigold);
+  color: #fff;
+}
+.slice-fixed {
+  background: #c7ced8;
+  color: var(--ink);
+}
+.money-bar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: calc(14px * var(--text-scale));
+}
+.money-bar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.money-bar-legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+.legend-issue i {
+  background: var(--ember);
+}
+.legend-ok i {
+  background: var(--marigold);
+}
+.legend-fixed i {
+  background: #c7ced8;
+}
+.money-bar-legend b {
+  color: var(--ink);
+}
+.money-bar-legend small {
+  color: var(--ink-faint);
+  font-size: calc(13px * var(--text-scale));
+}
+
+/* Rows: badge beside the name */
+.ledger-merchant.has-mark {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ledger-merchant.has-mark > span:last-child {
+  min-width: 0;
+}
+.ledger-merchant .last-used {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ledger-merchant .unknown-tag {
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+  padding: 3px;
+}
+.ledger-amount .cue-chip {
+  margin-top: 4px;
+  font-size: calc(13px * var(--text-scale));
+  padding: 2px 8px;
+}
+
+details.exclusion-note {
+  padding: 12px 16px;
+  line-height: 1.6;
+}
+details.exclusion-note summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ---------- Screen 2: issue tiles and visual cards ---------- */
+
+.issue-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+  margin: 18px 0 26px;
+}
+.issue-tile {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--ember-edge);
+  border-radius: 16px;
+  background: var(--ember-skin);
+  color: var(--ember-deep);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.14s var(--ease-out);
+}
+.issue-tile:hover,
+.issue-tile:focus-visible {
+  transform: translateY(-2px);
+}
+.issue-tile-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--ember);
+  color: #fff;
+}
+.issue-tile b {
+  font: 600 calc(30px * var(--text-scale)) / 1 var(--serif);
+}
+.issue-tile span {
+  font-weight: 600;
+  font-size: calc(14px * var(--text-scale));
+}
+.issue-tile small {
+  color: var(--ember);
+  font-size: calc(13px * var(--text-scale));
+}
+.issue-tile.is-calm {
+  border-color: transparent;
+  background: var(--sage-skin);
+  color: var(--sage);
+  cursor: default;
+}
+.issue-tile.is-calm .issue-tile-icon {
+  background: var(--sage);
+}
+
+.issue-card-header {
+  align-items: center;
+}
+.issue-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* The picture inside each card */
+.issue-visual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 14px 0 6px;
+}
+.issue-visual-from {
+  color: var(--ink-faint);
+  font: 500 calc(20px * var(--text-scale)) var(--serif);
+  text-decoration: line-through;
+}
+.issue-visual-arrow {
+  color: var(--ember);
+}
+.issue-visual-to {
+  color: var(--ember);
+  font: 600 calc(28px * var(--text-scale)) / 1 var(--serif);
+}
+.issue-visual-big {
+  color: var(--ink);
+  font: 600 calc(24px * var(--text-scale)) / 1 var(--serif);
+}
+.issue-visual-label {
+  color: var(--ink-faint);
+  font-size: calc(13px * var(--text-scale));
+}
+.issue-coins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex-basis: 100%;
+}
+.issue-coins i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ember);
+  opacity: 0.85;
+}
+.issue-card details.issue-why {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: calc(14px * var(--text-scale));
+  line-height: 1.55;
+}
+.issue-card details.issue-why summary {
+  cursor: pointer;
+  color: var(--ink-faint);
+  font-size: calc(13px * var(--text-scale));
+}
+
+/* ---------- Screen 3: three-step strip ---------- */
+
+.path-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.path-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: calc(14px * var(--text-scale));
+  font-weight: 500;
+}
+.path-steps li + li::before {
+  content: "";
+  width: 22px;
+  height: 2px;
+  margin-right: 2px;
+  border-radius: 2px;
+  background: var(--rule-firm);
+}
+.path-step-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--marigold-skin);
+  color: var(--marigold-deep);
+}
+.path-blocked {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.path-blocked .path-step-icon {
+  background: var(--paper-sink);
+  color: var(--ink-soft);
+}
+.path-name-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 660px) {
+  .merchant-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+  .money-bar-track {
+    height: 36px;
+  }
+  .path-steps li + li::before {
+    width: 12px;
+  }
+}
+
+/* Undo older rules that would squash the new pieces */
+.money-bar-legend {
+  font-family: var(--sans);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.path-name .path-name-top {
+  display: flex;
+  margin-top: 0;
+}
+.path-name .merchant-mark {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  border-radius: 10px;
+  font: 700 calc(13px * var(--text-scale)) / 1 var(--sans);
+}
+.path-card.issue .path-name .merchant-mark {
+  color: var(--ember);
+}
+.path-steps li,
+.path-blocked {
+  margin: 0;
+}

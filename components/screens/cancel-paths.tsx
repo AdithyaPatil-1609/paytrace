@@ -8,6 +8,7 @@ import { formatDate, formatINR } from "@/lib/presentation/format";
 import type { Commitment } from "@/lib/payments/types";
 import { useState } from "react";
 import { CancellationDrawer } from "@/components/detail/cancellation-drawer";
+import { CueIcon, MerchantMark } from "@/components/chrome/visual-cues";
 
 export function CancelPathsScreen({
   items,
@@ -42,7 +43,6 @@ export function CancelPathsScreen({
         number="3"
         eyebrow="HOW TO STOP EACH ONE"
         title="A cancel path for every autopay"
-        copy="Follow the steps for your service and payment provider, then keep the confirmation."
         help="Pick a payment to see how to stop it, step by step. Cancelling the service and stopping the payment are sometimes two separate steps, and we show both. Bills, insurance and loans still have to be paid even if you turn off autopay."
       />
       {saved > 0 && (
@@ -62,7 +62,10 @@ export function CancelPathsScreen({
               key={item.id}
             >
               <div className="path-name">
-                <strong>{item.merchant}</strong>
+                <span className="path-name-top">
+                  <MerchantMark name={item.merchant} tone={isIssue ? "issue" : item.cancelMode === "block" ? "fixed" : "ok"} />
+                  <strong>{item.merchant}</strong>
+                </span>
                 <span>{monthlyCost(item)}</span>
                 <small className="path-mode">{modeLabel(item)}</small>
                 <small className="path-spent">
@@ -71,11 +74,42 @@ export function CancelPathsScreen({
                 {item.mandateRef && <small>Mandate: {item.mandateRef}</small>}
               </div>
               <div className="path-copy path-guide-intro">
-                <p>
-                  {item.cancelMode === "block"
-                    ? "This is a loan obligation. Contact the lender about repayment or closure; do not stop its mandate from this app."
-                    : "Follow the service and payment-provider steps, keep confirmation, and check what to do if charges continue."}
-                </p>
+                {item.cancelMode === "block" ? (
+                  <p
+                    className="path-blocked"
+                    title="This is a loan obligation. Contact the lender about repayment or closure; do not stop its mandate from this app."
+                  >
+                    <span className="path-step-icon">
+                      <CueIcon kind="loan" size={18} />
+                    </span>
+                    Loan: talk to the lender
+                  </p>
+                ) : (
+                  <ol
+                    className="path-steps"
+                    aria-label="Three steps"
+                    title="Follow the service and payment-provider steps, keep confirmation, and check what to do if charges continue."
+                  >
+                    <li>
+                      <span className="path-step-icon">
+                        <CueIcon kind="app" size={18} />
+                      </span>
+                      Stop service
+                    </li>
+                    <li>
+                      <span className="path-step-icon">
+                        <CueIcon kind="bank" size={18} />
+                      </span>
+                      Stop money
+                    </li>
+                    <li>
+                      <span className="path-step-icon">
+                        <CueIcon kind="receipt" size={18} />
+                      </span>
+                      Keep proof
+                    </li>
+                  </ol>
+                )}
                 {isKept && (
                   <p className="kept-note">
                     Kept. The warning is settled and the mandate stays <strong>Active</strong>, so
@@ -102,13 +136,10 @@ export function CancelPathsScreen({
                       aria-controls={openGuide === item.id ? `cancel-guide-${item.id}` : undefined}
                       onClick={() => setOpenGuide(item.id)}
                     >
-                      View provider cancellation steps <i aria-hidden="true">→</i>
+                      Show steps <i aria-hidden="true">→</i>
+                      <span className="visually-hidden"> to stop {item.merchant}</span>
                     </button>
-                    <small>
-                      {item.cancelMode === "normal"
-                        ? "Opens guidance only."
-                        : "This does not change the year. The amount due remains."}
-                    </small>
+                    {item.cancelMode !== "normal" && <small>The amount due remains.</small>}
                   </>
                 )}
               </div>

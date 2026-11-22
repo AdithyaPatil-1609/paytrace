@@ -40,9 +40,16 @@ export function cancelDestination(item: RouteItem) {
   return null;
 }
 
-export function UpiCancelLink({ item }: { item: RouteItem }) {
+/** `compact` shows only the button; the steps move to its tooltip. */
+export function UpiCancelLink({ item, compact = false }: { item: RouteItem; compact?: boolean }) {
   const destination = cancelDestination(item);
   if (!destination) return null;
+  if (compact)
+    return (
+      <a className="danger-button" href={destination.url} target="_blank" rel="noopener noreferrer" title={destination.steps}>
+        {destination.label} ↗
+      </a>
+    );
   return <>
     <p>{destination.steps}</p>
     <a className="danger-button" href={destination.url} target="_blank" rel="noopener noreferrer">{destination.label} →</a>
