@@ -10,7 +10,7 @@ import { parseGmailReceipt } from "../lib/accounts/sync";
 import { parseStorePriceChange, parseStoreReceipt } from "../lib/ingestion/store-email";
 import { detectCommitments } from "../lib/payments/engine";
 import { issueGroups } from "../lib/presentation/issue-cards";
-import { SubscriptionWatchlist } from "../components/subscription-watchlist";
+import { SubscriptionWatchlist } from "../components/insights/subscription-watchlist";
 import { readDictionary } from "../data/fixtures";
 import type { NotificationRow, StatementRow } from "../lib/payments/types";
 

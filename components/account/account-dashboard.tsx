@@ -9,13 +9,13 @@ import type { readLiveDashboard } from "@/db/neo4j/live";
 import type { SourceInfo } from "@/db/neo4j/dataset";
 import type { Dataset } from "@/lib/payments/types";
 import { formatINR } from "@/lib/presentation/format";
-import { SubscriptionWatchlist } from "@/components/subscription-watchlist";
-import { EverydaySpending } from "@/components/everyday-spending";
+import { SubscriptionWatchlist } from "@/components/insights/subscription-watchlist";
+import { EverydaySpending } from "@/components/insights/everyday-spending";
 import { accountErrorMessage } from "@/lib/accounts/errors";
-import { AddPhoneMenu } from "@/components/add-phone";
+import { AddPhoneMenu } from "@/components/account/add-phone";
 import { BarMenu, SyncIcon, useClickAway } from "@/components/chrome/bar-menu";
-import { GraphWarningsPanel } from "@/components/graph-warnings";
-import { StatementImportButton } from "@/components/statement-import";
+import { GraphWarningsPanel } from "@/components/insights/graph-warnings";
+import { StatementImportButton } from "@/components/account/statement-import";
 
 type Snapshot = Awaited<ReturnType<typeof readLiveDashboard>> & {
   linked: boolean; lastSync: string | null; syncStatus: string | null; syncError?:string|null; iphone?: boolean;

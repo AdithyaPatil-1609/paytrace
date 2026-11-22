@@ -88,8 +88,8 @@ test("the Shortcut body keeps a given time inside the window and refuses one out
 test("Add phone offers Connect iPhone, and Disconnect once connected", async () => {
   const { createElement } = await import("react");
   const { renderToStaticMarkup } = await import("react-dom/server");
-  const { IphoneConnect } = await import("../components/iphone-connect");
-  const { AccountDashboard } = await import("../components/account-dashboard");
+  const { IphoneConnect } = await import("../components/account/iphone-connect");
+  const { AccountDashboard } = await import("../components/account/account-dashboard");
   const menu = renderToStaticMarkup(createElement(AccountDashboard, { name: "User", email: "user@example.com", linked: false, lastSync: null, asOf: "2026-11-21" }));
   assert.ok(menu.includes("DATA CONNECTION · IPHONE SMS"));
   assert.ok(menu.includes("Connect iPhone"));

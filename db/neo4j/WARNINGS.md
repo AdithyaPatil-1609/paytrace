@@ -55,7 +55,7 @@ Aura Free allows **one free instance per account**, so the demo instance needs e
 ## Commands (VS Code terminal on Windows, PowerShell)
 
 ```powershell
-cd recur
+cd paytrace
 npm ci
 npm run lint
 npm run typecheck

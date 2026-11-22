@@ -2,7 +2,7 @@
     "adapter_path": "ml/adapters/qwen3-8b-recurring",
     "batch_size": 2,
     "clear_cache_threshold": 0,
-    "config": "/Users/adithyapatil/Desktop/HackUFront/recur-job4/ml/lora_recurring.yaml",
+    "config": "ml/lora_recurring.yaml",
     "data": "ml/data/mlx_recurring",
     "fine_tune_type": "lora",
     "grad_accumulation_steps": 1,
