@@ -19,12 +19,23 @@ const BANK_PREFIXES = new Set(["POS", "UPI", "ACH", "NACH", "ECS", "IMPS", "NEFT
 const NOISE = new Set(["COM", "WWW", "HTTP", "HTTPS", "PVT", "LTD", "LIMITED", "INC", "LLC", "CO"]);
 
 /** Upper case, punctuation to spaces, bank prefixes and reference numbers removed. */
-export function normalizeDescriptor(text: string) {
+export function normalizeDescriptor(text: string, keepProductCodes = false) {
   const words = text.toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim().split(" ").filter(Boolean);
   let start = 0;
   while (start < words.length - 1 && BANK_PREFIXES.has(words[start])) start++;
   // Pure numbers and long codes with digits are references, not names.
-  const tokens = words.slice(start).filter(w => !NOISE.has(w) && !/^\d+$/.test(w) && !(w.length >= 6 && /\d/.test(w)));
+  const tokens = words.slice(start).filter((w, index, values) => {
+    if (NOISE.has(w)) return false;
+    if (!/\d/.test(w)) return true;
+    if (!keepProductCodes) return !/^\d+$/.test(w) && w.length < 6;
+    // Branded product codes such as M365, ZEE5 and 7ELEVEN are names, not
+    // account numbers. Only short digit runs are retained; long/mixed IDs go.
+    if (w.length <= 24 && /^(?:[A-Z]+\d{1,3}[A-Z]*|\d{1,3}[A-Z]+)$/.test(w)) return true;
+    // A short trailing product edition, e.g. MICROSOFT 365. Do not retain
+    // numbers after explicit reference/account labels.
+    const previous = values[index - 1] ?? "";
+    return /^\d{1,3}$/.test(w) && index === values.length - 1 && /^[A-Z]{3,}$/.test(previous) && !/^(?:REF|REFERENCE|TXN|ACCOUNT|ACCT|UTR|ID|CARD|INR|RS)$/.test(previous);
+  });
   return { tokens, compact: tokens.join("") };
 }
 

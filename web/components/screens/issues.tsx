@@ -80,7 +80,7 @@ export function IssuesScreen({
                       <header className="issue-card-header">
                         <div className="issue-card-title">
                           <MerchantMark name={item.merchant} tone="issue" />
-                          <h3 title={item.rawNarration}>{item.product || item.merchant}</h3>
+                          <h3 title={item.rawNarration}>{item.inDictionary || item.merchantIdentity ? item.product || item.merchant : item.merchant}</h3>
                         </div>
                         <span className={`issue-card-badge badge-${group.id}`}>
                           <WarningIcon />

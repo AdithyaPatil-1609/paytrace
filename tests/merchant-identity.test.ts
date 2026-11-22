@@ -5,6 +5,7 @@ import { readDictionary } from "../data/fixtures";
 import { detectCommitments } from "../server/payments/engine";
 import { issueGroups } from "../server/presentation/issue-cards";
 import type { Dataset } from "../server/payments/types";
+import { pendingIdentities } from "../neo4j/merchant-identities";
 
 const dictionary = readDictionary();
 const reply = (name: string | null, category: string | null) => JSON.stringify({ results: [{ index: 0, name, category }] });
@@ -29,6 +30,24 @@ test("exact dictionary aliases and sensitive or address-like descriptors never r
   const never = async () => { throw new Error("must not call model"); };
   assert.equal((await suggestMerchantIdentities(["SPOTIFY STOCKHOLM SE", "OTP 1234", "person@upi"], dictionary, never)).size, 0);
   assert.equal(merchantIdentityInput("OTP 1234"), null);
+});
+
+test("alphanumeric provider names reach the model and a grounded short-code expansion is accepted", async () => {
+  assert.equal(merchantIdentityInput("M365"), "M365");
+  assert.equal(merchantIdentityInput("MICROSOFT365"), "MICROSOFT365");
+  assert.equal(merchantIdentityInput("MICROSOFT 365"), "MICROSOFT 365");
+  assert.equal(merchantIdentityInput("UPI ZEE5 123456789"), "ZEE5");
+  assert.equal(merchantIdentityInput("UPI ABC123456789"), null);
+  assert.deepEqual((await suggestMerchantIdentities(["M365"], [], async () => reply("Microsoft 365", "software"))).get(0), { name: "Microsoft 365", category: "software" });
+  assert.deepEqual((await suggestMerchantIdentities(["ZEE5"], [], async () => reply("Zee5", "entertainment"))).get(0), { name: "Zee5", category: "entertainment" });
+  assert.equal((await suggestMerchantIdentities(["M365"], [], async () => reply("Netflix 365", "entertainment"))).get(0), null);
+  assert.equal((await suggestMerchantIdentities(["M365"], [], async () => reply("Microsoft 999", "software"))).get(0), null);
+});
+
+test("retry older unidentified merchants, without changing user-confirmed or rejected identities", () => {
+  const row = { id: "id", descriptor: "M365", name: null, category: null, status: "unknown", version: "v1" };
+  const rows = [row, { ...row, id: "confirmed", status: "confirmed" }, { ...row, id: "rejected", status: "rejected" }, { ...row, id: "current", version: "v2" }];
+  assert.deepEqual(pendingIdentities(rows, ["M365"]).map(r => r.id), ["id"]);
 });
 
 test("suggestions remain separate from verified aliases; confirming changes classification but not money or cancellation instructions", () => {

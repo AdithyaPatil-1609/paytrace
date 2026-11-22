@@ -20,7 +20,7 @@ export function visibleIdentities(rows: MerchantRecord[]): MerchantIdentity[] {
 }
 export function pendingIdentities(rows: MerchantRecord[], descriptors: string[]) {
   const dictionary = readDictionary();
-  return merchantAiEnabled() ? rows.filter(row => descriptors.includes(row.descriptor) && !row.status && !matchDictionary(row.descriptor, dictionary) && merchantIdentityInput(row.descriptor)).slice(0, MERCHANT_IDENTITY_BATCH) : [];
+  return merchantAiEnabled() ? rows.filter(row => descriptors.includes(row.descriptor) && (!row.status || row.status === "unknown" && row.version !== MERCHANT_IDENTITY_VERSION) && !matchDictionary(row.descriptor, dictionary) && merchantIdentityInput(row.descriptor)).slice(0, MERCHANT_IDENTITY_BATCH) : [];
 }
 
 const active = new Set<string>();
@@ -40,7 +40,7 @@ export async function refreshMerchantIdentities(profile: string, descriptors: st
     for (const [index, suggestion] of suggestions) {
       const row = rows[index];
       await session.run(`MATCH (u:LiveProfile {id:$profile})-[:RECEIVED]->(:LiveEvent)-[:ABOUT]->(m:LiveMerchant {id:$id,profile:$profile})
-        WHERE m.aiStatus IS NULL AND m.name=$descriptor
+        WHERE (m.aiStatus IS NULL OR (m.aiStatus='unknown' AND coalesce(m.aiVersion,'') <> $version)) AND m.name=$descriptor
         WITH DISTINCT u,m SET m.aiName=$name, m.aiCategory=$category, m.aiStatus=$status, m.aiVersion=$version, m.aiCheckedAt=datetime(),
           u.revision=coalesce(u.revision,0)+1`, { profile, id: row.id, descriptor: row.descriptor, name: suggestion?.name ?? null, category: suggestion?.category ?? null,
         status: suggestion ? "suggested" : "unknown", version: MERCHANT_IDENTITY_VERSION });
