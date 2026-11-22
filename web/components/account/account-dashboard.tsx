@@ -10,6 +10,7 @@ import type { SourceInfo } from "@/neo4j/dataset";
 import type { Dataset } from "@/server/payments/types";
 import { formatINR } from "@/server/presentation/format";
 import { SubscriptionWatchlist } from "@/web/components/insights/subscription-watchlist";
+import { FamilyInviteWaiting } from "@/web/components/account/family-access";
 import { EverydaySpending } from "@/web/components/insights/everyday-spending";
 import { accountErrorMessage } from "@/server/accounts/errors";
 import { AddPhoneMenu } from "@/web/components/account/add-phone";
@@ -112,5 +113,5 @@ export function AccountDashboard({name,email,linked,lastSync,asOf,notice,noticeI
     {data?.recentEvents.length?<div className="account-table">{data.recentEvents.map(event=><div key={event.noticeId}><span><strong>{event.brand}</strong><small>{event.channel.toUpperCase()} · {event.eventType.replaceAll("_"," ")} · {event.sentOn}</small></span><strong>{event.amount===undefined?(event.planPrice===undefined?"Amount unknown":`${formatINR(event.planPrice)} reported`):formatINR(event.amount)}{["subscription_renewal","debit_scheduled"].includes(event.eventType)?" scheduled":""}</strong></div>)}</div>:<p>No imported financial messages yet.</p>}
   </details>;
 
-  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,barActions:<><StatementImportButton onImported={afterImport}/>{gmailMenu}<AddPhoneMenu iphoneConnected={snapshot?.iphone===true} onChange={()=>void refresh()}/></>,notice:banner,activity,subscriptionAlerts:<>{watchlist}<EverydaySpending rows={data?.everydaySpending??[]} onChange={()=>void refresh()}/></>,graphWarnings:<GraphWarningsPanel/>}}/>;
+  return <Dashboard dataset={dataset} source={source} commitments={data?.commitments??[]} account={{name,controls,barActions:<><StatementImportButton onImported={afterImport}/>{gmailMenu}<AddPhoneMenu iphoneConnected={snapshot?.iphone===true} onChange={()=>void refresh()}/></>,notice:<>{banner}<FamilyInviteWaiting/></>,activity,subscriptionAlerts:<>{watchlist}<EverydaySpending rows={data?.everydaySpending??[]} onChange={()=>void refresh()}/></>,graphWarnings:<GraphWarningsPanel/>}}/>;
 }

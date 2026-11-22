@@ -12,6 +12,7 @@ import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/clien
 import { createSession } from "../../neo4j/accounts";
 import { deleteAllUserData } from "../../neo4j/delete-user";
 import { ingestLiveEvent } from "../../neo4j/live";
+import { recordSubscriptionFact } from "../../neo4j/warnings";
 import { acceptFamilyInvite, cancelFamilyInvite, createFamilyInvite, familyAccess, leaveFamilyGrant, peekFamilyInvite, readFamily, revokeFamilyGrant } from "../../neo4j/family";
 import { profileFor, SESSION } from "../../server/accounts/security";
 import { FAMILY_LIMITS } from "../../server/payments/rules";
@@ -79,6 +80,40 @@ test("an owner's link, accepted by a signed-in viewer, creates one read-only CAN
   const overview = await readFamily(owner.sub);
   assert.deepEqual(overview.viewers.map(v => [v.name, v.email]), [["Ravi", "ravi@example.test"]]);
   assert.deepEqual((await readFamily(viewer.sub)).sharedWithMe.map(g => g.owner), ["Asha"]);
+});
+
+test("the viewer sees the owner's warnings, read-only and without evidence or references", { skip }, async () => {
+  const owner = await person("Rhea"), viewer = await person("Om");
+  const events = [
+    { source: "email", kind: "debit_posted", merchant: "QUIETFLIX", amountPaise: 49900, date: "2026-08-05", reference: "UPIQUIET1", sourceId: "fam-q1" },
+    { source: "email", kind: "debit_posted", merchant: "QUIETFLIX", amountPaise: 64900, date: "2026-09-05", reference: "UPIQUIET2", sourceId: "fam-q2" },
+    { source: "email", kind: "debit_posted", merchant: "MANDFLIX", amountPaise: 9900, date: "2026-08-05", reference: "MNDTSECRET9", sourceId: "fam-m1" },
+    { source: "email", kind: "mandate_cancelled", merchant: "MANDFLIX", amountPaise: null, date: "2026-08-20", reference: "MNDTSECRET9", sourceId: "fam-m2" },
+    { source: "email", kind: "debit_posted", merchant: "MANDFLIX", amountPaise: 9900, date: "2026-09-05", reference: "MNDTSECRET9", sourceId: "fam-m3" }
+  ] as const;
+  for (const e of events) await ingestLiveEvent(owner.profile, { ...e });
+  const accepted = await acceptFamilyInvite(viewer.sub, await invited(owner.sub));
+  assert.ok(accepted.ok);
+  const view = await call("summary", viewer.cookie, { grantId: accepted.grantId });
+  assert.equal(view.status, 200);
+  const summary = await view.json();
+  assert.equal(summary.alertsIncomplete, false);
+  const kinds = summary.alerts.map((a: { kind: string; merchant: string }) => `${a.kind}:${a.merchant}`);
+  assert.ok(kinds.includes("silent_rise:QUIETFLIX"), kinds.join());
+  assert.ok(kinds.includes("charged_after_cancel:MANDFLIX"), kinds.join());
+  for (const a of summary.alerts) assert.deepEqual(Object.keys(a).sort(), ["date", "detail", "kind", "level", "merchant", "title"]);
+  const text = JSON.stringify(summary);
+  for (const secret of ["UPIQUIET1", "MNDTSECRET9", "fam-q1", "fam-m2", owner.profile, owner.sub, "rhea@example.test"]) assert.ok(!text.includes(secret), `no ${secret}`);
+
+  // Facts the owner records later reach the viewer on the next check.
+  const s = getNeo4jDriver().session({ database: neo4jDatabase });
+  const sub = await s.run("MATCH (:LiveProfile {id:$p})-[:HAS_SUBSCRIPTION]->(x {merchantKey:'QUIETFLIX'}) RETURN x.id AS id", { p: owner.profile }).finally(() => s.close());
+  await recordSubscriptionFact(owner.profile, String(sub.records[0].get("id")), { usedOn: "2026-05-01" });
+  const again = await (await call("summary", viewer.cookie, { grantId: accepted.grantId })).json();
+  assert.ok(again.alerts.some((a: { kind: string; merchant: string }) => a.kind === "unused" && a.merchant === "QUIETFLIX"));
+
+  assert.equal(await revokeFamilyGrant(owner.sub, accepted.grantId), true);
+  assert.equal((await call("summary", viewer.cookie, { grantId: accepted.grantId })).status, 404, "no warnings after access ends");
 });
 
 test("an invite works once, never for its owner, and not after it expires or is cancelled", { skip }, async () => {
