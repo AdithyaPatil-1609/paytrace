@@ -7,6 +7,7 @@
  */
 import { loadFixtures } from "@/data/fixtures";
 import { detectCommitments, matchDictionary } from "@/lib/payments/engine";
+import { isLateDebitNotice, LATE_NOTICE_MESSAGE } from "@/lib/payments/notice-timing";
 import type { Dataset, DictionaryEntry, MandateRow, NotificationRow, StatementRow } from "@/lib/payments/types";
 import type { Sandbox, SandboxEvent } from "./store";
 import type { StatementLine } from "@/lib/statements/csv";
@@ -134,8 +135,9 @@ export function sandboxView(box: Sandbox | null): SandboxView {
       cancelled.set(brand, event.date);
       notifications.push(notice);
     } else if (event.kind === "debit_scheduled") {
-      notifications.push({ ...notice, renewalDate: event.date });
-      alerts.push({ n, kind: "upcoming", title: `Upcoming debit: ${brand}`, detail: `${rupees(event.amountPaise)} will be taken on ${event.date}. Stop it before then if you do not want it.` });
+      const scheduled: NotificationRow = { ...notice, renewalDate: event.date };
+      notifications.push(scheduled);
+      alerts.push({ n, kind: "upcoming", title: `Upcoming debit: ${brand}`, detail: `${rupees(event.amountPaise)} will be taken on ${event.date}. Stop it before then if you do not want it.${isLateDebitNotice(scheduled) ? ` ${LATE_NOTICE_MESSAGE}` : ""}` });
     } else if (event.kind === "price_change") {
       notifications.push(notice);
       alerts.push({ n, kind: "price_notice", title: `Price change notice: ${brand}`, detail: `The new price is ${rupees(event.amountPaise)}. The next charge will be checked against it.` });

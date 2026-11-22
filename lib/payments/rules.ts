@@ -181,6 +181,12 @@ export const GRAPH_WARNING_LIMITS = {
   severityHighPct: 20
 } as const;
 
+/** Pre-debit notice timing (plan card G4), used by lib/payments/notice-timing.ts. */
+export const NOTICE_TIMING_LIMITS = {
+  /** A debit notice should arrive at least this many hours before the debit. */
+  minNoticeHours: 24
+} as const;
+
 /** Body limits for the browser POST routes (Ask AI, Challenge), read before parsing. */
 export const BROWSER_BODY_LIMITS = {
   assistantBytes: 4 * 1024,
