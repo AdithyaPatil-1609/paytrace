@@ -65,36 +65,91 @@ export type CancelOption = { title: string; steps: string[]; links: CancelLink[]
  *  Card: the bank's e-mandate website, then the service's app, else the service's
  *  website, else the bank's phone and email (or the number on the card).
  */
-export function cancelOptions(item: Pick<Commitment, "merchant" | "mechanism" | "rawNarration" | "stopService" | "stopMoney"> & { notices?: { sender: string }[]; evidenceRows?: { narration: string; account?: string }[] }): CancelOption[] {
+type CancelItem = Pick<Commitment, "merchant" | "mechanism" | "rawNarration" | "stopService" | "stopMoney"> &
+  Partial<Pick<Commitment, "cancelMode" | "spendGroup">> &
+  { notices?: { sender: string }[]; evidenceRows?: { narration: string; account?: string }[] };
+
+function verifiedStep(step: string): boolean {
+  return Boolean(step?.trim()) && !/^not in the dictionary yet[.!]?$/i.test(step.trim());
+}
+
+/** Unknown steps are not instructions; use the confirmed payment rail instead. */
+export function missingCancellationGuidance(item: Pick<CancelItem, "stopService" | "stopMoney">): boolean {
+  return !verifiedStep(item.stopService) || !verifiedStep(item.stopMoney);
+}
+
+export function requiresProviderReview(item: Pick<CancelItem, "mechanism" | "cancelMode" | "spendGroup">): boolean {
+  return Boolean(
+    (item.cancelMode && item.cancelMode !== "normal") ||
+    ["enach", "emi_ach", "bbps", "neft_standing"].includes(item.mechanism) ||
+    (item.spendGroup && item.spendGroup !== "subscriptions")
+  );
+}
+
+/** General guidance only: never invent a merchant URL or an exact cancel path. */
+function genericCancellation(item: CancelItem): CancelOption[] {
+  const confirm = "Confirm the merchant, subscription and payment method using your statement or receipt before changing anything.";
+  const service = "Contact the service provider through its official support channel to confirm how to end the subscription and get a cancellation confirmation.";
+  if (requiresProviderReview(item)) return [{
+    title: "Review with your provider before stopping payment",
+    steps: [confirm, "Ask the provider and bank about the agreement, outstanding dues and consequences. Do not revoke a mandate for a loan, bill, insurance policy or other obligation until you confirm how to settle or end it safely."],
+    links: []
+  }];
+  if (item.mechanism === "play_store") return [{
+    title: "Check Google Play subscriptions",
+    steps: ["If this charge is billed through Google Play, open the account that owns the subscription and check its subscriptions. Cancel the matching plan only after confirming it is the correct one.", service],
+    links: [{ label: "Google Play: subscriptions", href: "https://play.google.com/store/account/subscriptions" }]
+  }];
+  if (item.mechanism === "vas") return [{
+    title: "Check with your mobile operator",
+    steps: ["Check active add-ons or paid services in the operator's official app or contact its support. Confirm which service is billed and ask how to stop renewal.", "Keep the confirmation and check the next bill."],
+    links: []
+  }];
+  return [{
+    title: "Identify the payment method first",
+    steps: [confirm, service, "If it is UPI AutoPay, a card standing instruction or another mandate, ask the relevant payment provider how to manage it. Do not stop payment until you know what it is for."],
+    links: []
+  }];
+}
+
+export function cancelOptions(item: CancelItem): CancelOption[] {
   const service = SERVICE[item.merchant] ?? [];
   const app = APPS.has(item.merchant) || service.length > 0;
-  const inService: CancelOption | null = item.stopService ? { title: app ? `Cancel in the ${item.merchant} app` : `Cancel on the ${item.merchant} website or with ${item.merchant}`, steps: [item.stopService], links: service } : null;
+  const missing = missingCancellationGuidance(item);
+  if (missing && requiresProviderReview(item)) return genericCancellation(item);
+  const inService: CancelOption | null = verifiedStep(item.stopService) ? { title: app ? `Cancel in the ${item.merchant} app` : `Cancel on the ${item.merchant} website or with ${item.merchant}`, steps: [item.stopService], links: service } : null;
 
   if (item.mechanism === "upi_autopay") {
     return [
-      { title: "Cancel the autopay on NPCI's UPI Help portal", steps: [`Open UPI Help → log in with the mobile number linked to your bank → enter the OTP → Show my autopay mandates → ${item.merchant} → Revoke`], links: [UPI_HELP] },
-      ...(inService ? [inService] : []),
-      ...(item.stopMoney ? [{ title: "Or revoke it in your UPI app", steps: [item.stopMoney], links: [] }] : [])
+      { title: missing ? "Review the mandate on NPCI UPI Help" : "Cancel the autopay on NPCI's UPI Help portal", steps: [missing ? "First confirm that this is a UPI AutoPay subscription and that stopping it will not leave an outstanding obligation. Open UPI Help to review the matching mandate and revoke it only after confirming the correct one." : `Open UPI Help → log in with the mobile number linked to your bank → enter the OTP → Show my autopay mandates → ${item.merchant} → Revoke`], links: [UPI_HELP] },
+      ...(inService ? [inService] : [{ title: "Confirm how to end the service", steps: ["Check the matching subscription with the service provider first. Confirm whether cancelling the plan and revoking the mandate are separate steps."], links: [] }]),
+      ...(verifiedStep(item.stopMoney) ? [{ title: "Or revoke it in your UPI app", steps: [item.stopMoney], links: [] }] : [{ title: "Check the UPI app used to approve it", steps: ["Find the matching AutoPay mandate in your UPI app. Confirm the merchant and obligation before revoking it."], links: [] }])
     ];
   }
 
   if (item.mechanism === "card_recurring") {
     const bank = bankOf(item);
     const out: CancelOption[] = [];
+    if (missing) out.push({ title: "Verify the card standing instruction", steps: ["Confirm that the charge is a recurring card payment and that stopping it will not leave outstanding dues. Ask your card issuer how to manage the matching standing instruction."], links: [] });
     if (bank && bank.cards.length) out.push({ title: `Cancel through ${bank.name}'s website`, steps: [`Open the e-mandate page → log in with your card number and the OTP → find ${item.merchant} → Cancel`], links: bank.cards });
     else if (bank) out.push({ title: `Cancel through ${bank.name}`, steps: [`${bank.name} app or netbanking → Cards → Manage e-mandates (or Standing instructions) → ${item.merchant} → Cancel`], links: [] });
     if (inService) out.push(inService);
+    else out.push({ title: "Confirm how to end the service", steps: ["Contact the verified merchant through its official support channel to confirm the subscription and cancellation process."], links: [] });
     if (!inService || !app) {
       const contact = bank?.phone || bank?.email
-        ? `Call ${bank.name} on ${bank.phone ?? "the number on the back of your card"}${bank.email ? ` or email ${bank.email}` : ""}. Ask them to cancel the card mandate for ${item.merchant} (${item.rawNarration}) and give you a reference number`
-        : `Call the customer care number on the back of your card. Ask the bank to cancel the card mandate for ${item.merchant} (${item.rawNarration}) and give you a reference number`;
+        ? `Call ${bank.name} on ${bank.phone ?? "the number on the back of your card"}${bank.email ? ` or email ${bank.email}` : ""}. Ask them to ${missing ? "identify the mandate and confirm whether it can safely be stopped" : "cancel the card mandate"} for ${item.merchant} (${item.rawNarration}) and give you a reference number`
+        : `Call the customer care number on the back of your card. Ask the bank to ${missing ? "identify the mandate and confirm whether it can safely be stopped" : "cancel the card mandate"} for ${item.merchant} (${item.rawNarration}) and give you a reference number`;
       out.push({ title: "Ask your bank to stop it", steps: [contact], links: [] });
     }
     return out;
   }
 
-  // eNACH, bills, loans, Google Play and operator packs: the service, then the money, as written.
-  return [{ title: "Do this", steps: [item.stopService, item.stopMoney].filter(Boolean), links: service }];
+  // Preserve the dictionary's exact instructions when both steps are available.
+  if (!missing) return [{ title: "Do this", steps: [item.stopService, item.stopMoney], links: service }];
+  return [
+    ...(inService ? [inService] : []),
+    ...genericCancellation(item)
+  ];
 }
 
 const RBI_CMS: CancelLink = { label: "RBI complaint portal", href: "https://cms.rbi.org.in" };
