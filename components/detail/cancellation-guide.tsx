@@ -2,11 +2,12 @@
 
 import { formatDate, formatINR } from "@/lib/presentation/format";
 import type { Commitment } from "@/lib/payments/types";
+import { cancelOptions, ifStillCharged, type CancelLink } from "@/lib/presentation/cancel-links";
 
 function InstructionFlow({ text }: { text: string }) {
   const parts = text
     .trim()
-    .split(/\.\s+|\.$|,\s+then\s+|\s+→\s+/i)
+    .split(/\s+→\s+/)
     .map((part) => part.trim())
     .filter(Boolean);
   return (
@@ -38,17 +39,9 @@ export function CancellationGuide({
   onComplete: () => void;
 }) {
   const obligation = item.cancelMode !== "normal";
-  const steps = [
-    item.stopService,
-    "Ask the service for written confirmation and keep a copy of your request.",
-    item.stopMoney,
-    item.mandateRef
-      ? `Keep your mandate reference: ${item.mandateRef}. You may need it when contacting your payment provider.`
-      : "Keep the payment reference and your cancellation confirmation for any follow-up.",
-    item.nextCharge
-      ? `Check the next expected debit on ${formatDate(item.nextCharge)}. Confirm the provider's processing time before that date.`
-      : "Check your provider's next debit date and processing time. Future payment dates may vary."
-  ].filter(Boolean);
+  // The ways to cancel, best first; the person uses the first one that works.
+  const options = cancelOptions(item);
+  const still = ifStillCharged(item);
   return (
     <section
       className="cancellation-guide"
@@ -94,60 +87,33 @@ export function CancellationGuide({
       )}
       <div className="cancellation-columns">
         <div>
-          <h3 className="cancellation-eyebrow">DO THIS</h3>
-          <ol className="cancellation-timeline">
-            <li className="timeline-start">
-              <span className="timeline-marker" aria-hidden="true" />
-              <span className="timeline-label">YOU</span>
-            </li>
-            {steps.map((step, index) => (
-              <li key={index}>
-                <span className="timeline-marker" aria-hidden="true">
-                  {index + 1}
-                </span>
-                <InstructionFlow text={step} />
+          <h3 className="cancellation-eyebrow">HOW TO CANCEL</h3>
+          <ol className="cancel-options">
+            {options.map((option, index) => (
+              <li key={option.title}>
+                <p className="cancel-option-title">
+                  <span>{index === 0 ? "Best" : "If not"}</span> {option.title}
+                </p>
+                {option.steps.map((step, i) => <InstructionFlow key={i} text={step} />)}
+                <LinkRow links={option.links} />
               </li>
             ))}
-            <li className="timeline-end">
-              <span className="timeline-marker" aria-hidden="true" />
-              <span className="timeline-label">
-                {obligation ? "PROVIDER CONFIRMATION" : "CANCELLATION CONFIRMED BY PROVIDER"}
-              </span>
-            </li>
           </ol>
+          {item.nextCharge && (
+            <p className="cancellation-deadline">
+              Cancel before {formatDate(item.nextCharge)}, the next expected debit.
+            </p>
+          )}
         </div>
         <div>
-          <h3 className="cancellation-eyebrow">IF THEY DON&apos;T STOP</h3>
-          <ol className="cancellation-timeline cancellation-escalation">
-            <li className="timeline-start">
-              <span className="timeline-marker" aria-hidden="true" />
-              <span className="timeline-label">STILL CHARGED</span>
-            </li>
-            <li>
-              <span className="timeline-marker" aria-hidden="true">
-                1
-              </span>
-              <InstructionFlow
-                text={
-                  item.ifSilent ||
-                  "Contact the service and payment provider with the debit details and your cancellation confirmation."
-                }
-              />
-            </li>
-            <li>
-              <span className="timeline-marker" aria-hidden="true">
-                2
-              </span>
-              <InstructionFlow text="Keep the debit reference, cancellation date, confirmation and complaint reference. If unresolved, follow your provider's formal complaints process." />
-            </li>
-            <li className="timeline-end">
-              <span className="timeline-marker" aria-hidden="true" />
-              <span className="timeline-label">FOLLOW UP UNTIL RESOLVED</span>
-            </li>
+          <h3 className="cancellation-eyebrow">STILL CHARGED AFTER CANCELLING?</h3>
+          <ol className="still-charged">
+            {still.steps.map((step, index) => <li key={index}>{step}</li>)}
           </ol>
+          <LinkRow links={still.links} />
           {item.trap && (
             <p className="cancellation-warning">
-              <strong>Watch for:</strong> {item.trap}
+              <strong>Careful:</strong> {item.trap}
             </p>
           )}
         </div>
@@ -164,5 +130,21 @@ export function CancellationGuide({
         </footer>
       )}
     </section>
+  );
+}
+
+function LinkRow({ links }: { links: CancelLink[] }) {
+  if (links.length === 0) return null;
+  return (
+    <div className="cancel-link-row">
+      <div>
+        {links.map((link) => (
+          <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" title={link.note}>
+            {link.label} ↗
+          </a>
+        ))}
+      </div>
+      {links.filter((link) => link.note).map((link) => <p key={`${link.href}-note`}>{link.note}</p>)}
+    </div>
   );
 }

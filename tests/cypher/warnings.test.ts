@@ -135,3 +135,21 @@ test("15: two people with the same merchant never see each other's warnings", { 
   const other = await subscriptionId(a, "SHAREDFLIX");
   assert.equal(await recordSubscriptionFact(b, other, { usedOn: "2026-01-01" }), false, "B cannot write to A's subscription");
 });
+
+test("a price-change notice before the next debit is warned ahead; once the new price is paid it is not", { skip }, async () => {
+  const profile = fresh();
+  await load(profile, [debit("AHEADFLIX", "2026-09-05", 64900), debit("AHEADFLIX", "2026-10-05", 64900), debit("AHEADFLIX", "2026-11-05", 64900),
+    event("price_change", "AHEADFLIX", "2026-11-18", 79900),
+    debit("PAIDFLIX", "2026-09-05", 64900), event("price_change", "PAIDFLIX", "2026-09-20", 79900), debit("PAIDFLIX", "2026-10-05", 79900), debit("PAIDFLIX", "2026-11-05", 79900),
+    debit("SCHEDFLIX", "2026-09-24", 11900), debit("SCHEDFLIX", "2026-10-24", 11900),
+    event("debit_scheduled", "SCHEDFLIX", "2026-11-21", 13900, { source: "sms", renewalDate: "2026-11-24" })]);
+  const { priceAhead, headsUp: alerts } = await readGraphWarnings(profile, TODAY);
+  const ahead = priceAhead.find((w) => w.merchant === "AHEADFLIX");
+  assert.ok(ahead, "the announced rise is warned before it is charged");
+  assert.equal(ahead.newPaise, 79900);
+  assert.equal(ahead.chargeOn, "2026-12-05");
+  assert.ok(!priceAhead.some((w) => w.merchant === "PAIDFLIX"), "already charged at the new price: nothing ahead");
+  const sched = priceAhead.find((w) => w.merchant === "SCHEDFLIX");
+  assert.ok(sched && sched.chargeOn === "2026-11-24" && sched.dateConfirmed, "a pre-debit notice fixes the date");
+  assert.ok(alerts.some((a) => a.kind === "price_rise_ahead" && a.merchant === "SCHEDFLIX"), "due in 3 days: it is a heads-up");
+});

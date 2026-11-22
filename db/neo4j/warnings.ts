@@ -42,10 +42,19 @@ export type UpcomingWarning = {
   frequency: Frequency; confidence: "high" | "medium" | "low"; confirmed: boolean; history: { date: string; amountPaise: number }[];
   evidence: Evidence[]; why: string;
 };
-export type GraphWarnings = {
-  asOf: string; price: PriceWarning[]; mandate: MandateWarning[]; mandateUnknown: string[];
-  unused: UnusedWarning[]; cancellation: CancelWarning[]; upcoming: UpcomingWarning[];
+/** A higher price announced (price-change notice, pre-debit notice or renewal notice) that has not been charged yet. */
+export type PriceAheadWarning = {
+  subscriptionId: string; merchant: string; currentPaise: number; lastPaidOn: string; newPaise: number; pctChange: number;
+  chargeOn: string | null; daysRemaining: number | null; dateConfirmed: boolean; evidence: Evidence[]; why: string;
 };
+export type GraphWarnings = {
+  asOf: string; price: PriceWarning[]; priceAhead: PriceAheadWarning[]; mandate: MandateWarning[]; mandateUnknown: string[];
+  unused: UnusedWarning[]; cancellation: CancelWarning[]; upcoming: UpcomingWarning[];
+  /** The few that need action in the next days: shown first, and sent to the phone. */
+  headsUp: HeadsUp[];
+};
+/** One short alert for the phone and the top of the account page: what will happen, when, and what to do. */
+export type HeadsUp = { id: string; kind: "price_rise_ahead" | "debit_due"; merchant: string; date: string | null; daysRemaining: number | null; amountPaise: number | null; title: string; body: string };
 
 const n = (value: unknown) => (value == null ? null : Number(value));
 const params = (profile: string, today: string, extra: Record<string, unknown> = {}) => ({ profile, today, ...L, ...extra });
@@ -139,6 +148,26 @@ MATCH (u:LiveProfile {id:$profile})-[:HAS_SUBSCRIPTION]->(s:LiveSubscription) WH
   AND NOT EXISTS { (u)-[:RECEIVED]->(m:LiveEvent {kind:'mandate_created'})-[:ABOUT]->(mm:LiveMerchant) WHERE mm.key = s.merchantKey AND m.amountPaise > 0 }
 RETURN s.merchant AS merchant ORDER BY merchant`;
 
+/**
+ * Query 5: a notice announcing a higher amount than the last one paid, so the
+ * person hears about the rise before the money is taken. Notices: a price-change
+ * email or SMS, a bank's pre-debit notice, or a renewal notice.
+ */
+export const PRICE_AHEAD_QUERY = `
+MATCH (u:LiveProfile {id:$profile})-[:HAS_SUBSCRIPTION]->(s:LiveSubscription)-[:LATEST]->(latest:LivePayment)
+WHERE s.cancelEffectiveOn IS NULL OR s.cancelEffectiveOn > $today
+MATCH (u)-[:RECEIVED]->(e:LiveEvent)-[:ABOUT]->(m:LiveMerchant)
+WHERE m.key = s.merchantKey AND e.kind IN ['price_change', 'debit_scheduled', 'subscription_renewal']
+  AND coalesce(e.status, '') <> 'ignored' AND e.amountPaise IS NOT NULL
+  AND e.date >= toString(date(latest.date) - duration({days: $noticeLeadDays}))
+  AND toInteger(e.amountPaise) * 100 >= (100 + $priceRisePct) * toInteger(latest.amountPaise)
+  AND (e.renewalDate IS NULL OR e.renewalDate >= $today)
+OPTIONAL MATCH (s)-[:FIRST]->(:LivePayment)-[:NEXT*0..]->(:LivePayment)-[n:NEXT]->(:LivePayment)
+WITH s, latest, e, collect(n.gapDays) AS gaps
+RETURN s.id AS subscriptionId, s.merchant AS merchant, latest.date AS latestDate, toInteger(latest.amountPaise) AS currentPaise, gaps,
+  e {.id, .source, .kind, .date, .renewalDate, amountPaise: toInteger(e.amountPaise)} AS notice
+ORDER BY e.date DESC`;
+
 /** Cycle facts per subscription, shared by the unused and upcoming warnings. */
 const CYCLES = `
 MATCH (u:LiveProfile {id:$profile})-[:HAS_SUBSCRIPTION]->(s:LiveSubscription)-[:LATEST]->(latest:LivePayment)
@@ -198,6 +227,7 @@ export async function readGraphWarnings(profile: string, today = new Date().toIS
   try {
     const raw = await session.executeRead(async (tx) => ({
       price: await rows(tx, PRICE_QUERY, params(profile, today)),
+      priceAhead: await rows(tx, PRICE_AHEAD_QUERY, params(profile, today)),
       mandate: await rows(tx, MANDATE_QUERY, params(profile, today)),
       mandateUnknown: await rows(tx, MANDATE_UNKNOWN_QUERY, params(profile, today)),
       unused: await rows(tx, UNUSED_QUERY, params(profile, today)),
@@ -205,13 +235,17 @@ export async function readGraphWarnings(profile: string, today = new Date().toIS
       cycles: await rows(tx, UPCOMING_CYCLE_QUERY, params(profile, today)),
       notices: await rows(tx, UPCOMING_NOTICE_QUERY, params(profile, today, { until }))
     }));
+    const priceAhead = priceAheadWarnings(raw.priceAhead, today);
+    const upcoming = upcomingWarnings(raw.cycles, raw.notices, today, until);
     return {
       asOf: today,
       price: raw.price.map(priceWarning),
+      priceAhead,
+      headsUp: headsUp({ priceAhead, upcoming }),
       ...mandateWarnings(raw.mandate, raw.mandateUnknown),
       unused: raw.unused.map((row) => unusedWarning(row, today)),
       cancellation: raw.cancel.map(cancelWarning),
-      upcoming: upcomingWarnings(raw.cycles, raw.notices, today, until)
+      upcoming
     };
   } finally {
     await session.close();
@@ -230,6 +264,59 @@ function priceWarning(row: Record<string, unknown>): PriceWarning {
       ? `${base} Paytrace sees this merchant's emails, but found no price-change notice before the higher charge. It may still have been announced somewhere Paytrace cannot see.`
       : `${base} Paytrace sees too little of this merchant's mail to say whether the rise was announced.`;
   return { subscriptionId: String(row.subscriptionId), merchant: String(row.merchant), previous, latest, deltaPaise: Number(row.deltaPaise), pctChange: pct, gapDays: Number(row.gapDays), classification, notices, severity: severityOf(pct), why };
+}
+
+/** One warning per subscription, from the newest notice. The date comes from the notice, else the cycle. */
+export function priceAheadWarnings(found: Record<string, unknown>[], today: string): PriceAheadWarning[] {
+  const seen = new Set<string>();
+  const out: PriceAheadWarning[] = [];
+  for (const row of found) {
+    const id = String(row.subscriptionId);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const notice = row.notice as Record<string, unknown>;
+    const currentPaise = Number(row.currentPaise), newPaise = Number(notice.amountPaise);
+    const gap = median((row.gaps as unknown[]).map(Number));
+    const announced = (notice.renewalDate as string | null) ?? null;
+    let chargeOn = announced ?? (gap != null && gap >= L.minCycleDays ? nextDate(String(row.latestDate), gap) : null);
+    // An estimate already in the past means the cycle has moved on: roll it forward.
+    while (!announced && chargeOn && gap && chargeOn < today) chargeOn = nextDate(chargeOn, gap);
+    const daysRemaining = chargeOn ? days(today, chargeOn) : null;
+    const pct = Math.round(((newPaise - currentPaise) * 1000) / currentPaise) / 10;
+    const kind = String(notice.kind).replaceAll("_", " ");
+    const when = chargeOn ? `${announced ? "on" : "around"} ${chargeOn}${daysRemaining != null ? ` (in ${daysRemaining} ${daysRemaining === 1 ? "day" : "days"})` : ""}` : "at the next renewal";
+    out.push({
+      subscriptionId: id, merchant: String(row.merchant), currentPaise, lastPaidOn: String(row.latestDate), newPaise, pctChange: pct,
+      chargeOn, daysRemaining, dateConfirmed: Boolean(announced),
+      evidence: [{ id: String(notice.id), source: String(notice.source), kind: String(notice.kind), date: String(notice.date) }],
+      why: `A ${kind} ${String(notice.source) === "sms" ? "SMS" : "email"} dated ${notice.date} says ${row.merchant} will charge ${rupees(newPaise)}. You last paid ${rupees(currentPaise)} on ${row.latestDate} (+${pct}%). The higher amount is expected ${when}.`
+    });
+  }
+  return out.sort((a, b) => (a.chargeOn ?? "9999").localeCompare(b.chargeOn ?? "9999"));
+}
+
+/**
+ * The heads-up list: every price rise not yet charged, and every debit due in
+ * the next few days. A merchant with both gets one alert, the price one.
+ */
+export function headsUp(w: Pick<GraphWarnings, "priceAhead" | "upcoming">, withinDays: number = L.headsUpDays): HeadsUp[] {
+  const out: HeadsUp[] = [];
+  const priced = new Set<string>();
+  for (const p of w.priceAhead) {
+    priced.add(p.merchant);
+    const when = p.chargeOn ? `${p.dateConfirmed ? "on" : "around"} ${p.chargeOn}` : "at the next renewal";
+    out.push({ id: `price:${p.subscriptionId}:${p.evidence[0]?.id ?? ""}`, kind: "price_rise_ahead", merchant: p.merchant, date: p.chargeOn, daysRemaining: p.daysRemaining, amountPaise: p.newPaise,
+      title: `${p.merchant} is going up to ${rupees(p.newPaise)}`,
+      body: `You pay ${rupees(p.currentPaise)} now (+${p.pctChange}%). The new price will be taken ${when}. If it is not worth it, cancel before then: PayTrace shows how.` });
+  }
+  for (const u of w.upcoming) {
+    if (u.daysRemaining < 0 || u.daysRemaining > withinDays || priced.has(u.merchant)) continue;
+    const day = u.daysRemaining === 0 ? "today" : u.daysRemaining === 1 ? "tomorrow" : `in ${u.daysRemaining} days`;
+    out.push({ id: `due:${u.merchant}:${u.expectedOn}`, kind: "debit_due", merchant: u.merchant, date: u.expectedOn, daysRemaining: u.daysRemaining, amountPaise: u.amountPaise,
+      title: `${u.merchant}: ${u.amountPaise == null ? "a debit" : rupees(u.amountPaise)} ${day}`,
+      body: `${u.confirmed ? "Your bank or the merchant has announced it" : "Expected from your past payments"} for ${u.expectedOn}. Keep enough in the account, or cancel before then if you no longer want it.` });
+  }
+  return out.sort((a, b) => (a.date ?? "9999").localeCompare(b.date ?? "9999"));
 }
 
 function mandateWarnings(found: Record<string, unknown>[], unknown: Record<string, unknown>[]) {

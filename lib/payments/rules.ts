@@ -99,8 +99,8 @@ export function describeIssue(
   if (signals.includes("trial_converted")) return "A trial-ending notice, then the paid price. The ₹1 hold is not the price.";
   if (signals.includes("zombie")) {
     return context.lastOpened
-      ? `Last opened ${context.lastOpened}, about ${Math.floor((context.openedDaysAgo ?? 0) / 30)} months ago. The charge did not stop.`
-      : "Never opened in the last twelve months. A pack she did not go looking for.";
+      ? `Your last use was ${context.lastOpened}, about ${Math.floor((context.openedDaysAgo ?? 0) / 30)} months ago (as you told PayTrace), while payments continue.`
+      : "PayTrace has no record of when you last used it. Review whether you still use it.";
   }
   return undefined;
 }
@@ -164,6 +164,8 @@ export const GRAPH_WARNING_LIMITS = {
   unusedDays: 90,
   /** Days ahead an upcoming debit is warned about. */
   upcomingWindowDays: 7,
+  /** Days ahead a debit is pushed to the person as a heads-up (phone notification and banner). */
+  headsUpDays: 3,
   /** A mandate limit this many times the usual charge is a risk worth showing. */
   highMandateRatio: 3,
   /** Severity steps for a price rise, in percent. */
