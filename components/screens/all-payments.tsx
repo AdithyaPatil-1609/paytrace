@@ -71,6 +71,7 @@ export function AllPaymentsScreen({
 }) {
   // The same test the Issues screen uses, so both screens always agree.
   const flagged = new Set(issueItems(items, kept).map((item) => item.id));
+  const priceIncreases = items.filter((item) => priceRise(item) !== undefined).length;
   // The panel stays closed until the person clicks a payment.
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = items.find((item) => item.id === selectedId) ?? null;
@@ -95,6 +96,24 @@ export function AllPaymentsScreen({
               </small>
             )}
           </p>
+          <dl className="ledger-summary" aria-label="Recurring payment summary">
+            <div className="ledger-summary-card">
+              <dt>Recurring payments</dt>
+              <dd>{items.length}</dd>
+            </div>
+            <div className="ledger-summary-card">
+              <dt title="Projected annual cost divided by 12">Monthly recurring cost</dt>
+              <dd>{formatINR(total / 12)}</dd>
+            </div>
+            <div className="ledger-summary-card">
+              <dt>Projected annual cost</dt>
+              <dd>{formatINR(total)}</dd>
+            </div>
+            <div className="ledger-summary-card">
+              <dt title="Payments with a higher latest price">Price increases</dt>
+              <dd className={priceIncreases > 0 ? "has-increases" : undefined}>{priceIncreases}</dd>
+            </div>
+          </dl>
         </header>
 
         <PaymentRadar items={items} flagged={flagged} asOf={asOf} onOpen={pick} />
