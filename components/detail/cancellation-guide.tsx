@@ -2,7 +2,7 @@
 
 import { formatDate, formatINR } from "@/lib/presentation/format";
 import type { Commitment } from "@/lib/payments/types";
-import { cancelOptions, ifStillCharged, type CancelLink } from "@/lib/presentation/cancel-links";
+import { cancelOptions, ifStillCharged, missingCancellationGuidance, requiresProviderReview, type CancelLink } from "@/lib/presentation/cancel-links";
 
 function InstructionFlow({ text }: { text: string }) {
   const parts = text
@@ -38,7 +38,8 @@ export function CancellationGuide({
   onClose: () => void;
   onComplete: () => void;
 }) {
-  const obligation = item.cancelMode !== "normal";
+  const generalGuidance = missingCancellationGuidance(item);
+  const obligation = item.cancelMode !== "normal" || (generalGuidance && requiresProviderReview(item));
   // The ways to cancel, best first; the person uses the first one that works.
   const options = cancelOptions(item);
   const still = ifStillCharged(item);
@@ -53,7 +54,7 @@ export function CancellationGuide({
           <p className="cancellation-eyebrow">
             {item.instrument} / {item.mechanism.replaceAll("_", " ")}
           </p>
-          <h2 id={`cancel-title-${item.id}`}>{item.product || item.merchant}</h2>
+          <h2 id={`cancel-title-${item.id}`}>{item.inDictionary ? item.product || item.merchant : item.merchant}</h2>
           <p>
             {formatINR(item.annualCost)} a year · {item.merchant}
           </p>
@@ -79,6 +80,11 @@ export function CancellationGuide({
         These steps guide you through changes with the service and payment provider. PayTrace does
         not cancel anything for you.
       </p>
+      {generalGuidance && (
+        <p className="cancellation-warning">
+          Merchant-specific cancellation instructions are not verified. The guidance below is based on the available payment information. Confirm the billing method and provider first.
+        </p>
+      )}
       {obligation && (
         <p className="cancellation-warning">
           Stopping automatic payments does not end the bill, policy or other obligation. Review the
@@ -101,7 +107,7 @@ export function CancellationGuide({
           </ol>
           {item.nextCharge && (
             <p className="cancellation-deadline">
-              Cancel before {formatDate(item.nextCharge)}, the next expected debit.
+              {generalGuidance || obligation ? <>Next expected debit: {formatDate(item.nextCharge)}. Confirm the correct process with your provider.</> : <>Cancel before {formatDate(item.nextCharge)}, the next expected debit.</>}
             </p>
           )}
         </div>
