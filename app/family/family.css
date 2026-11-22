@@ -14,5 +14,24 @@
 .family-totals strong { font: 400 calc(24px * var(--text-scale)) var(--serif); }
 .family-consent { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-size: calc(14px * var(--text-scale)); color: var(--ink-soft); }
 .family-shares { margin: 12px 0 0; padding-left: 20px; font-size: calc(14px * var(--text-scale)); color: var(--ink-soft); }
-@media (max-width: 600px) { .family-totals { grid-template-columns: 1fr; } .family-link { flex-direction: column; } }
+@media (max-width: 600px) { .family-totals { grid-template-columns: 1fr; } .family-link { flex-direction: column; } .family-list > div > strong { text-align: left; } }
 .family-link .account-button, .family-list .account-button { width: auto; flex: 0 0 auto; margin-top: 0; }
+/* Family View is read by people who may not use Paytrace themselves: larger text by default, and it still follows large-text mode. */
+.family-shared { margin-top: 24px; }
+.family-grid { margin-top: 24px; }
+.family-view { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rule-firm); font-size: calc(16px * var(--text-scale)); }
+.family-view .account-table strong { font-size: calc(17px * var(--text-scale)); }
+.family-view .account-table small { font-size: calc(14px * var(--text-scale)); }
+.family-view .family-banner { font-size: calc(15px * var(--text-scale)); }
+.family-view h3 { font-size: calc(18px * var(--text-scale)); margin: 22px 0 8px; }
+.family-alerts ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.family-alerts li.family-alert { padding: 14px 16px; border-radius: 10px; border: 1px solid var(--rule-firm); border-left-width: 5px; background: var(--paper); }
+.family-alerts li.family-alert.review { border-color: var(--ember-edge); border-left-color: var(--ember); background: var(--ember-skin); }
+.family-alerts li.family-alert.soon { border-left-color: var(--gold); background: var(--gold-skin); }
+.family-alerts li.family-alert.note { border-left-color: var(--marigold); }
+.family-alert-level { display: block; font-size: calc(12px * var(--text-scale)); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-faint); }
+.family-alert.review .family-alert-level { color: var(--ember-deep); }
+.family-alert.soon .family-alert-level { color: var(--gold-deep); }
+.family-alert > strong { display: block; font-size: calc(18px * var(--text-scale)); margin-top: 4px; color: var(--ink); }
+.family-alert > p { font-size: calc(16px * var(--text-scale)); margin-top: 4px; line-height: 1.45; }
+.family-waiting a { color: inherit; font-weight: 600; }
