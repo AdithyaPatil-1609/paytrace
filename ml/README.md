@@ -28,6 +28,23 @@ What it was trained on, and how it was tested:
 - **Method:** LoRA on the 4-bit model (QLoRA) with MLX-LM: 16 layers, rank 8, learning rate 1e-4, 240 steps at batch size 2, loss on the answer only. Validation loss fell from 0.925 to 0.001. Config: `lora_alerts.yaml`.
 - **Limits:** both test sets are synthetic and small. Real bank alerts will include formats neither set covers, so expect lower accuracy on real data until the template set grows.
 
+## Job 4 results: commitment or everyday spending
+
+The engine groups debits by statement text, so a supermarket visited every month can look recurring. Job 4 reads one group (statement text, payment rail, mandate and notice flags, dates and amounts; never names or accounts) and says `commitment`, `everyday_spending` or `unsure`.
+
+| Model | Held-out test (204) | Hidden commitments (worse error) | Everyday left as recurring |
+| --- | --- | --- | --- |
+| `qwen3:14b`, base (Ollama) | 178/204 (87%) | 5/116 | 5/76 |
+| Qwen3 8B, base (MLX) | 119/204 (58%) | 0/116 | 1/76 |
+| **Qwen3 8B + adapter (MLX)** | **193/204 (95%)** | **1/116** | 9/76 |
+
+On the dev set the tuned model scores 26/27 (96%). Full tables: `ml/results/recurring_*_v1.md`.
+
+- **Training data:** 503 synthetic groups from `gen_recurring.py` (55 for validation). All invented: no real statement, person or account.
+- **Method:** LoRA on the 4-bit model with MLX-LM: 16 layers, rank 8, learning rate 1e-4, 400 steps at batch size 2, loss on the answer only. Config: `lora_recurring.yaml`.
+- **In the app:** `db/neo4j/recurring-checks.ts` asks it about new groups after the dashboard loads, within the rules in `lib/payments/recurring-check.ts`: a group with a dictionary match, an autopay mandate, a notice, or a loan or insurance stays recurring whatever the model says, the person's "keep as recurring" always wins, and if the server is off nothing is hidden.
+- **Limits:** the test set is synthetic. Expect lower accuracy on real statements until the generator covers more formats.
+
 ## Job 2 and the chatbot
 
 The **Ask AI** button in the bottom-right corner of the dashboard runs all three jobs (`lib/assistant/`):
@@ -51,6 +68,7 @@ Run it:
 ```bash
 ollama serve                 # Job 1 and Job 2: qwen3:14b
 npm run ai:alerts            # Job 3: the fine-tuned alert reader on 127.0.0.1:8080 (optional; falls back to qwen3:14b)
+npm run ai:recurring         # Job 4: the fine-tuned recurring checker on 127.0.0.1:8081 (optional; nothing is hidden without it)
 npm run dev                  # then open the dashboard and press Ask AI
 npm run ai:eval              # re-score the whole assistant
 ```

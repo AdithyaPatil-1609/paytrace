@@ -1,0 +1,42 @@
+{
+    "adapter_path": "ml/adapters/qwen3-8b-recurring",
+    "batch_size": 2,
+    "clear_cache_threshold": 0,
+    "config": "/Users/adithyapatil/Desktop/HackUFront/recur-job4/ml/lora_recurring.yaml",
+    "data": "ml/data/mlx_recurring",
+    "fine_tune_type": "lora",
+    "grad_accumulation_steps": 1,
+    "grad_checkpoint": false,
+    "iters": 400,
+    "learning_rate": 0.0001,
+    "lora_parameters": {
+        "rank": 8,
+        "scale": 20.0,
+        "dropout": 0.0
+    },
+    "lr_schedule": null,
+    "mask_prompt": true,
+    "max_seq_length": 1024,
+    "model": "mlx-community/Qwen3-8B-4bit",
+    "num_layers": 16,
+    "optimizer": "adam",
+    "optimizer_config": {
+        "adam": {},
+        "adamw": {},
+        "muon": {},
+        "sgd": {},
+        "adafactor": {}
+    },
+    "project_name": null,
+    "report_to": null,
+    "resume_adapter_file": null,
+    "save_every": 80,
+    "seed": 20261122,
+    "steps_per_eval": 80,
+    "steps_per_report": 20,
+    "test": false,
+    "test_batches": 500,
+    "train": true,
+    "trust_remote_code": false,
+    "val_batches": -1
+}
