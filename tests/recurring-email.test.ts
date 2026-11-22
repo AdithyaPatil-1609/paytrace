@@ -4,7 +4,7 @@ import { parseFinancialEmail } from "../lib/ingestion/email";
 import { parseGmailReceipt } from "../lib/accounts/sync";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SubscriptionWatchlist } from "../components/subscription-watchlist";
+import { SubscriptionWatchlist } from "../components/insights/subscription-watchlist";
 import { semanticEmailCandidate } from "../lib/ingestion/semantic-email";
 
 test("generic recurring obligations extract labeled amounts and dates without recording payment",()=>{

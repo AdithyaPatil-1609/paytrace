@@ -6,7 +6,7 @@
  * know (last real use, a cancellation), which becomes user-confirmed evidence.
  */
 import { useCallback, useEffect, useState } from "react";
-import { TrustBadge } from "@/components/personal-graph-panel";
+import { TrustBadge } from "@/components/insights/personal-graph-panel";
 import type { CancelWarning, Evidence, GraphWarnings, MandateWarning, PriceAheadWarning, PriceWarning, UnusedWarning, UpcomingWarning } from "@/db/neo4j/warnings";
 
 const inr = (paise: number | null | undefined) =>

@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SubscriptionWatchlist } from "../components/subscription-watchlist";
+import { SubscriptionWatchlist } from "../components/insights/subscription-watchlist";
 import { headsUp, priceAheadWarnings, upcomingWarnings } from "../db/neo4j/warnings";
 import { isLateDebitNotice, isLateNotice, LATE_NOTICE_MESSAGE, maxNoticeHours } from "../lib/payments/notice-timing";
 import { NOTICE_TIMING_LIMITS } from "../lib/payments/rules";

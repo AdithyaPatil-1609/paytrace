@@ -1,5 +1,5 @@
 /** /family/accept#invite=…: a person accepts a Family View invite. The token stays after "#" and never reaches the server's logs. */
-import { FamilyAccept } from "@/components/family-access";
+import { FamilyAccept } from "@/components/account/family-access";
 import "../../account/account.css";
 import "../family.css";
 

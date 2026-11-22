@@ -6,8 +6,8 @@
  */
 import { useState } from "react";
 import { BarMenu, PhoneIcon } from "@/components/chrome/bar-menu";
-import { IphoneConnect } from "@/components/iphone-connect";
-import { PhonePairing } from "@/components/phone-pairing";
+import { IphoneConnect } from "@/components/account/iphone-connect";
+import { PhonePairing } from "@/components/account/phone-pairing";
 
 type Kind = "iphone" | "android";
 

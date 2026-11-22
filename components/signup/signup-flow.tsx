@@ -8,9 +8,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PayTraceLogo } from "@/components/paytrace-logo";
-import { PhonePairing } from "@/components/phone-pairing";
+import { PhonePairing } from "@/components/account/phone-pairing";
 import { PhoneOtp, type FirebaseWebConfig } from "./phone-otp";
-import { StatementImport } from "@/components/statement-import";
+import { StatementImport } from "@/components/account/statement-import";
 import { SyncProgress } from "./sync-progress";
 
 export type SignUpAccount = {

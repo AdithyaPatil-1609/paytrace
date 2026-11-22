@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
-import { AccountLogin } from "@/components/account-login";
+import { AccountLogin } from "@/components/account/account-login";
 import { accountForSession } from "@/db/neo4j/accounts";
 import { accountConfigured, SESSION } from "@/lib/accounts/security";
-import { AccountDashboard } from "@/components/account-dashboard";
+import { AccountDashboard } from "@/components/account/account-dashboard";
 import { noticeIsError, noticeText } from "@/lib/accounts/notices";
 import { redirect } from "next/navigation";
 import "./account.css";

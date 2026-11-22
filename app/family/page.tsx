@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { accountForSession } from "@/db/neo4j/accounts";
 import { SESSION } from "@/lib/accounts/security";
-import { FamilyAccess } from "@/components/family-access";
+import { FamilyAccess } from "@/components/account/family-access";
 import "../account/account.css";
 import "./family.css";
 
