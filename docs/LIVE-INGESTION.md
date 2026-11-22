@@ -28,7 +28,7 @@ Date: 2026-01-01
 
 ## Existing analysis and agent tools
 
-`readLiveSummary` maps scoped graph records to the existing `detectCommitments` engine; this reuses its cadence, cost, notice and mandate logic. The offline fixture/Cypher demo remains unchanged. Uncertain matches are stored as `POSSIBLE_MATCH` relationships. `LIVE_QUERIES` in `db/neo4j/live.ts` contains fixed parameterized payment, evidence, event and review queries. Pass `$profile` server-side; never let the chatbot choose someone else's profile or run arbitrary Cypher.
+`readLiveSummary` maps scoped graph records to the existing `detectCommitments` engine; this reuses its cadence, cost, notice and mandate logic. The offline fixture/Cypher demo remains unchanged. Uncertain matches are stored as `POSSIBLE_MATCH` relationships. `LIVE_QUERIES` in `neo4j/live.ts` contains fixed parameterized payment, evidence, event and review queries. Pass `$profile` server-side; never let the chatbot choose someone else's profile or run arbitrary Cypher.
 
 For the proposed frontend, poll the protected summary through an authenticated server-side session and refresh when `revision` changes. Never put the read or device secret in browser JavaScript. The current frontend was deliberately not edited.
 

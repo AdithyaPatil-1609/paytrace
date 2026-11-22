@@ -8,17 +8,17 @@ import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { ingestLiveEvent } from "../../db/neo4j/live";
-import { ensureChains } from "../../db/neo4j/chains";
-import { decideSimilarLink, readSimilarLinks, refreshSimilarLinksFor } from "../../db/neo4j/merchant-links";
-import { readEvidenceTrust } from "../../db/neo4j/evidence-trust";
-import { readGraphWarnings, WARNING_QUERIES } from "../../db/neo4j/warnings";
-import { createSession } from "../../db/neo4j/accounts";
-import { deleteAllUserData } from "../../db/neo4j/delete-user";
-import { profileFor, SESSION } from "../../lib/accounts/security";
-import { emailProvenance, LEGACY_REASON, smsProvenance, statementProvenance } from "../../lib/ingestion/trust";
-import type { PaymentEvent } from "../../lib/ingestion/event";
+import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/client";
+import { ingestLiveEvent } from "../../neo4j/live";
+import { ensureChains } from "../../neo4j/chains";
+import { decideSimilarLink, readSimilarLinks, refreshSimilarLinksFor } from "../../neo4j/merchant-links";
+import { readEvidenceTrust } from "../../neo4j/evidence-trust";
+import { readGraphWarnings, WARNING_QUERIES } from "../../neo4j/warnings";
+import { createSession } from "../../neo4j/accounts";
+import { deleteAllUserData } from "../../neo4j/delete-user";
+import { profileFor, SESSION } from "../../server/accounts/security";
+import { emailProvenance, LEGACY_REASON, smsProvenance, statementProvenance } from "../../server/ingestion/trust";
+import type { PaymentEvent } from "../../server/ingestion/event";
 
 const skip = !hasNeo4jConfig();
 const TODAY = "2026-11-21";
@@ -169,8 +169,8 @@ test("the Cypher shown is the Cypher that ran, with counts and no private values
 
 test("routes take the person from the session: a changed profile id or another person's merchant gets nothing", { skip }, async () => {
   Object.assign(process.env, { GOOGLE_WEB_CLIENT_ID: "test-client", GOOGLE_WEB_CLIENT_SECRET: "test-secret", PAYTRACE_APP_URL: "http://localhost:3000", PAYTRACE_AUTH_KEY: "ab".repeat(32) });
-  const { GET } = await import("../../app/api/account/graph/route");
-  const { POST } = await import("../../app/api/account/merchants/similar/route");
+  const { GET } = await import("../../web/app/api/account/graph/route");
+  const { POST } = await import("../../web/app/api/account/merchants/similar/route");
   const a = `test-${randomUUID()}`, b = `test-${randomUUID()}`;
   subs.push(a, b);
   const sessionA = await createSession({ sub: a, email: "a@example.com", name: "A" });

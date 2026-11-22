@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { detectCommitments } from "@/lib/payments/engine";
+import { detectCommitments } from "@/server/payments/engine";
 import { loadFixtures } from "@/data/fixtures";
-import { prepareChallenge, runOfflineChallenge } from "@/lib/scenarios/challenge";
+import { prepareChallenge, runOfflineChallenge } from "@/server/scenarios/challenge";
 
 const dataset = loadFixtures();
 const original = JSON.stringify(dataset);

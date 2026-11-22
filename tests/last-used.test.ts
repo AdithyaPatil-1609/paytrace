@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { detectCommitments } from "@/lib/payments/engine";
-import { RULES } from "@/lib/payments/rules";
-import { formatDate } from "@/lib/presentation/format";
-import { lastUsedLine } from "@/lib/presentation/last-used";
-import { issueDescription } from "@/lib/presentation/issue-cards";
-import { phoneReport, usageFor, usageRows } from "@/db/neo4j/live";
-import type { Dataset, StatementRow, UsageRow } from "@/lib/payments/types";
+import { detectCommitments } from "@/server/payments/engine";
+import { RULES } from "@/server/payments/rules";
+import { formatDate } from "@/server/presentation/format";
+import { lastUsedLine } from "@/server/presentation/last-used";
+import { issueDescription } from "@/server/presentation/issue-cards";
+import { phoneReport, usageFor, usageRows } from "@/neo4j/live";
+import type { Dataset, StatementRow, UsageRow } from "@/server/payments/types";
 
 const AS_OF = "2026-11-22";
 const debit = (merchant: string, date: string, amount: number): StatementRow => ({

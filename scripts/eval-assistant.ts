@@ -3,7 +3,7 @@
  *
  *   npm run ai:eval            (needs: ollama serve, with qwen3:14b pulled)
  *
- * For each question in ml/data/assistant_test.jsonl it checks:
+ * For each question in ai/training/data/assistant_test.jsonl it checks:
  *   - routed:   Job 1 picked the expected intent;
  *   - facts:    the reply carries every key fact (amount or word) expected;
  *   - worded:   Qwen's wording passed the number check and was used
@@ -14,13 +14,13 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { loadFixtures } from "../data/fixtures";
-import { detectCommitments } from "../lib/payments/engine";
-import { ask } from "../lib/assistant/assistant";
-import { CHAT_MODEL } from "../lib/assistant/models";
+import { detectCommitments } from "../server/payments/engine";
+import { ask } from "../ai/assistant/assistant";
+import { CHAT_MODEL } from "../ai/assistant/models";
 import {
   ANSWER_PROMPT_VERSION,
   INTENT_PROMPT_VERSION,
-} from "../lib/assistant/prompts";
+} from "../ai/assistant/prompts";
 
 type Case = {
   tag: string;
@@ -31,7 +31,7 @@ type Case = {
   found?: boolean;
 };
 
-const TEST_FILE = "ml/data/assistant_test.jsonl";
+const TEST_FILE = "ai/training/data/assistant_test.jsonl";
 const cases: Case[] = readFileSync(TEST_FILE, "utf8")
   .split("\n")
   .filter((line) => line.trim())
@@ -144,7 +144,7 @@ ${rows
   .join("\n")}
 `;
 
-  const out = `ml/results/assistant_test_${CHAT_MODEL.replace(/:/g, "-")}_answer-${ANSWER_PROMPT_VERSION}.md`;
+  const out = `ai/training/results/assistant_test_${CHAT_MODEL.replace(/:/g, "-")}_answer-${ANSWER_PROMPT_VERSION}.md`;
   writeFileSync(out, report);
   console.log(`\n${passed}/${rows.length} fully correct. Wrote ${out}`);
 }

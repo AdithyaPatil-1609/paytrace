@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { gmailRetryDelayMs } from "../lib/accounts/sync";
+import { gmailRetryDelayMs } from "../server/accounts/sync";
 
 const NOW = Date.parse("2026-11-21T12:00:00.000Z");
 

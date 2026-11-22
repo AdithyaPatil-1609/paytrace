@@ -17,13 +17,13 @@ Guides and write-ups that are bigger than a README. Start with the [root README]
 | --- | --- |
 | [security/DEVICE_SIGNING.md](security/DEVICE_SIGNING.md) | Signed requests from the Android companion |
 | [security/REMEDIATION.md](security/REMEDIATION.md) | Findings, fixes and what is left |
-| [security/TEST-FAIL-RESULTS.md](security/TEST-FAIL-RESULTS.md) | Results of the attack cases in `eval/hostile.csv` |
+| [security/TEST-FAIL-RESULTS.md](security/TEST-FAIL-RESULTS.md) | Results of the attack cases in `ai/eval/hostile.csv` |
 | [security/ROUND2-QA.md](security/ROUND2-QA.md) | Short answers to common security and privacy questions, with where to see the proof |
 
 ## Elsewhere
 
-- Neo4j graph: [db/neo4j/README.md](../db/neo4j/README.md), with `WARNINGS.md`, `GRAPH-INTELLIGENCE.md` and `AGENT.md` next to it.
-- Local models: [ml/README.md](../ml/README.md).
+- Neo4j graph: [neo4j/README.md](../neo4j/README.md), with `WARNINGS.md`, `GRAPH-INTELLIGENCE.md` and `AGENT.md` next to it.
+- Local models: [ai/training/README.md](../ai/training/README.md).
 - Android companion: [android/README.md](../android/README.md).
 
 Docs never contain real data, keys or tokens.

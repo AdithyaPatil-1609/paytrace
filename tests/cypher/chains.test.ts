@@ -7,10 +7,10 @@ import "../../scripts/load-env-local";
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { ingestLiveEvent } from "../../db/neo4j/live";
-import { ensureChains } from "../../db/neo4j/chains";
-import type { PaymentEvent } from "../../lib/ingestion/event";
+import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/client";
+import { ingestLiveEvent } from "../../neo4j/live";
+import { ensureChains } from "../../neo4j/chains";
+import type { PaymentEvent } from "../../server/ingestion/event";
 
 const skip = !hasNeo4jConfig();
 const profiles: string[] = [];

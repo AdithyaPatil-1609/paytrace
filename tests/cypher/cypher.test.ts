@@ -14,16 +14,16 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { Driver, Session } from "neo4j-driver";
 import { withSimulatedAutopay } from "../../data/simulation";
-import { analyzeCommitments } from "../../db/neo4j/analyze";
-import { demoDatabase, getDemoDriver, hasDemoNeo4jConfig } from "../../db/neo4j/client";
-import { loadGraphFacts } from "../../db/neo4j/graph";
-import { analyzeWithSimulatedAutopay } from "../../db/neo4j/simulate";
-import { writePayments } from "../../db/neo4j/write";
-import { isSilentPriceHike, isTrialConverted, isZombie, unusedTotal, yearlyTotal } from "@/lib/payments/analysis";
-import { detectCommitments } from "@/lib/payments/engine";
+import { analyzeCommitments } from "../../neo4j/analyze";
+import { demoDatabase, getDemoDriver, hasDemoNeo4jConfig } from "../../neo4j/client";
+import { loadGraphFacts } from "../../neo4j/graph";
+import { analyzeWithSimulatedAutopay } from "../../neo4j/simulate";
+import { writePayments } from "../../neo4j/write";
+import { isSilentPriceHike, isTrialConverted, isZombie, unusedTotal, yearlyTotal } from "@/server/payments/analysis";
+import { detectCommitments } from "@/server/payments/engine";
 import { AS_OF, loadFixtures, loadParserFixtures } from "@/data/fixtures";
-import { RULES } from "@/lib/payments/rules";
-import type { Commitment } from "@/lib/payments/types";
+import { RULES } from "@/server/payments/rules";
+import type { Commitment } from "@/server/payments/types";
 
 const skip = hasDemoNeo4jConfig() ? false : "The demo database is not configured. Set NEO4J_DEMO_* and run npm run seed.";
 
@@ -163,7 +163,7 @@ describe("Cypher engine on the live graph", { skip }, () => {
     assert.equal(await count(), before);
   });
 
-  test("C13. thresholds reach the query from lib/payments/rules.ts, they are not written into it", async () => {
+  test("C13. thresholds reach the query from server/payments/rules.ts, they are not written into it", async () => {
     const lenient = await analyzeCommitments(session, AS_OF, { ...RULES, zombieDays: 400 });
     const gym = lenient.find((item) => item.merchant === "FitLine Gym")!;
     assert.equal(gym.signals.includes("zombie"), false);

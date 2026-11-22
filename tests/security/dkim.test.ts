@@ -1,7 +1,7 @@
 /** Only Google's own Authentication-Results line is trusted, and only a clear failure drops an email. */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { fromDomain, senderAuthentication } from "../../lib/ingestion/dkim";
+import { fromDomain, senderAuthentication } from "../../server/ingestion/dkim";
 
 const ar = (value: string) => ({ name: "Authentication-Results", value });
 const from = "Spotify <no-reply@spotify.com>";

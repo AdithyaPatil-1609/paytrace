@@ -3,14 +3,14 @@
  * and the demo sandbox using a statement in place of the demo person's.
  * All data is made up.
  */
-import { isManualTransfer } from "../lib/payments/engine";
+import { isManualTransfer } from "../server/payments/engine";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cleanNarration, parseStatementCsv, statementAmount, statementDate } from "../lib/statements/csv";
-import { generateStatement, statementCsv } from "../lib/statements/generate";
-import { clearSandboxes, getSandbox, openSandbox } from "../lib/sandbox/store";
-import { clearStatement, loadSampleStatement, loadUploadedStatement } from "../lib/sandbox/statement";
-import { sandboxView } from "../lib/sandbox/dataset";
+import { cleanNarration, parseStatementCsv, statementAmount, statementDate } from "../server/statements/csv";
+import { generateStatement, statementCsv } from "../server/statements/generate";
+import { clearSandboxes, getSandbox, openSandbox } from "../server/sandbox/store";
+import { clearStatement, loadSampleStatement, loadUploadedStatement } from "../server/sandbox/statement";
+import { sandboxView } from "../server/sandbox/dataset";
 import { loadFixtures } from "../data/fixtures";
 
 const HDFC = `HDFC BANK Ltd.\nStatement of accounts\n\nDate,Narration,Chq./Ref.No.,Value Dt,Withdrawal Amt.,Deposit Amt.,Closing Balance
@@ -94,10 +94,10 @@ test("an uploaded statement replaces the demo data for that visitor only, and ca
 });
 
 // ---- signed-in import ------------------------------------------------------
-import { statementEvents, merchantFromNarration } from "../lib/statements/events";
-import { validateEvent } from "../lib/ingestion/event";
+import { statementEvents, merchantFromNarration } from "../server/statements/events";
+import { validateEvent } from "../server/ingestion/event";
 import { NextRequest } from "next/server";
-import { POST as importStatement } from "../app/api/account/statement/route";
+import { POST as importStatement } from "../web/app/api/account/statement/route";
 
 test("only debits become payments, each with a stable id; identical lines stay two", () => {
   const parsed = parseStatementCsv(statementCsv(generateStatement("y", "2026-11-21")));

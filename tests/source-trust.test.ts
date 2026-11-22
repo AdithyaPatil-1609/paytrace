@@ -4,8 +4,8 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { corroboration, emailProvenance, LEGACY_REASON, readTrust, smsProvenance, statementProvenance } from "../lib/ingestion/trust";
-import { validateEvent } from "../lib/ingestion/event";
+import { corroboration, emailProvenance, LEGACY_REASON, readTrust, smsProvenance, statementProvenance } from "../server/ingestion/trust";
+import { validateEvent } from "../server/ingestion/event";
 
 test("an email is verified only when Gmail's sender check passed", () => {
   assert.equal(emailProvenance("pass").sourceTrust, "verified_origin");

@@ -4,8 +4,8 @@
  */
 import assert from "node:assert/strict";
 import test, { beforeEach } from "node:test";
-import { clientKey, LIMITS, resetRateLimits, takeHit, tooMany } from "../lib/security/rate-limit";
-import { POST as ask } from "../app/api/assistant/route";
+import { clientKey, LIMITS, resetRateLimits, takeHit, tooMany } from "../server/security/rate-limit";
+import { POST as ask } from "../web/app/api/assistant/route";
 
 beforeEach(() => resetRateLimits());
 
@@ -62,7 +62,7 @@ test("Ask AI refuses the seventh question in a minute from one person", async ()
 });
 
 test("Gmail sync refuses the sixth request in a minute from one address, before any session check", async () => {
-  const { POST: sync } = await import("../app/api/account/gmail/sync/route");
+  const { POST: sync } = await import("../web/app/api/account/gmail/sync/route");
   const { NextRequest } = await import("next/server");
   const send = () => sync(new NextRequest("http://localhost:3000/api/account/gmail/sync", { method: "POST", headers: { origin: "http://localhost:3000", "cf-connecting-ip": "203.0.113.30" } }));
   for (let i = 0; i < LIMITS.gmailSync[0].limit; i++) assert.notEqual((await send()).status, 429);

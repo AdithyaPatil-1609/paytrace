@@ -18,7 +18,7 @@ try {
 
 const config = [
   {
-    ignores: [".next/**", "node_modules/**", "out/**", "build/**", "next-env.d.ts"]
+    ignores: ["web/.next/**", ".next/**", "node_modules/**", "out/**", "build/**", "web/next-env.d.ts", "ai/training/.venv/**"]
   },
   ...nextCoreWebVitals,
   ...nextTypescript

@@ -3,11 +3,11 @@ import "./load-env-local";
 import { setTimeout as delay } from "node:timers/promises";
 
 async function main() {
-  const { accountConfig }=await import("../lib/accounts/security");
-  const { linkedAccounts }=await import("../db/neo4j/accounts");
-  const { syncAccount }=await import("../lib/accounts/sync");
-  const { AccountError }=await import("../lib/accounts/errors");
-  const { getNeo4jDriver }=await import("../db/neo4j/client");
+  const { accountConfig }=await import("../server/accounts/security");
+  const { linkedAccounts }=await import("../neo4j/accounts");
+  const { syncAccount }=await import("../server/accounts/sync");
+  const { AccountError }=await import("../server/accounts/errors");
+  const { getNeo4jDriver }=await import("../neo4j/client");
   accountConfig();
   try {
     do {

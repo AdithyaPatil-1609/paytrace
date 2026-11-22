@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseFinancialEmail } from "../lib/ingestion/email";
-import { parseGmailReceipt } from "../lib/accounts/sync";
+import { parseFinancialEmail } from "../server/ingestion/email";
+import { parseGmailReceipt } from "../server/accounts/sync";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SubscriptionWatchlist } from "../components/insights/subscription-watchlist";
-import { semanticEmailCandidate } from "../lib/ingestion/semantic-email";
+import { SubscriptionWatchlist } from "../web/components/insights/subscription-watchlist";
+import { semanticEmailCandidate } from "../server/ingestion/semantic-email";
 
 test("generic recurring obligations extract labeled amounts and dates without recording payment",()=>{
   const base={id:"obligation123",from:"Provider <notices@example.com>",date:"2026-10-13"};

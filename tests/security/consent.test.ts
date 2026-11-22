@@ -1,7 +1,7 @@
 /** Gmail is linked only with the exact, current consent and the box ticked (DPDP). */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { GMAIL_CONSENT_VERSION, hasGmailConsent } from "../../lib/accounts/consent";
+import { GMAIL_CONSENT_VERSION, hasGmailConsent } from "../../server/accounts/consent";
 
 const form = (fields: Record<string, string>) => { const f = new FormData(); for (const [k, v] of Object.entries(fields)) f.set(k, v); return f; };
 

@@ -2,9 +2,9 @@
 // Made-up merchants and records only.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { corroboratedGraph, GRAPH_LIMITS, layoutGraph, LAYOUT, recordsGraph, shorten, similarGraph, trustGraph } from "../lib/presentation/query-graph";
-import type { Evidence } from "../db/neo4j/warnings";
-import type { SimilarLink } from "../db/neo4j/merchant-links";
+import { corroboratedGraph, GRAPH_LIMITS, layoutGraph, LAYOUT, recordsGraph, shorten, similarGraph, trustGraph } from "../server/presentation/query-graph";
+import type { Evidence } from "../neo4j/warnings";
+import type { SimilarLink } from "../neo4j/merchant-links";
 
 const ev = (id: string, source = "sms", sourceTrust: Evidence["sourceTrust"] = "authenticated_source"): Evidence =>
   ({ id, source, kind: "debit_alert", date: "2026-10-05", sourceTrust, trustReason: "test" });

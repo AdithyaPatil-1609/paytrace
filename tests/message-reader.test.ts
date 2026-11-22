@@ -4,9 +4,9 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { checkReply, readMessage } from "../lib/assistant/message-reader";
-import { MESSAGE_KINDS, READER_JSON_SCHEMA, ReaderFieldsSchema } from "../lib/assistant/reader-shape";
-import { amountPaise, eventFromFields, parseDateText } from "../lib/ingestion/from-reader";
+import { checkReply, readMessage } from "../ai/assistant/message-reader";
+import { MESSAGE_KINDS, READER_JSON_SCHEMA, ReaderFieldsSchema } from "../ai/assistant/reader-shape";
+import { amountPaise, eventFromFields, parseDateText } from "../server/ingestion/from-reader";
 
 const message = (text: string) => ({ text, sender: "VM-HDFCBK-S", receivedAt: "2026-11-21T10:00:00.000Z" });
 const reply = (fields: Record<string, unknown>) =>

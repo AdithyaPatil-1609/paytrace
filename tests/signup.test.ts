@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cleanFullName } from "../lib/accounts/security";
-import { toE164 } from "../lib/accounts/phone-number";
-import { createFlow, authorizationUrl } from "../lib/accounts/google";
+import { cleanFullName } from "../server/accounts/security";
+import { toE164 } from "../server/accounts/phone-number";
+import { createFlow, authorizationUrl } from "../server/accounts/google";
 
 test("sign-up full names are checked", () => {
   assert.equal(cleanFullName("  Adhyay   Ravishankar "), "Adhyay Ravishankar");

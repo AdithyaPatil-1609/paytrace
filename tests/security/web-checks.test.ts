@@ -4,9 +4,9 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { fromOurSite } from "../../lib/security/origin";
-import { readJsonBody } from "../../lib/security/body";
-import nextConfig from "../../next.config";
+import { fromOurSite } from "../../server/security/origin";
+import { readJsonBody } from "../../server/security/body";
+import nextConfig from "../../web/next.config";
 
 const ORIGIN = "https://paytrace.co.in";
 function withAccounts<T>(work: () => T) {

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cancelOptions, missingCancellationGuidance, requiresProviderReview } from "../lib/presentation/cancel-links";
-import type { Mechanism } from "../lib/payments/types";
+import { cancelOptions, missingCancellationGuidance, requiresProviderReview } from "../server/presentation/cancel-links";
+import type { Mechanism } from "../server/payments/types";
 
 const unknown = {
   merchant: "Example merchant",

@@ -5,8 +5,8 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readMessage } from "../../lib/assistant/message-reader";
-import { appearsIn, keepGroundedFields, looksLikeInstructions } from "../../lib/assistant/verify-fields";
+import { readMessage } from "../../ai/assistant/message-reader";
+import { appearsIn, keepGroundedFields, looksLikeInstructions } from "../../ai/assistant/verify-fields";
 
 const base = { is_financial: true, kind: "debit" as const, merchant: "Netflix", amount_text: "Rs 649.00", date_text: "21-11-26", reference: "UPI123456", account_last4: "4417", upi_id: null };
 const sms = "Rs 649.00 debited from A/c XX4417 on 21-11-26 for NETFLIX. UPI Ref UPI123456 -HDFC Bank";

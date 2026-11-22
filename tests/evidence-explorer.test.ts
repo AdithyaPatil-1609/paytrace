@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PaymentEvidenceExplorer } from "../components/visualizations/payment-evidence-graph";
-import { detectCommitments } from "@/lib/payments/engine";
+import { PaymentEvidenceExplorer } from "../web/components/visualizations/payment-evidence-graph";
+import { detectCommitments } from "@/server/payments/engine";
 import { loadFixtures } from "@/data/fixtures";
 
 const dataset = loadFixtures();

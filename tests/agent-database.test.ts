@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
-import { getAgentDriver, hasAgentNeo4jConfig } from "../db/neo4j/agent-client";
+import { getAgentDriver, hasAgentNeo4jConfig } from "../neo4j/agent-client";
 
 const keys = ["PERSONAL_NEO4J_URI", "PERSONAL_NEO4J_USERNAME", "PERSONAL_NEO4J_PASSWORD", "NEO4J_URI", "NEO4J_DEMO_URI"];
 const saved = Object.fromEntries(keys.map(key => [key, process.env[key]]));
