@@ -216,7 +216,7 @@ export function AssistantWidget({ scope, onOpen }: { scope: "demo" | "demo-stati
         className="assistant-toggle"
         onClick={() => (open ? close() : setOpen(true))}
         aria-expanded={open}
-        aria-label={open ? "Close the assistant" : "Open the Paytrace assistant"}
+        aria-label={open ? "Close the assistant" : "Ask AI: open the Paytrace assistant"}
       >
         {open ? (
           "×"
