@@ -2,6 +2,7 @@
 
 import { formatDate, formatINR } from "@/lib/presentation/format";
 import type { Commitment } from "@/lib/payments/types";
+import { cancelDestination, upiRoute } from "@/components/detail/upi-cancel-link";
 import { cancelOptions, ifStillCharged, missingCancellationGuidance, requiresProviderReview, type CancelLink } from "@/lib/presentation/cancel-links";
 
 function InstructionFlow({ text }: { text: string }) {
@@ -43,6 +44,12 @@ export function CancellationGuide({
   // The ways to cancel, best first; the person uses the first one that works.
   const options = cancelOptions(item);
   const still = ifStillCharged(item);
+  // Keep external hand-offs in the drawer, not in the compact payment row.
+  const destination = !obligation && !requiresProviderReview(item) ? cancelDestination(item) : null;
+  const normalizeUrl = (url: string) => url.replace("://www.", "://").replace(/\/$/, "");
+  const extraDestination = destination && !options.some(option =>
+    option.links.some(link => normalizeUrl(link.href) === normalizeUrl(destination.url))
+  ) ? destination : null;
   return (
     <section
       className="cancellation-guide"
@@ -104,6 +111,15 @@ export function CancellationGuide({
                 <LinkRow links={option.links} />
               </li>
             ))}
+            {extraDestination && (
+              <li>
+                <p className="cancel-option-title"><span>Optional</span> {upiRoute(item) === "possible" ? "Check for a UPI AutoPay mandate" : extraDestination.label}</p>
+                <InstructionFlow text={upiRoute(item) === "possible"
+                  ? "If you confirm this payment is billed through UPI AutoPay, open NPCI UPI Help to find the matching mandate. Revoke only after confirming the correct payment and that no obligation remains. If no mandate appears, confirm the billing method with the provider."
+                  : extraDestination.steps} />
+                <LinkRow links={[{ label: upiRoute(item) === "possible" ? "Open NPCI UPI Help" : extraDestination.label, href: extraDestination.url }]} />
+              </li>
+            )}
           </ol>
           {item.nextCharge && (
             <p className="cancellation-deadline">
