@@ -1,5 +1,8 @@
 import { ScreenHeader } from "@/components/chrome/screen-header";
 import { WarningIcon } from "@/components/chrome/warning-tag";
+import { CueChip, CueIcon, MerchantMark } from "@/components/chrome/visual-cues";
+import { CUE_FOR_GROUP } from "@/components/screens/all-payments";
+import { formatDate } from "@/lib/presentation/format";
 import { cancelDestination, UpiCancelLink } from "@/components/detail/upi-cancel-link";
 import { formatINR } from "@/lib/presentation/format";
 import {
@@ -8,6 +11,7 @@ import {
   issueGroups
 } from "@/lib/presentation/issue-cards";
 import type { Commitment } from "@/lib/payments/types";
+import type { IssueCategory } from "@/lib/presentation/issue-cards";
 import { challengeChoices } from "@/lib/scenarios/challenge-ui";
 
 export function IssuesScreen({
@@ -37,24 +41,39 @@ export function IssuesScreen({
         number="2"
         eyebrow="PAYMENTS WORTH A LOOK"
         title="Issues"
-        copy={`${findings} ${findings === 1 ? "finding" : "findings"} across ${paymentCount} ${paymentCount === 1 ? "payment" : "payments"} worth reviewing.`}
         help="These are the payments that need a look: price rises, services you don't use, debits coming up and charges after you cancelled. One payment can show up in more than one list. Tap any of them to see the proof."
       />
-      {findings > 0 && (
-        <div className="issue-alert" role="alert">
-          <span className="issue-alert-icon" aria-hidden="true">
-            <WarningIcon />
-          </span>
-          <div>
-            <strong>
-              {paymentCount} {paymentCount === 1 ? "payment needs" : "payments need"} your attention
-            </strong>
-            <p>
-              {formatINR(atStake)} a year goes to them. Check each warning below, then stop or keep the payment.
-            </p>
+      <nav className="issue-tiles" aria-label={`${paymentCount} payments need a look, ${formatINR(atStake)} a year`}>
+        {findings === 0 ? (
+          <div className="issue-tile is-calm">
+            <span className="issue-tile-icon">
+              <CueIcon kind="ok" size={20} />
+            </span>
+            <b>0</b>
+            <span>All clear</span>
           </div>
-        </div>
-      )}
+        ) : (
+          groups
+            .filter((group) => group.rows.length > 0)
+            .map((group) => (
+              <button
+                type="button"
+                key={group.id}
+                className="issue-tile"
+                onClick={() =>
+                  document.getElementById(`issue-category-${group.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+              >
+                <span className="issue-tile-icon">
+                  <CueIcon kind={CUE_FOR_GROUP[group.id]} size={20} />
+                </span>
+                <b>{group.rows.length}</b>
+                <span>{group.title}</span>
+                <small>{formatINR(group.rows.reduce((sum, item) => sum + item.annualCost, 0))}/yr</small>
+              </button>
+            ))
+        )}
+      </nav>
       {findings === 0 && (
         <p className="issue-empty" role="status">
           Nothing needs review in the available records. Payments you chose to keep are not flagged
@@ -79,8 +98,8 @@ export function IssuesScreen({
               aria-labelledby={`issue-category-${group.id}`}
             >
               <header className="issue-category-header">
-                <h2 id={`issue-category-${group.id}`}>
-                  {group.title} <span>({group.rows.length})</span>
+                <h2 id={`issue-category-${group.id}`} title={group.description}>
+                  <CueIcon kind={CUE_FOR_GROUP[group.id]} size={22} /> {group.title} <span>({group.rows.length})</span>
                 </h2>
                 {showTotal && (
                   <p>
@@ -89,7 +108,6 @@ export function IssuesScreen({
                   </p>
                 )}
               </header>
-              <p className="issue-category-description">{group.description}</p>
               {group.rows.length === 0 ? (
                 <p className="issue-category-empty">None found in the available records.</p>
               ) : (
@@ -97,18 +115,22 @@ export function IssuesScreen({
                   {group.rows.map((item) => (
                     <article className="issue-card" data-row={item.id} key={item.id}>
                       <header className="issue-card-header">
-                        <div>
-                          <h3>{item.product || item.merchant}</h3>
-                          <p className="issue-card-descriptor">{item.rawNarration}</p>
+                        <div className="issue-card-title">
+                          <MerchantMark name={item.merchant} tone="issue" />
+                          <h3 title={item.rawNarration}>{item.product || item.merchant}</h3>
                         </div>
                         <span className={`issue-card-badge badge-${group.id}`}>
                           <WarningIcon />
                           {group.badge}
                         </span>
                       </header>
-                      <p className="issue-card-explanation">{issueDescription(item, group.id)}</p>
+                      <IssueVisual item={item} category={group.id} />
+                      <details className="issue-why">
+                        <summary>Why?</summary>
+                        {issueDescription(item, group.id)}
+                      </details>
                       <div className="issue-card-actions">
-                        {group.id !== "unknown" && cancelDestination(item) ? <UpiCancelLink item={item} /> : (
+                        {group.id !== "unknown" && cancelDestination(item) ? <UpiCancelLink item={item} compact /> : (
                         <button
                           className="issue-card-link"
                           onClick={() =>
@@ -158,5 +180,66 @@ export function IssuesScreen({
         </details>
       )}
     </>
+  );
+}
+
+/** The finding as a picture: old price → new price, coins paid since last use, and so on. */
+function IssueVisual({ item, category }: { item: Commitment; category: IssueCategory }) {
+  if (category === "price" || category === "announced") {
+    const extra = annualPriceIncrease(item);
+    return (
+      <div className="issue-visual">
+        <span className="issue-visual-from">{formatINR(item.previousAmount ?? 0)}</span>
+        <span className="issue-visual-arrow">
+          <CueIcon kind="price" size={22} />
+        </span>
+        <span className="issue-visual-to">{formatINR(item.amount)}</span>
+        {extra !== undefined && <CueChip kind="price">+{formatINR(extra)}/yr</CueChip>}
+      </div>
+    );
+  }
+  if (category === "unused") {
+    const charges = item.lastOpened ? item.evidenceRows.filter((row) => row.date > item.lastOpened!) : item.evidenceRows;
+    const paid = charges.reduce((sum, row) => sum + row.amount, 0);
+    const since = item.lastOpened ?? item.notOpenedSince;
+    return (
+      <div className="issue-visual">
+        {since ? (
+          <CueChip kind="unused">Last used {formatDate(since)}</CueChip>
+        ) : (
+          <CueChip kind="unused">No use recorded</CueChip>
+        )}
+        <span className="issue-visual-big">{formatINR(paid)}</span>
+        <span className="issue-visual-label">paid since</span>
+        <span className="issue-coins" aria-label={`${charges.length} charges`}>
+          {charges.slice(0, 24).map((row) => (
+            <i key={row.txnId} title={`${formatDate(row.date)} · ${formatINR(row.amount)}`} />
+          ))}
+        </span>
+      </div>
+    );
+  }
+  if (category === "trial") {
+    return (
+      <div className="issue-visual">
+        <CueChip kind="trial" tone="fixed">Free trial</CueChip>
+        <span className="issue-visual-arrow">→</span>
+        <span className="issue-visual-to">{formatINR(item.amount)}</span>
+      </div>
+    );
+  }
+  if (category === "new") {
+    return (
+      <div className="issue-visual">
+        <CueChip kind="new">Started {formatDate(item.startedOn)}</CueChip>
+        <span className="issue-visual-big">{formatINR(item.amount)}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="issue-visual">
+      <CueChip kind="unknown">Who is this?</CueChip>
+      <code>{item.rawNarration}</code>
+    </div>
   );
 }

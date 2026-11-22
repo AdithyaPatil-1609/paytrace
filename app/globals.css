@@ -25,3 +25,5 @@
 @import "./styles/ledger.css";
 /* PayTrace logo and landing extras. */
 @import "./styles/logo.css";
+/* Pictures in place of sentences, loaded last. */
+@import "./styles/visual.css";
