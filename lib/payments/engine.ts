@@ -12,13 +12,29 @@ import type {
   NoticeRow,
   Signal,
   SpendGroup,
-  StatementRow
+  StatementRow,
+  UsageRow
 } from "./types";
 import { commitmentId, describeIssue, describeRecurring, instrumentByMechanism, RULES, statusFor } from "./rules";
 
 const DAY = 24 * 60 * 60 * 1000;
 /** A service unopened for this long is a zombie. */
 export const ZOMBIE_DAYS = RULES.zombieDays;
+
+/**
+ * The usage row for one payment: by dictionary brand first, then by the same
+ * merchant name (live subscriptions carry the payment's own merchant name).
+ */
+function findUsage(usage: UsageRow[], entry: DictionaryEntry | undefined, narration: string) {
+  const byBrand = entry ? usage.find((item) => item.brand === entry.brand) : undefined;
+  if (byBrand) return byBrand;
+  const key = usageKey(narration);
+  return key ? usage.find((item) => usageKey(item.brand) === key) : undefined;
+}
+
+function usageKey(name: string) {
+  return name.toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
 
 function days(from: string, to: string) {
   return Math.round((Date.parse(to) - Date.parse(from)) / DAY);
@@ -274,9 +290,11 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
       }))
       .sort((a, b) => a.sentOn.localeCompare(b.sentOn));
 
-    const usageRow = entry ? usage.find((item) => item.brand === entry.brand) : undefined;
+    const usageRow = findUsage(usage, entry, group.narration);
     const lastOpened = usageRow?.lastOpened || undefined;
-    const openedDaysAgo = lastOpened ? days(lastOpened, asOf) : undefined;
+    // "Not opened since <day>" counts from that day: the real last use is at least that long ago.
+    const notOpenedSince = lastOpened ? undefined : usageRow?.notOpenedSince || undefined;
+    const openedDaysAgo = lastOpened ? days(lastOpened, asOf) : notOpenedSince ? days(notOpenedSince, asOf) : undefined;
     // Same rule as live data: only a last-use date the person gave (synthetic in the demo) can make
     // a payment "Not used". No date means unknown, never "unused".
     const neverOpened = false;
@@ -330,7 +348,7 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
       gapMax: gaps.length ? Math.max(...gaps) : undefined,
       mandate: Boolean(mandate)
     });
-    const issue = describeIssue(signals, { lastOpened, previous, latest, openedDaysAgo });
+    const issue = describeIssue(signals, { lastOpened, notOpenedSince, usageSource: usageRow?.source, previous, latest, openedDaysAgo });
 
     commitments.push({
       id: commitmentId(
@@ -358,6 +376,8 @@ export function detectCommitments(dataset: Dataset): Commitment[] {
       nextCharge,
       lastOpened,
       lastOpenedMonthsAgo: openedDaysAgo === undefined ? undefined : Math.floor(openedDaysAgo / 30),
+      ...(notOpenedSince ? { notOpenedSince } : {}),
+      ...(usageRow?.source ? { usageSource: usageRow.source } : {}),
       opensLast12Months: usageRow?.opensLast12Months,
       kind,
       bucket: bucketFor(kind, mechanism),

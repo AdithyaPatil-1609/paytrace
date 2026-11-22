@@ -28,7 +28,7 @@ const OPEN_EVENT = "paytrace:open-sandbox";
 
 /** The "Try it" button in the demo's top bar, left of the profile menu. It opens the console. */
 export function SandboxLauncher({ count }: { count: number }) {
-  return <button className="sbx-launcher" type="button" onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))} aria-label="Open the try-it console">
+  return <button className="sbx-launcher" type="button" onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}>
     Try it<span className="sbx-launcher-long">: send a message</span>{count ? <span className="sbx-count">{count}</span> : null}
   </button>;
 }

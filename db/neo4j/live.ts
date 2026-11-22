@@ -2,7 +2,8 @@ import { getNeo4jDriver, neo4jDatabase } from "./client";
 import { digest, eventKey, matchPayment, merchantKey, type PaymentEvent, type MatchablePayment } from "@/lib/ingestion/event";
 import { detectCommitments, matchDictionary, NOTICE_CHANNEL } from "@/lib/payments/engine";
 import { readDictionary } from "@/data/fixtures";
-import type { Commitment, Dataset, MandateRow, NotificationRow, StatementRow } from "@/lib/payments/types";
+import { usageMatches } from "./app-usage";
+import type { Commitment, Dataset, DictionaryEntry, MandateRow, NotificationRow, StatementRow, UsageRow } from "@/lib/payments/types";
 import { needsCheck, splitByChecks, type StoredCheck } from "@/lib/payments/recurring-check";
 import { UNVERIFIED, type Provenance } from "@/lib/ingestion/trust";
 
@@ -132,16 +133,76 @@ export const LIVE_QUERIES = {
   review: `MATCH (:LiveProfile {id:$profile})-[:RECEIVED]->(e:LiveEvent)-[:POSSIBLE_MATCH]->(p:LivePayment) WHERE e.status='review' RETURN e.id AS eventId,p.id AS candidatePaymentId`
 } as const;
 
+/** Usage facts on the person's own subscriptions: Android screen time (db/neo4j/app-usage.ts) or a date they confirmed. */
+export const USAGE_QUERY = `MATCH (:LiveProfile {id:$profile})-[:HAS_SUBSCRIPTION]->(s:LiveSubscription)
+WHERE s.lastVerifiedUsageAt IS NOT NULL OR s.usageNoUseSince IS NOT NULL
+RETURN s.merchant AS merchant, s.lastVerifiedUsageAt AS lastUsed, s.usageNoUseSince AS noUseSince, s.usageSource AS source`;
+
+export type StoredUsage = { merchant: unknown; lastUsed: unknown; noUseSince: unknown; source: unknown };
+
+/** The phone's last report, as kept on the profile by recordAppUsage. Anything unreadable is dropped. */
+export function phoneReport(raw: unknown): StoredUsage[] {
+  if (typeof raw !== "string") return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(item => item && typeof item === "object").map(item => ({ ...item, source: "android_usage_stats" }) as StoredUsage) : [];
+  } catch { return []; }
+}
+
+/**
+ * One usage row per payment merchant: every stored fact whose app name matches
+ * the merchant (usageMatches, the same rule the phone report uses), keeping the
+ * most recent last use. Only when no fact has a date does "not opened since" stand.
+ */
+export function usageFor(merchants: string[], stored: StoredUsage[], dictionary: DictionaryEntry[]): UsageRow[] {
+  const facts = usageRows(stored, []);
+  const rows: UsageRow[] = [];
+  for (const merchant of merchants) {
+    const found = facts.filter(fact => usageMatches(merchant, fact.brand));
+    const used = found.filter(fact => fact.lastOpened).sort((a, b) => b.lastOpened!.localeCompare(a.lastOpened!))[0];
+    const quiet = found.filter(fact => fact.notOpenedSince).sort((a, b) => b.notOpenedSince!.localeCompare(a.notOpenedSince!))[0];
+    const best = used ?? quiet;
+    if (!best) continue;
+    rows.push({ ...best, brand: merchant });
+    const brand = matchDictionary(merchant, dictionary)?.brand;
+    if (brand && brand !== merchant && !rows.some(row => row.brand === brand)) rows.push({ ...best, brand });
+  }
+  return rows;
+}
+
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Turns stored usage facts into the engine's usage rows, so a payment card can
+ * say when the app was last used and the "Stopped using it" rule can fire.
+ * Only real facts become rows: a subscription with no usage record gets none,
+ * so the card shows nothing and the payment is never called unused.
+ */
+export function usageRows(stored: StoredUsage[], dictionary: DictionaryEntry[]): UsageRow[] {
+  const rows: UsageRow[] = [];
+  for (const item of stored) {
+    const merchant = typeof item.merchant === "string" ? item.merchant : "";
+    const lastOpened = typeof item.lastUsed === "string" && ISO_DAY.test(item.lastUsed) ? item.lastUsed : undefined;
+    const notOpenedSince = !lastOpened && typeof item.noUseSince === "string" && ISO_DAY.test(item.noUseSince) ? item.noUseSince : undefined;
+    if (!merchant || (!lastOpened && !notOpenedSince)) continue;
+    const source = item.source === "android_usage_stats" ? "phone" : "you";
+    rows.push({ brand: matchDictionary(merchant, dictionary)?.brand ?? merchant, ...(lastOpened ? { lastOpened } : { notOpenedSince }), opensLast12Months: 0, source });
+  }
+  return rows;
+}
+
 /** Shared query; only the authenticated account endpoint receives the complete dataset. */
 export async function readLiveDashboard(profile: string, options: { withDetected?: boolean } = {}) {
   const session = getNeo4jDriver().session({ database: neo4jDatabase });
   try {
-    const { payments, events: allEvents, revision, checks } = await session.executeRead(async tx => {
+    const { payments, events: allEvents, revision, checks, usage } = await session.executeRead(async tx => {
       const payments = await tx.run(LIVE_QUERIES.payments, { profile });
       const events = await tx.run(LIVE_QUERIES.events, { profile });
       const version = await tx.run("MATCH (u:LiveProfile {id:$profile}) RETURN u.revision AS revision", { profile });
       const checks = await tx.run(CHECKS_QUERY, { profile });
-      return { payments: payments.records.map(r => r.get("item")), events: events.records.map(r => r.get("item")), revision: Number(version.records[0]?.get("revision") ?? 0), checks: checks.records.map(toCheck) };
+      const usage = await tx.run(USAGE_QUERY, { profile });
+      const report = await tx.run("MATCH (u:LiveProfile {id:$profile}) RETURN u.appUsageReport AS report", { profile });
+      return { payments: payments.records.map(r => r.get("item")), events: events.records.map(r => r.get("item")), revision: Number(version.records[0]?.get("revision") ?? 0), checks: checks.records.map(toCheck), usage: [...usage.records.map(r => ({ ...r.toObject(), source: r.get("source") === "user_confirmed" ? "user_confirmed" : "android_usage_stats" }) as StoredUsage), ...phoneReport(report.records[0]?.get("report"))] };
     });
     // Bank statement lines are payments, not messages: they feed the payments, never the notice list.
     const events = allEvents.filter(e => e.source !== "statement");
@@ -191,7 +252,7 @@ export async function readLiveDashboard(profile: string, options: { withDetected
     // become dated rows, marked as notices; a bank debit for the same merchant, date and amount wins.
     const paidRows = statement.length;
     statement.push(...noticeRows(statement, events, profile, asOf));
-    const dataset: Dataset = { asOf, statement, notifications, mandates, dictionary, usage: [] };
+    const dataset: Dataset = { asOf, statement, notifications, mandates, dictionary, usage: usageFor([...new Set(statement.map(row => row.narration))], usage, dictionary) };
     const detected = detectCommitments(dataset);
     // Job 4: a shop visited often (checked by the local model, within the rules in recurring-check.ts) is listed apart, never dropped.
     const { commitments, everyday } = splitByChecks(detected, checks);

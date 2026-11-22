@@ -15,9 +15,9 @@ export function ProfileMenu() {
   useCloseOnOutsideClick(menu);
   return (
     <details className="profile-menu" ref={menu}>
-      <summary aria-label={`Account menu for ${DEMO_PERSON.first}`}>
+      <summary>
         <b aria-hidden="true">{DEMO_PERSON.first[0]}</b>
-        <span>{DEMO_PERSON.first}</span>
+        <span>{DEMO_PERSON.first}<span className="issues-sr-only">, account menu</span></span>
         <Chevron />
       </summary>
       <div className="profile-panel">

@@ -522,6 +522,18 @@ body {
   overflow-wrap: anywhere;
 }
 
+.ledger-merchant .last-used {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: calc(12.5px * var(--text-scale));
+}
+
+.ledger-merchant .last-used.is-stale {
+  color: var(--ember-deep);
+  font-weight: 600;
+}
+
 .rail-tag {
   display: inline-block;
   padding: 3px 10px;

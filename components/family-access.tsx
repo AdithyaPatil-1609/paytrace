@@ -249,13 +249,13 @@ export function FamilyAccept() {
   return <Shell>
     <section className="account-card" style={{ maxWidth: 620 }}>
       <p className="account-eyebrow">FAMILY INVITE</p>
-      {!token ? <><h2>No invite found</h2><p className="account-note">Open the full link you were sent. It ends with #invite=…</p></>
-        : signedOut ? <><h2>Sign in to continue</h2><p className="account-note">Sign in with your own Google account, then come back to this page. The invite is kept in this browser tab until you accept it.</p><Link className="account-button primary" href="/signin">Sign in</Link></>
-        : done ? <><h2>Invite accepted</h2><p className="account-note">{done}</p><Link className="account-button primary" href={grant ? `/family#view=${grant}` : "/family"}>Open Family View</Link></>
+      {!token ? <><h1 className="family-accept-title">No invite found</h1><p className="account-note">Open the full link you were sent. It ends with #invite=…</p></>
+        : signedOut ? <><h1 className="family-accept-title">Sign in to continue</h1><p className="account-note">Sign in with your own Google account, then come back to this page. The invite is kept in this browser tab until you accept it.</p><Link className="account-button primary" href="/signin">Sign in</Link></>
+        : done ? <><h1 className="family-accept-title">Invite accepted</h1><p className="account-note">{done}</p><Link className="account-button primary" href="/family">Open Family View</Link></>
         : !peek ? <p className="account-note">Checking the invite…</p>
-        : !peek.ok ? <><h2>This invite cannot be used</h2><p className="account-note" role="alert">{peek.error}</p><Link className="account-button" href="/family">Go to Family access</Link></>
+        : !peek.ok ? <><h1 className="family-accept-title">This invite cannot be used</h1><p className="account-note" role="alert">{peek.error}</p><Link className="account-button" href="/family">Go to Family access</Link></>
         : <>
-          <h2>{peek.owner} wants to share their recurring payments with you</h2>
+          <h1 className="family-accept-title">{peek.owner} wants to share their recurring payments with you</h1>
           <p className="account-note">If you accept, you can see a read-only list for {peek.grantDays} days. {peek.owner} can remove your access at any time, and you can stop viewing at any time.</p>
           {WHAT_IS_SHARED}
           <label className="family-consent"><input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)}/> I want to see {peek.owner}&apos;s recurring payments, and I will keep them private.</label>

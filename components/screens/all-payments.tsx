@@ -13,6 +13,7 @@ import { issueItems } from "@/lib/payments/analysis";
 import { ChargeSparkline } from "@/components/visualizations/charge-sparkline";
 import { PaymentRadar } from "@/components/visualizations/payment-radar";
 import { formatINR } from "@/lib/presentation/format";
+import { lastUsedLine } from "@/lib/presentation/last-used";
 import type { Commitment, Mechanism } from "@/lib/payments/types";
 
 const RAIL: Record<Mechanism, string | null> = {
@@ -137,6 +138,7 @@ export function AllPaymentsScreen({
             const rail = RAIL[item.mechanism] ?? (item.basis === "notices" ? "Rail not known" : item.instrument);
             const rise = priceRise(item);
             const warning = flagged.has(item.id) && item.kind !== "silent" ? warningLabel(item.kind) : undefined;
+            const lastUsed = lastUsedLine(item);
             return (
               <button
                 type="button"
@@ -152,6 +154,7 @@ export function AllPaymentsScreen({
                     {!item.inDictionary && <i className="unknown-tag">unknown</i>}
                   </strong>
                   <code>{item.rawNarration}</code>
+                  {lastUsed && <small className={`last-used${item.kind === "unused" ? " is-stale" : ""}`}>{lastUsed}</small>}
                 </span>
                 <span className="ledger-rail">
                   <span className="rail-tag">{rail}</span>

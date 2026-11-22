@@ -285,7 +285,7 @@ export function Landing({
             {/* Card 2: Private by design */}
             <article className="preview-card privacy-card">
               <p className="card-eyebrow">YOUR DATA, YOUR PERMISSION</p>
-              <h3>Private by design</h3>
+              <h2>Private by design</h2>
               <ul className="privacy-list">
                 <li>
                   <span className="icon-lock" aria-hidden="true">🔒</span>
@@ -312,7 +312,7 @@ export function Landing({
       />
 
       {signInOpen && (
-        <aside
+        <div
           className={`signin-drawer ${signInOpen ? "open" : ""}`}
           role="dialog"
           aria-modal="true"
@@ -397,7 +397,7 @@ export function Landing({
               </p>
             </footer>
           </div>
-        </aside>
+        </div>
       )}
     </main>
   );
