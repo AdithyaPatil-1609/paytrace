@@ -9,7 +9,7 @@ import type { Commitment, Mechanism } from "@/server/payments/types";
 
 export type CancelLink = { label: string; href: string; note?: string };
 
-const SERVICE: Record<string, CancelLink[]> = {
+export const SERVICE: Record<string, CancelLink[]> = {
   Netflix: [{ label: "Netflix: cancel membership", href: "https://www.netflix.com/cancelplan" }],
   Spotify: [{ label: "Spotify: manage your plan", href: "https://www.spotify.com/account/subscription/" }],
   YouTube: [{ label: "YouTube: Purchases and memberships", href: "https://www.youtube.com/paid_memberships" }],
@@ -55,7 +55,7 @@ export function cancelLinks(item: Pick<Commitment, "merchant" | "mechanism" | "r
 }
 
 /** Services people use through an app or website of their own: cancelling there stops the plan. */
-const APPS = new Set(["Netflix", "Spotify", "YouTube", "Google One", "FitApp", "Amazon Prime", "JioHotstar", "Canva", "Headspace Plus", "Apple Music", "iCloud+", "Hinge", "Bumble", "Snapchat"]);
+export const APPS = new Set(["Netflix", "Spotify", "YouTube", "Google One", "FitApp", "Amazon Prime", "JioHotstar", "Canva", "Headspace Plus", "Apple Music", "iCloud+", "Hinge", "Bumble", "Snapchat"]);
 
 export type CancelOption = { title: string; steps: string[]; links: CancelLink[] };
 

@@ -4,6 +4,7 @@
  * Mentor feedback was that the screens asked people to read too much.
  */
 import type { ReactNode } from "react";
+import type { IssueCategory } from "@/server/presentation/issue-cards";
 import type { Commitment } from "@/server/payments/types";
 
 export type CueKind =
@@ -157,3 +158,13 @@ export function toneOf(item: Pick<Commitment, "id" | "bucket">, flagged: Set<str
   if (item.bucket === "bills" || item.bucket === "debt") return "fixed";
   return "ok";
 }
+
+/** One picture per kind of problem, used by the Issues screen. */
+export const CUE_FOR_GROUP: Record<IssueCategory, CueKind> = {
+  price: "price",
+  announced: "price",
+  unused: "unused",
+  trial: "trial",
+  new: "new",
+  unknown: "unknown"
+};

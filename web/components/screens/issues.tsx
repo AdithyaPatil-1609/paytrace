@@ -1,7 +1,6 @@
 import { ScreenHeader } from "@/web/components/chrome/screen-header";
 import { WarningIcon } from "@/web/components/chrome/warning-tag";
-import { CueChip, CueIcon, MerchantMark } from "@/web/components/chrome/visual-cues";
-import { CUE_FOR_GROUP } from "@/web/components/screens/all-payments";
+import { CUE_FOR_GROUP, CueChip, CueIcon, MerchantMark } from "@/web/components/chrome/visual-cues";
 import { formatDate } from "@/server/presentation/format";
 import { cancelDestination, UpiCancelLink } from "@/web/components/detail/upi-cancel-link";
 import { formatINR } from "@/server/presentation/format";
