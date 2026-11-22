@@ -8,13 +8,13 @@ import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { createSession } from "../../db/neo4j/accounts";
-import { deleteAllUserData } from "../../db/neo4j/delete-user";
-import { ingestLiveEvent } from "../../db/neo4j/live";
-import { acceptFamilyInvite, cancelFamilyInvite, createFamilyInvite, familyAccess, leaveFamilyGrant, peekFamilyInvite, readFamily, revokeFamilyGrant } from "../../db/neo4j/family";
-import { profileFor, SESSION } from "../../lib/accounts/security";
-import { FAMILY_LIMITS } from "../../lib/payments/rules";
+import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/client";
+import { createSession } from "../../neo4j/accounts";
+import { deleteAllUserData } from "../../neo4j/delete-user";
+import { ingestLiveEvent } from "../../neo4j/live";
+import { acceptFamilyInvite, cancelFamilyInvite, createFamilyInvite, familyAccess, leaveFamilyGrant, peekFamilyInvite, readFamily, revokeFamilyGrant } from "../../neo4j/family";
+import { profileFor, SESSION } from "../../server/accounts/security";
+import { FAMILY_LIMITS } from "../../server/payments/rules";
 
 const skip = !hasNeo4jConfig();
 const ORIGIN = "http://localhost:3000";
@@ -37,7 +37,7 @@ async function invited(ownerSub: string) {
   return made.token;
 }
 const call = async (path: string, cookie: string, body: unknown) => {
-  const { POST } = await import(`../../app/api/family/${path}/route`);
+  const { POST } = await import(`../../web/app/api/family/${path}/route`);
   return POST(new NextRequest(`${ORIGIN}/api/family/${path}`, { method: "POST", headers: { cookie, origin: ORIGIN, "content-type": "application/json" }, body: JSON.stringify(body) })) as Promise<Response>;
 };
 
@@ -143,7 +143,7 @@ test("only the owner can revoke, revocation is immediate, and expired access is 
 
 test("requests need a session, the same site and valid input", { skip }, async () => {
   const owner = await person("Uma");
-  const { POST } = await import("../../app/api/family/invite/route");
+  const { POST } = await import("../../web/app/api/family/invite/route");
   const crossSite = await POST(new NextRequest(`${ORIGIN}/api/family/invite`, { method: "POST", headers: { cookie: owner.cookie, origin: "https://evil.example", "content-type": "application/json" }, body: "{}" }));
   assert.equal(crossSite.status, 403);
   const noSession = await POST(new NextRequest(`${ORIGIN}/api/family/invite`, { method: "POST", headers: { origin: ORIGIN, "content-type": "application/json" }, body: "{}" }));

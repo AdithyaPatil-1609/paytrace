@@ -8,11 +8,11 @@ import "../../scripts/load-env-local";
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { ingestLiveEvent, readLiveSummary } from "../../db/neo4j/live";
-import { recordAppUsage } from "../../db/neo4j/app-usage";
-import { readGraphWarnings } from "../../db/neo4j/warnings";
-import type { PaymentEvent } from "../../lib/ingestion/event";
+import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/client";
+import { ingestLiveEvent, readLiveSummary } from "../../neo4j/live";
+import { recordAppUsage } from "../../neo4j/app-usage";
+import { readGraphWarnings } from "../../neo4j/warnings";
+import type { PaymentEvent } from "../../server/ingestion/event";
 
 const skip = !hasNeo4jConfig();
 const DAY = 86_400_000;

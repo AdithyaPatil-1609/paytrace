@@ -1,7 +1,7 @@
 /** Pure helpers behind the live graph warnings: cycle names, next dates, savings, classes. */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { annualPaise, classifyPrice, frequencyOf, headsUp, nextDate, priceAheadWarnings, severityOf, type UpcomingWarning } from "../db/neo4j/warnings";
+import { annualPaise, classifyPrice, frequencyOf, headsUp, nextDate, priceAheadWarnings, severityOf, type UpcomingWarning } from "../neo4j/warnings";
 
 test("cycle lengths are named, odd ones are 'other'", () => {
   assert.deepEqual([7, 30, 91, 182, 365, 45, null].map(frequencyOf), ["weekly", "monthly", "quarterly", "half-yearly", "yearly", "other", "unknown"]);

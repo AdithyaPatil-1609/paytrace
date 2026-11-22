@@ -16,8 +16,8 @@ import {
   unusedTotal,
   upcomingRenewals,
   yearlyTotal
-} from "@/lib/payments/analysis";
-import { detectCommitments } from "@/lib/payments/engine";
+} from "@/server/payments/analysis";
+import { detectCommitments } from "@/server/payments/engine";
 import { loadFixtures, loadParserFixtures } from "@/data/fixtures";
 
 const dataset = loadFixtures();

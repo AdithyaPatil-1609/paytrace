@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { projectMerchantKnowledge } from "../db/neo4j/agent-knowledge";
-import type { DictionaryEntry } from "../lib/payments/types";
+import { projectMerchantKnowledge } from "../neo4j/agent-knowledge";
+import type { DictionaryEntry } from "../server/payments/types";
 
 const row: DictionaryEntry = {
   brand: "Example Merchant", pattern: "EXAMPLE", product: "Example plan", category: "software",

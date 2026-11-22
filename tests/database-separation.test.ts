@@ -5,8 +5,8 @@
  */
 import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
-import { demoSharesPersonalDatabase, getDemoDriver, hasDemoNeo4jConfig } from "../db/neo4j/client";
-import { loadDemo } from "../lib/data/load-demo";
+import { demoSharesPersonalDatabase, getDemoDriver, hasDemoNeo4jConfig } from "../neo4j/client";
+import { loadDemo } from "../server/data/load-demo";
 
 const saved = { ...process.env };
 afterEach(() => {

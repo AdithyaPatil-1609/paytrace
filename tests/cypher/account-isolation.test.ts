@@ -2,11 +2,11 @@ import "../../scripts/load-env-local";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { accountForSession, claimSync, createSession, endSession, removeGmailGrant, storeGmailGrant } from "../../db/neo4j/accounts";
-import { ingestLiveEvent, readLiveDashboard, readLiveSummary } from "../../db/neo4j/live";
-import { profileFor } from "../../lib/accounts/security";
-import type { PaymentEvent } from "../../lib/ingestion/event";
+import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/client";
+import { accountForSession, claimSync, createSession, endSession, removeGmailGrant, storeGmailGrant } from "../../neo4j/accounts";
+import { ingestLiveEvent, readLiveDashboard, readLiveSummary } from "../../neo4j/live";
+import { profileFor } from "../../server/accounts/security";
+import type { PaymentEvent } from "../../server/ingestion/event";
 
 test("separate Google accounts and disconnected grants cannot share or write private payments",{skip:!hasNeo4jConfig()},async()=>{
   Object.assign(process.env,{GOOGLE_WEB_CLIENT_ID:"test-client",GOOGLE_WEB_CLIENT_SECRET:"test-secret",PAYTRACE_APP_URL:"http://localhost:3000",PAYTRACE_AUTH_KEY:"ab".repeat(32)});

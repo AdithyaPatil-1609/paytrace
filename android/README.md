@@ -5,7 +5,7 @@ The Android app that sends bank SMS and app screen time to the person's Paytrace
 ## What it does
 
 - **Bank SMS:** `SmsReceiver.kt` listens for SMS, `BankSenders.kt` keeps only registered bank and payment senders, and `SmsParser.kt` reads the payment fields. Messages with an OTP, PIN or password are dropped on the phone and never sent.
-- **Signed requests:** each phone has its own P-256 key (`DeviceKey.kt`) and signs every request (`SigningFormat.kt`, `EventSender.kt`). The server checks it in `lib/ingestion/device-auth.ts`. See `docs/security/DEVICE_SIGNING.md`.
+- **Signed requests:** each phone has its own P-256 key (`DeviceKey.kt`) and signs every request (`SigningFormat.kt`, `EventSender.kt`). The server checks it in `server/ingestion/device-auth.ts`. See `docs/security/DEVICE_SIGNING.md`.
 - **Screen time:** with the person's permission (Settings → Usage access), `AppUsage.kt` reports when each paid app (`KnownApps.kt`) was last opened and the minutes in the last 30 days. Only app names and dates are sent, never what was done in the app.
 - **Duplicates:** `DuplicateDetector.kt` stops the same SMS being sent twice.
 

@@ -13,19 +13,37 @@ Payment fields are extracted by rules and by a local Qwen model. Message text is
 
 ## Project map
 
-| Folder | What it holds | README |
-| --- | --- | --- |
-| `app/` | Next.js pages, API routes and stylesheets | [app/README.md](app/README.md) |
-| `components/` | React UI: dashboard, screens, account menus, charts | [components/README.md](components/README.md) |
-| `lib/` | Core logic: payment engine, ingestion, accounts, assistant, security | [lib/README.md](lib/README.md) |
-| `db/neo4j/` | Neo4j graph: Cypher queries, writes, warnings, Aura Agent | [db/neo4j/README.md](db/neo4j/README.md) |
-| `data/` | Synthetic demo data and the CSV fixture loader | [data/README.md](data/README.md) |
-| `android/` | Paytrace Companion (Android): bank SMS and screen time | [android/README.md](android/README.md) |
-| `ml/` | Local Qwen model work: prompts, LoRA adapters, evaluations | [ml/README.md](ml/README.md) |
-| `scripts/` | Seeding, Gmail tools, evaluations, deployment | [scripts/README.md](scripts/README.md) |
-| `tests/` | Unit, security and live-graph (Cypher) tests | [tests/README.md](tests/README.md) |
-| `docs/` | Setup guides, security reviews and design notes | [docs/README.md](docs/README.md) |
-| `eval/` | `hostile.csv`: the attack cases the security tests and sandbox cover | |
+One folder per technology. Everything for a technology lives in its folder.
+
+```
+paytrace/
+├── web/        Next.js + React: the website people use
+│   ├── app/          pages and API routes
+│   ├── components/   screens, charts, menus
+│   └── public/       images and icons
+├── server/     TypeScript logic behind the API (no UI)
+├── neo4j/      Neo4j: every Cypher query and database write
+├── ai/         local Qwen models: runtime code, training, evals
+├── android/    Kotlin: the Paytrace Companion phone app
+├── data/       made-up demo data and the merchant catalog
+├── scripts/    command-line tools: seed, Gmail sync, evals
+├── tests/      unit, security and live-graph tests
+└── docs/       setup guides and security reviews
+```
+
+| Folder | Technology | What it holds | README |
+| --- | --- | --- | --- |
+| `web/` | Next.js, React, CSS | Pages, API routes, components, styles, images | [web/README.md](web/README.md) |
+| `server/` | TypeScript | Payment engine, ingestion, accounts, statements, security | [server/README.md](server/README.md) |
+| `neo4j/` | Neo4j, Cypher | Per-person graphs, queries, writes, warnings, Aura Agent | [neo4j/README.md](neo4j/README.md) |
+| `ai/` | Qwen (Ollama, MLX) | Model calls and OTP guard, LoRA training, evals | [ai/README.md](ai/README.md) |
+| `android/` | Kotlin | Companion app: bank SMS and screen time | [android/README.md](android/README.md) |
+| `data/` | CSV, JSON | Synthetic demo data and the merchant catalog | [data/README.md](data/README.md) |
+| `scripts/` | Node | Seeding, Gmail tools, evaluations | [scripts/README.md](scripts/README.md) |
+| `tests/` | Node test runner | Unit, security and Cypher tests | [tests/README.md](tests/README.md) |
+| `docs/` | Markdown | Setup guides, security reviews, design notes | [docs/README.md](docs/README.md) |
+
+Imports use the `@/` prefix from the repo root, for example `@/server/payments/rules` or `@/neo4j/live`. Settings live in one `.env.local` at the repo root; `web/next.config.ts` loads it for the site.
 
 ## Run it locally
 
@@ -49,7 +67,7 @@ Without database settings the app falls back to the bundled CSV demo. For Google
 | Qwen3 8B + alerts adapter | Reading a pasted bank alert | `npm run ai:alerts` (port 8080) |
 | Qwen3 8B + recurring adapter | Second check on recurring payments | `npm run ai:recurring` (port 8081) |
 
-The app only talks to models on the same machine. Details are in [ml/README.md](ml/README.md).
+The app only talks to models on the same machine. Details are in [ai/training/README.md](ai/training/README.md).
 
 ## Commands
 
@@ -67,11 +85,11 @@ All checks run in CI on every pull request (`.github/workflows/ci.yml`).
 
 ## How a finding travels through the code
 
-1. **Ingest:** `app/api/ingest/*` and `lib/ingestion/` accept SMS, email and screen time. They check signatures and drop OTP messages.
-2. **Store:** `db/neo4j/live.ts` and `db/neo4j/write.ts` write payment events into the person's own graph.
-3. **Analyse:** `db/neo4j/queries/commitments.ts` groups charges into recurring payments, and `lib/payments/rules.ts` holds the shared thresholds (price rise, unused, trial).
-4. **Show:** `components/dashboard.tsx` renders the five screens (All payments, Issues, Cancel paths, Annual, Evidence graph).
-5. **Act:** `lib/presentation/cancel-links.ts` and `components/detail/` give the cancel steps and official links (NPCI UPI Help, bank e-mandate pages).
+1. **Ingest:** `web/app/api/ingest/*` and `server/ingestion/` accept SMS, email and screen time. They check signatures and drop OTP messages.
+2. **Store:** `neo4j/live.ts` and `neo4j/write.ts` write payment events into the person's own graph.
+3. **Analyse:** `neo4j/queries/commitments.ts` groups charges into recurring payments, and `server/payments/rules.ts` holds the shared thresholds (price rise, unused, trial).
+4. **Show:** `web/components/dashboard.tsx` renders the five screens (All payments, Issues, Cancel paths, Annual, Evidence graph).
+5. **Act:** `server/presentation/cancel-links.ts` and `web/components/detail/` give the cancel steps and official links (NPCI UPI Help, bank e-mandate pages).
 
 ## Working rules
 

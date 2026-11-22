@@ -7,7 +7,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { RESTORE_TEXT_SIZE, TEXT_SIZE_KEY } from "../components/chrome/text-size-toggle";
+import { RESTORE_TEXT_SIZE, TEXT_SIZE_KEY } from "../web/components/chrome/text-size-toggle";
 
 const sheets = execFileSync("git", ["ls-files", "*.css"], { encoding: "utf8" }).split("\n").filter(Boolean);
 
@@ -25,7 +25,7 @@ test("every px or rem font size in the style sheets scales with --text-scale", (
 });
 
 test("large-text mode raises the scale and the saved choice is restored before paint", () => {
-  const foundation = readFileSync("app/styles/foundation.css", "utf8");
+  const foundation = readFileSync("web/app/styles/foundation.css", "utf8");
   assert.match(foundation, /--text-scale:\s*1;/);
   assert.match(foundation, /:root\[data-text-size="large"\]\s*{\s*--text-scale:\s*1\.25;/);
   assert.ok(RESTORE_TEXT_SIZE.includes(TEXT_SIZE_KEY));

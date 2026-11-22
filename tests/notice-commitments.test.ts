@@ -5,10 +5,10 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { noticeRows } from "../db/neo4j/live";
-import { detectCommitments, NOTICE_CHANNEL } from "../lib/payments/engine";
+import { noticeRows } from "../neo4j/live";
+import { detectCommitments, NOTICE_CHANNEL } from "../server/payments/engine";
 import { readDictionary } from "../data/fixtures";
-import type { StatementRow } from "../lib/payments/types";
+import type { StatementRow } from "../server/payments/types";
 
 const ASOF = "2026-11-21";
 const notice = (id: string, date: string, extra: Record<string, unknown> = {}) => ({

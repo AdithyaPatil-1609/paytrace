@@ -2,8 +2,8 @@
 // The layouts are made up and imitate common net-banking tables. No real statement or account.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { headerCells, pdfLines, pdfWordsToCsv, type PdfWord } from "../lib/statements/pdf";
-import { parseStatementCsv } from "../lib/statements/csv";
+import { headerCells, pdfLines, pdfWordsToCsv, type PdfWord } from "../server/statements/pdf";
+import { parseStatementCsv } from "../server/statements/csv";
 
 /** Words on one line at height y, each given as [text, x]. Width is a rough 6 points per character. */
 const line = (y: number, cells: [string, number][], page = 1): PdfWord[] => cells.map(([str, x]) => ({ str, x, y, w: str.length * 6, page }));

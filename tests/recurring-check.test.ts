@@ -7,20 +7,20 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { readDictionary } from "../data/fixtures";
-import { detectCommitments } from "../lib/payments/engine";
-import type { StatementRow } from "../lib/payments/types";
+import { detectCommitments } from "../server/payments/engine";
+import type { StatementRow } from "../server/payments/types";
 import {
   candidateFor, checkHash, mayHide, needsCheck, parseVerdict, railOf, RECURRING_PROMPT, renderCandidate, splitByChecks, type Candidate, type StoredCheck
-} from "../lib/payments/recurring-check";
+} from "../server/payments/recurring-check";
 
-test("the prompt is the one in ml/recurring.py", () => {
-  const match = readFileSync("ml/recurring.py", "utf8").match(/SYSTEM_PROMPT = """([\s\S]*?)"""/);
+test("the prompt is the one in ai/training/recurring.py", () => {
+  const match = readFileSync("ai/training/recurring.py", "utf8").match(/SYSTEM_PROMPT = """([\s\S]*?)"""/);
   assert.ok(match);
   assert.equal(RECURRING_PROMPT, match[1].trim());
 });
 
 test("the app renders every group character for character as the training data did", () => {
-  const rows = readFileSync("ml/data/recurring_render_check.jsonl", "utf8").trim().split("\n").map((line) => JSON.parse(line) as { candidate: Candidate; rendered: string });
+  const rows = readFileSync("ai/training/data/recurring_render_check.jsonl", "utf8").trim().split("\n").map((line) => JSON.parse(line) as { candidate: Candidate; rendered: string });
   assert.ok(rows.length >= 20);
   for (const row of rows) assert.equal(renderCandidate(row.candidate), row.rendered);
 });

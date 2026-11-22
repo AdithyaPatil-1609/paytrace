@@ -39,4 +39,4 @@ phone / browser ──HTTPS──► Cloudflare (paytrace.co.in: TLS, WAF, rate 
 | SMS and email | Plus bank statements through the Account Aggregator, with a regulated partner | The RBI consent route for statements |
 | Settings in `.env.local` | A secrets manager; key rotation with `PAYTRACE_AUTH_KEY_ID` | No secrets on disk |
 
-Every limit already lives in one place (`lib/payments/rules.ts`, `lib/security/rate-limit.ts`), and every store sits behind a small function, so moving each one to Redis or a bigger database changes one file each, not the routes.
+Every limit already lives in one place (`server/payments/rules.ts`, `server/security/rate-limit.ts`), and every store sits behind a small function, so moving each one to Redis or a bigger database changes one file each, not the routes.

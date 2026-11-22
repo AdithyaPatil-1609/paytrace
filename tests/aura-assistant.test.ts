@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { askAuraGuidance, auraPrompt, chooseAuraTopic, hasAuraConfig, replyFromAura } from "../lib/assistant/aura";
+import { askAuraGuidance, auraPrompt, chooseAuraTopic, hasAuraConfig, replyFromAura } from "../ai/assistant/aura";
 
 test("catalog queries canonicalize merchant and mechanism names", () => {
   const merchant = chooseAuraTopic("How do I cancel Spotify Premium?");

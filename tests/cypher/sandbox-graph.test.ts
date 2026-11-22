@@ -6,12 +6,12 @@
 import "../../scripts/load-env-local";
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
-import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../db/neo4j/client";
-import { ingestLiveEvent } from "../../db/neo4j/live";
-import { deleteProfileGraph, sandboxProfile, sweepSandboxGraphs, syncSandboxGraph } from "../../db/neo4j/sandbox-graph";
-import { readGraphWarnings } from "../../db/neo4j/warnings";
-import { loadSampleStatement } from "../../lib/sandbox/statement";
-import { clearSandboxes, openSandbox } from "../../lib/sandbox/store";
+import { getNeo4jDriver, hasNeo4jConfig, neo4jDatabase } from "../../neo4j/client";
+import { ingestLiveEvent } from "../../neo4j/live";
+import { deleteProfileGraph, sandboxProfile, sweepSandboxGraphs, syncSandboxGraph } from "../../neo4j/sandbox-graph";
+import { readGraphWarnings } from "../../neo4j/warnings";
+import { loadSampleStatement } from "../../server/sandbox/statement";
+import { clearSandboxes, openSandbox } from "../../server/sandbox/store";
 
 const skip = !hasNeo4jConfig();
 const real = `test-real-${Date.now()}`;

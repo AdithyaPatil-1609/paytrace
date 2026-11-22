@@ -6,11 +6,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync, randomBytes, sign } from "node:crypto";
-import { identifySignedDevice, identifySmsSender, resetDeviceCache } from "../../lib/ingestion/device-auth";
-import { resetNonces } from "../../lib/ingestion/nonce-store";
-import { signedBytes, type SignedPurpose } from "../../lib/ingestion/signature";
-import { resetRateLimits } from "../../lib/security/rate-limit";
-import { usageMatches } from "../../db/neo4j/app-usage";
+import { identifySignedDevice, identifySmsSender, resetDeviceCache } from "../../server/ingestion/device-auth";
+import { resetNonces } from "../../server/ingestion/nonce-store";
+import { signedBytes, type SignedPurpose } from "../../server/ingestion/signature";
+import { resetRateLimits } from "../../server/security/rate-limit";
+import { usageMatches } from "../../neo4j/app-usage";
 
 const phone = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
 const publicKey = phone.publicKey.export({ format: "der", type: "spki" }).toString("base64");

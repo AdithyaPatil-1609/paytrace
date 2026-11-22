@@ -1,6 +1,6 @@
 # Signed requests from the phone (cards M2 and S5)
 
-The server side is done: `lib/ingestion/signature.ts`, `lib/ingestion/device-auth.ts`, `lib/ingestion/nonce-store.ts`, `db/neo4j/devices.ts` and the routes under `app/api/devices/`. This page tells the Android app exactly what to send.
+The server side is done: `server/ingestion/signature.ts`, `server/ingestion/device-auth.ts`, `server/ingestion/nonce-store.ts`, `neo4j/devices.ts` and the routes under `web/app/api/devices/`. This page tells the Android app exactly what to send.
 
 ## 1. Make the key once (Android Keystore)
 
@@ -96,6 +96,6 @@ Body (at most 8 KB, 40 apps):
   opened since `windowStart` (the first day the phone has usage statistics
   for, at most 180 days back).
 - The server matches `merchant` to the owner's own `LiveSubscription` by name
-  (`db/neo4j/app-usage.ts`) and sets `lastVerifiedUsageAt` (source
+  (`neo4j/app-usage.ts`) and sets `lastVerifiedUsageAt` (source
   `android_usage_stats`), or `usageNoUseSince` when not opened. The unused
   warning reads these; a newer user-confirmed date is never overwritten.

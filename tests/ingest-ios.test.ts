@@ -5,9 +5,9 @@
  */
 import assert from "node:assert/strict";
 import test, { beforeEach } from "node:test";
-import { GET, POST } from "../app/api/ingest/ios/route";
-import { bearerToken, checkShortcutBody, describeHeader, IOS_TOKEN, newIosToken } from "../lib/ingestion/ios-token";
-import { resetRateLimits } from "../lib/security/rate-limit";
+import { GET, POST } from "../web/app/api/ingest/ios/route";
+import { bearerToken, checkShortcutBody, describeHeader, IOS_TOKEN, newIosToken } from "../server/ingestion/ios-token";
+import { resetRateLimits } from "../server/security/rate-limit";
 
 const URL = "http://localhost/api/ingest/ios";
 const NOW = Date.parse("2026-11-21T12:00:00.000Z");
@@ -88,8 +88,8 @@ test("the Shortcut body keeps a given time inside the window and refuses one out
 test("Add phone offers Connect iPhone, and Disconnect once connected", async () => {
   const { createElement } = await import("react");
   const { renderToStaticMarkup } = await import("react-dom/server");
-  const { IphoneConnect } = await import("../components/account/iphone-connect");
-  const { AccountDashboard } = await import("../components/account/account-dashboard");
+  const { IphoneConnect } = await import("../web/components/account/iphone-connect");
+  const { AccountDashboard } = await import("../web/components/account/account-dashboard");
   const menu = renderToStaticMarkup(createElement(AccountDashboard, { name: "User", email: "user@example.com", linked: false, lastSync: null, asOf: "2026-11-21" }));
   assert.ok(menu.includes("DATA CONNECTION · IPHONE SMS"));
   assert.ok(menu.includes("Connect iPhone"));

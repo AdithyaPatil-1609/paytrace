@@ -1,8 +1,8 @@
 import "./load-env-local";
 
 async function main() {
-  const { getAgentDriver } = await import("../db/neo4j/agent-client");
-  const { seedAgentKnowledge } = await import("../db/neo4j/agent-knowledge");
+  const { getAgentDriver } = await import("../neo4j/agent-client");
+  const { seedAgentKnowledge } = await import("../neo4j/agent-knowledge");
   const driver = getAgentDriver();
   try {
     const counts = await seedAgentKnowledge();

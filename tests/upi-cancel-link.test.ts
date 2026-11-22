@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { UpiCancelLink, upiRoute } from "../components/detail/upi-cancel-link";
+import { UpiCancelLink, upiRoute } from "../web/components/detail/upi-cancel-link";
 
 const active = { mechanism: "upi_autopay", mandateStatus: "active", canCancel: true, cancelMode: "normal" } as const;
 const render = (item: Parameters<typeof UpiCancelLink>[0]["item"]) => renderToStaticMarkup(createElement(UpiCancelLink, { item }));

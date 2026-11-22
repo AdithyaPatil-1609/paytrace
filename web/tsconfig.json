@@ -1,0 +1,4 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "../server/**/*.ts", "../neo4j/**/*.ts", "../ai/**/*.ts", "../data/**/*.ts", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"]
+}

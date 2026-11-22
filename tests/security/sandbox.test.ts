@@ -6,13 +6,13 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { IncomingMessage, ReadResult } from "../../lib/assistant/message-reader";
-import { processSandboxMessage } from "../../lib/sandbox/pipeline";
-import { sandboxView, knownMerchant } from "../../lib/sandbox/dataset";
-import { runSignedAttack } from "../../lib/sandbox/attacks";
-import { clearSandboxes, getSandbox, openSandbox } from "../../lib/sandbox/store";
-import { ATTACKS, EMAIL_TEMPLATES, SMS_TEMPLATES, datesAfter } from "../../lib/sandbox/templates";
-import { detectCommitments } from "../../lib/payments/engine";
+import type { IncomingMessage, ReadResult } from "../../ai/assistant/message-reader";
+import { processSandboxMessage } from "../../server/sandbox/pipeline";
+import { sandboxView, knownMerchant } from "../../server/sandbox/dataset";
+import { runSignedAttack } from "../../server/sandbox/attacks";
+import { clearSandboxes, getSandbox, openSandbox } from "../../server/sandbox/store";
+import { ATTACKS, EMAIL_TEMPLATES, SMS_TEMPLATES, datesAfter } from "../../server/sandbox/templates";
+import { detectCommitments } from "../../server/payments/engine";
 import { loadFixtures } from "../../data/fixtures";
 
 /** A stand-in for Qwen: copies merchant, amount and date straight from the text. */

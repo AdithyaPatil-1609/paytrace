@@ -5,7 +5,7 @@
  *
  * This writes through the Bolt driver rather than LOAD CSV, so it works on
  * Neo4j Aura, where file:/// imports are not permitted. The graph it builds
- * is the same shape as db/neo4j/load-from-csv.cypher, with one correction:
+ * is the same shape as neo4j/load-from-csv.cypher, with one correction:
  * the dictionary row's wording lives on the Pattern node, not the Merchant.
  * Merchant is keyed by brand, and the dictionary holds two rows each for
  * Spotify and Netflix, so putting the copy on Merchant lets the later row
@@ -23,8 +23,8 @@ import {
 } from "@/data/fixtures";
 
 async function main() {
-  const { demoDatabase, demoSharesPersonalDatabase, getDemoDriver, hasDemoNeo4jConfig } = await import("../db/neo4j/client");
-  const writers = await import("../db/neo4j/write");
+  const { demoDatabase, demoSharesPersonalDatabase, getDemoDriver, hasDemoNeo4jConfig } = await import("../neo4j/client");
+  const writers = await import("../neo4j/write");
 
   // Synthetic data goes to the demo database only, never the personal one.
   if (!hasDemoNeo4jConfig()) {

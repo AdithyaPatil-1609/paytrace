@@ -6,11 +6,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readDictionary } from "../data/fixtures";
-import { detectCommitments, foldMissedCycles, NOTICE_CHANNEL } from "../lib/payments/engine";
-import type { NotificationRow, StatementRow } from "../lib/payments/types";
-import { factsFor } from "../lib/assistant/facts";
-import { CHALLENGE, complete, explain } from "../lib/assistant/assistant";
-import { isCurrent, watchDates, watchItems, type WatchItem } from "../lib/assistant/watchlist";
+import { detectCommitments, foldMissedCycles, NOTICE_CHANNEL } from "../server/payments/engine";
+import type { NotificationRow, StatementRow } from "../server/payments/types";
+import { factsFor } from "../ai/assistant/facts";
+import { CHALLENGE, complete, explain } from "../ai/assistant/assistant";
+import { isCurrent, watchDates, watchItems, type WatchItem } from "../ai/assistant/watchlist";
 
 const ASOF = "2026-11-21";
 const row = (narration: string, date: string, debit: number): StatementRow =>

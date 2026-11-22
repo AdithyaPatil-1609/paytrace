@@ -4,9 +4,9 @@ import { createServer } from "node:http";
 import { randomBytes, createHash } from "node:crypto";
 import { readFile, writeFile, chmod } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
-import { liveProfile } from "../lib/ingestion/auth";
-import { parseFinancialEmail } from "../lib/ingestion/email";
-import { gmailPaymentQuery, parseAllowedDomains } from "../lib/ingestion/gmail-filter";
+import { liveProfile } from "../server/ingestion/auth";
+import { parseFinancialEmail } from "../server/ingestion/email";
+import { gmailPaymentQuery, parseAllowedDomains } from "../server/ingestion/gmail-filter";
 
 const TOKEN_FILE = ".paytrace-gmail-token.json";
 const redirect = "http://127.0.0.1:53682";
@@ -61,7 +61,7 @@ async function sync() {
   const query = process.env.GMAIL_QUERY?.trim() || gmailPaymentQuery("newer_than:7d",domains);
   const saved = JSON.parse(await readFile(TOKEN_FILE,"utf8")) as {refresh_token:string};
   const access = (await token({grant_type:"refresh_token",refresh_token:saved.refresh_token})).access_token;
-  const { ingestLiveEvent } = await import("../db/neo4j/live");
+  const { ingestLiveEvent } = await import("../neo4j/live");
   async function gmail(path:string) {
     const res = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/${path}`, { headers:{ Authorization:`Bearer ${access}` } });
     if (!res.ok) throw new Error(`Gmail request failed (${res.status})`);
@@ -85,7 +85,7 @@ async function sync() {
 async function main() {
   if (process.argv.includes("--authorize")) return authorize();
   do { await sync(); if (process.argv.includes("--watch")) await delay(45_000); } while (process.argv.includes("--watch"));
-  const { getNeo4jDriver } = await import("../db/neo4j/client");
+  const { getNeo4jDriver } = await import("../neo4j/client");
   await getNeo4jDriver().close();
 }
 main().catch(error=>{ console.error(error instanceof Error ? error.message : "Gmail operation failed"); process.exit(1); });

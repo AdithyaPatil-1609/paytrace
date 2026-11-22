@@ -4,11 +4,11 @@
  */
 import assert from "node:assert/strict";
 import test, { beforeEach } from "node:test";
-import { POST } from "../app/api/ingest/sms/route";
-import { checkSmsBody, processSms, processSmsWithRetry } from "../lib/ingestion/sms-message";
-import { resetRateLimits } from "../lib/security/rate-limit";
-import type { ReadResult } from "../lib/assistant/message-reader";
-import type { PaymentEvent } from "../lib/ingestion/event";
+import { POST } from "../web/app/api/ingest/sms/route";
+import { checkSmsBody, processSms, processSmsWithRetry } from "../server/ingestion/sms-message";
+import { resetRateLimits } from "../server/security/rate-limit";
+import type { ReadResult } from "../ai/assistant/message-reader";
+import type { PaymentEvent } from "../server/ingestion/event";
 
 const CODE = "test-pairing-code-123";
 const URL = "http://localhost/api/ingest/sms";

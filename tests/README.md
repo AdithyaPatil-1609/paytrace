@@ -9,7 +9,7 @@ Node's built-in test runner with `tsx`. All test data is made up: no real messag
 | `cypher/` | `npm run test:cypher` | a seeded **test** Neo4j | Live-graph queries, account isolation, devices and delete, family, warnings, rollback |
 | `fixtures/` | | | Made-up statement files used by the statement tests |
 
-The attack cases in `../eval/hostile.csv` are what the security tests and the `/sandbox` page cover. Results are written up in `docs/security/TEST-FAIL-RESULTS.md`.
+The attack cases in `../ai/eval/hostile.csv` are what the security tests and the `/sandbox` page cover. Results are written up in `docs/security/TEST-FAIL-RESULTS.md`.
 
 ## Running the Cypher tests safely
 
