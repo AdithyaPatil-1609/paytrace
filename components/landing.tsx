@@ -204,23 +204,8 @@ export function Landing({
                   <path d="M21 13v2a4 4 0 0 1-4 4H3" />
                 </svg>
               </span>
-              <span className="partner-badge text-glyph" title="PayPal">
-                <b>P</b>
-              </span>
               <span className="partner-badge text-glyph" title="Mandates">
                 <b>M</b>
-              </span>
-              <span className="partner-badge" title="Amazon & E-Commerce">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="9" cy="21" r="1" />
-                  <circle cx="20" cy="21" r="1" />
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                </svg>
-              </span>
-              <span className="partner-badge" title="Spotify">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424c-.18.295-.563.387-.857.207-2.35-1.435-5.308-1.76-8.792-.963-.335.077-.67-.133-.746-.468-.077-.334.132-.67.467-.746 3.808-.87 7.076-.496 9.72 1.115.295.18.388.562.208.855zm1.225-2.723c-.226.367-.709.482-1.075.257-2.689-1.653-6.788-2.131-9.967-1.166-.413.126-.849-.108-.975-.52-.125-.414.108-.85.52-.976 3.632-1.102 8.147-.568 11.24 1.33.366.225.481.708.257 1.075zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71c-.493.15-1.016-.13-1.166-.624-.15-.493.13-1.017.624-1.167 3.532-1.072 9.404-.866 13.115 1.337.445.264.59.838.327 1.282-.264.443-.838.59-1.281.328z" />
-                </svg>
               </span>
               <span className="partner-badge text-glyph" title="NPCI">
                 <small>npci</small>
