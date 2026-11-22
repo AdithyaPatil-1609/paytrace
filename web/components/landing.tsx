@@ -54,6 +54,12 @@ export function Landing({
   // One drawer for both: "Sign in" for an existing account, "Sign up" starts the sign-up steps.
   const [authTab, setAuthTab] = useState<"signin" | "signup">("signin");
 
+  // The page may arrive as /?signin=1&notice=…; the drawer and notice are
+  // already in state, so show the plain address (paytrace.co.in) instead.
+  useEffect(() => {
+    if (window.location.search) window.history.replaceState(null, "", "/");
+  }, []);
+
   // Close drawer on Escape key
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
