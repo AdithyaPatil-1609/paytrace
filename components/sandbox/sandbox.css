@@ -1,6 +1,10 @@
-.sbx-launcher { position: fixed; left: 18px; bottom: 18px; z-index: 60; background: var(--ink); color: var(--paper-lift); border: 0; border-radius: 999px; padding: 12px 18px; font: 600 14px var(--sans); cursor: pointer; box-shadow: var(--lift-shadow); }
-.sbx-launcher span { margin-left: 8px; background: var(--marigold); color: var(--ink); border-radius: 999px; padding: 1px 8px; font-size: 12px; }
-.sbx-panel { position: fixed; left: 0; top: 0; bottom: 0; width: min(440px, 100vw); z-index: 60; background: var(--paper-lift); border-right: 1px solid var(--rule-firm); box-shadow: 8px 0 24px rgba(0,0,0,.08); display: flex; flex-direction: column; font-family: var(--sans); color: var(--ink); }
+.sbx-launcher { display: inline-flex; align-items: center; background: var(--ink); color: var(--paper-lift); border: 0; border-radius: 999px; padding: 8px 14px; font: 600 13px/1 var(--sans); cursor: pointer; white-space: nowrap; }
+.sbx-launcher:hover { opacity: .9; }
+.sbx-launcher .sbx-count { margin-left: 8px; background: var(--paper-lift); color: var(--ink); border-radius: 999px; padding: 2px 7px; font-size: 11px; }
+@media (max-width: 700px) { .sbx-launcher .sbx-launcher-long { display: none; } }
+.sbx-panel { position: fixed; top: 76px; right: max(12px, calc((100vw - 1480px) / 2 + 24px)); width: min(480px, calc(100vw - 24px)); max-height: calc(100vh - 96px); z-index: 70; background: var(--paper-lift); border: 1px solid var(--rule-firm); border-radius: 14px; box-shadow: 0 18px 48px rgba(20, 28, 60, .18); display: flex; flex-direction: column; font-family: var(--sans); color: var(--ink); overflow: hidden; animation: sbx-drop .16s ease-out; }
+@keyframes sbx-drop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@media (max-width: 700px) { .sbx-panel { top: 64px; right: 8px; width: calc(100vw - 16px); max-height: calc(100vh - 76px); } }
 .sbx-head { display: flex; justify-content: space-between; gap: 12px; padding: 16px 18px 10px; border-bottom: 1px solid var(--rule); }
 .sbx-head h2 { font: 600 19px/1.2 var(--serif); margin: 4px 0; }
 .sbx-eyebrow { font-size: 10px; letter-spacing: 1.6px; font-weight: 700; color: var(--marigold-deep, var(--marigold)); margin: 0; }
@@ -14,7 +18,7 @@
 .sbx-after_cancel, .sbx-price_rise { border-left-color: var(--ember, #a3262a); }
 .sbx-upcoming, .sbx-trial { border-left-color: #2f5d8a; background: #e8eff6; }
 .sbx-price_notice { border-left-color: #6b6b6b; background: var(--paper-sink, #f1ede6); }
-.sbx-tabs { display: flex; gap: 2px; padding: 10px 12px 0; border-bottom: 1px solid var(--rule); overflow-x: auto; }
+.sbx-tabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 8px 12px 0; border-bottom: 1px solid var(--rule); }
 .sbx-tabs button { border: 0; background: none; padding: 8px 10px; font: 600 12.5px var(--sans); color: var(--ink-soft); border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
 .sbx-tabs button.on { color: var(--ink); border-bottom-color: var(--marigold); }
 .sbx-body { overflow-y: auto; padding: 12px 18px 24px; display: grid; gap: 10px; align-content: start; flex: 1; }
@@ -46,6 +50,14 @@
 .sbx-field input, .sbx-field textarea { font: 13px var(--mono); padding: 8px 10px; border: 1px solid var(--rule-firm); border-radius: 8px; background: white; color: var(--ink); resize: vertical; }
 .sbx-primary { background: var(--ink); color: white; border: 0; border-radius: 8px; padding: 11px 14px; font: 600 14px var(--sans); cursor: pointer; }
 .sbx-primary:disabled { opacity: .55; cursor: wait; }
-@media (min-width: 1100px) { body:has(.sbx-panel) .paytrace-shell { margin-left: 440px; } }
 .sbx-upload { cursor: pointer; }
 .sbx-upload input[type="file"] { margin-top: 8px; font: 12.5px var(--sans); }
+.sbx-samples { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); }
+.sbx-chip { border: 1px solid var(--rule-firm); background: var(--paper); color: var(--ink); border-radius: 999px; padding: 5px 11px; font: 500 12px var(--sans); cursor: pointer; }
+.sbx-chip:hover { border-color: var(--ink); background: white; }
+.sbx-attack { display: grid; gap: 6px; }
+.sbx-answers { display: grid; gap: 8px; margin: 2px 0 4px; }
+.sbx-http { margin: 0 0 6px; font-size: 11.5px; color: var(--ink-soft); }
+.sbx-http code { font: 11px var(--mono); background: var(--paper); padding: 1px 5px; border-radius: 4px; }
+.sbx-http b.ok { color: #2f7d4f; }
+.sbx-http b.no { color: var(--ember, #a3262a); }

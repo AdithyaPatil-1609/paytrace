@@ -4,6 +4,7 @@
  * An uploaded file is read in memory only, kept for the sandbox's two hours,
  * and never stored or logged. Account numbers are removed while reading.
  */
+import { randomUUID } from "node:crypto";
 import { cleanNarration, parseStatementCsv } from "@/lib/statements/csv";
 import { generateStatement } from "@/lib/statements/generate";
 
@@ -18,10 +19,12 @@ function log(box: Sandbox, accepted: boolean, summary: string, preview: string, 
 
 const today = () => new Date(Date.now() + 5.5 * 3_600_000).toISOString().slice(0, 10);
 
-export function loadSampleStatement(box: Sandbox, now = today()) {
-  const sample = generateStatement(box.id, now);
+/** Each click is a new, randomly made person: a fresh seed every time. */
+export function loadSampleStatement(box: Sandbox, now = today(), seed: string = randomUUID()) {
+  const sample = generateStatement(seed, now);
+  box.samples = (box.samples ?? 0) + 1;
   box.statement = {
-    source: "sample", name: "Sample statement (12 months)",
+    source: "sample", name: `Sample statement #${box.samples} (12 months)`,
     lines: sample.lines.map(line => ({ ...line, narration: cleanNarration(line.narration) })),
     usage: sample.usage, notices: sample.notices, skipped: 0
   };

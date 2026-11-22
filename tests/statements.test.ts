@@ -3,6 +3,7 @@
  * and the demo sandbox using a statement in place of the demo person's.
  * All data is made up.
  */
+import { isManualTransfer } from "../lib/payments/engine";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { cleanNarration, parseStatementCsv, statementAmount, statementDate } from "../lib/statements/csv";
@@ -55,15 +56,27 @@ test("dates, amounts and descriptions are read carefully", () => {
   assert.equal(cleanNarration("UPI/RENT MR SHARMA/9812345678"), "UPI/RENT MR SHARMA/");
 });
 
-test("the sample statement raises all four warnings, and nothing from one-off spending", () => {
+test("every random sample person raises all four warnings, and nothing from one-off spending", () => {
+  for (let i = 0; i < 40; i++) {
+    clearSandboxes();
+    const box = openSandbox("a".repeat(32));
+    loadSampleStatement(box, i % 2 ? "2026-11-21" : "2026-02-27", `seed-${i}`);
+    const view = sandboxView(getSandbox("a".repeat(32)));
+    const kinds = new Set(view.alerts.map(a => a.kind));
+    for (const kind of ["price_rise", "unused", "upcoming", "after_cancel"] as const) assert.ok(kinds.has(kind), `seed-${i}: ${kind}`);
+    assert.ok(!view.alerts.some(a => /DMART|ATM|SWIGGY|RENT/.test(a.title)), `seed-${i}`);
+    assert.equal(view.statement?.source, "sample");
+  }
+});
+
+test("each click makes a different person", () => {
   clearSandboxes();
-  const box = openSandbox("a".repeat(32));
+  const box = openSandbox("d".repeat(32));
   loadSampleStatement(box, "2026-11-21");
-  const view = sandboxView(getSandbox("a".repeat(32)));
-  const kinds = new Set(view.alerts.map(a => a.kind));
-  for (const kind of ["price_rise", "unused", "upcoming", "after_cancel"] as const) assert.ok(kinds.has(kind), kind);
-  assert.ok(!view.alerts.some(a => /DMART|ATM|SWIGGY/.test(a.title)));
-  assert.equal(view.statement?.source, "sample");
+  const first = box.statement!.lines.map(l => `${l.narration}${l.amount}`).join();
+  loadSampleStatement(box, "2026-11-21");
+  assert.notEqual(box.statement!.lines.map(l => `${l.narration}${l.amount}`).join(), first);
+  assert.match(box.statement!.name, /#2/);
 });
 
 test("an uploaded statement replaces the demo data for that visitor only, and can be removed", () => {
@@ -111,4 +124,14 @@ test("the import route needs a signed-in request from our own site", async () =>
   const send = (origin: string) => importStatement(new NextRequest("https://paytrace.co.in/api/account/statement", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify({ name: "s.csv", csv: "x" }) }));
   assert.equal((await send("https://evil.example")).status, 403);
   assert.equal((await send("https://paytrace.co.in")).status, 401);
+});
+
+test("rent and other hand-sent UPI, IMPS or NEFT transfers are never auto debits", () => {
+  assert.equal(isManualTransfer("UPI/RENT MR SHARMA/"), true);
+  assert.equal(isManualTransfer("IMPS/P2A/RAVI KUMAR"), true);
+  assert.equal(isManualTransfer("NEFT RENT JULY"), true);
+  assert.equal(isManualTransfer("UPI AUTOPAY/NETFLIX"), false);
+  assert.equal(isManualTransfer("ACH DR LIC HSG EMI"), false);
+  assert.equal(isManualTransfer("NACH/HDFC LIFE"), false);
+  assert.equal(isManualTransfer("NETFLIX.COM"), false);
 });

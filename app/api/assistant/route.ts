@@ -10,6 +10,10 @@ import { readLiveDashboard } from "@/db/neo4j/live";
 import { SESSION } from "@/lib/accounts/security";
 import { ask, MAX_MESSAGE } from "@/lib/assistant/assistant";
 import { demoCommitments } from "@/lib/data/load-demo";
+import { detectCommitments } from "@/lib/payments/engine";
+import { sandboxView } from "@/lib/sandbox/dataset";
+import { SANDBOX_COOKIE, validSandboxId } from "@/lib/sandbox/session";
+import { getSandbox } from "@/lib/sandbox/store";
 import { clientKey, LIMITS, takeHit, tooMany } from "@/lib/security/rate-limit";
 import { forbidden, fromOurSite } from "@/lib/security/origin";
 import { readJsonBody } from "@/lib/security/body";
@@ -62,7 +66,15 @@ export async function POST(request: NextRequest) {
       const { summary } = await readLiveDashboard(user.profile);
       data = { items: summary.commitments, asOf: summary.asOf };
     } else {
-      data = await demoCommitments(body.scope === "demo-static");
+      // A demo visitor who loaded a sample statement or sent messages gets answers about that data.
+      const id = request.cookies.get(SANDBOX_COOKIE)?.value;
+      const box = validSandboxId(id) ? getSandbox(id) : null;
+      if (box && (box.statement || box.events.length)) {
+        const view = sandboxView(box);
+        data = { items: detectCommitments(view.dataset), asOf: view.asOf };
+      } else {
+        data = await demoCommitments(body.scope === "demo-static");
+      }
     }
   } catch {
     return Response.json({ error: "Payment data is unavailable right now." }, { status: 503, headers });

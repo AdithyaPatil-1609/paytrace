@@ -30,7 +30,7 @@ export type SandboxStatement = {
   notices: NotificationRow[];
   skipped: number;
 };
-export type Sandbox = { id: string; created: number; touched: number; counter: number; log: SandboxLogEntry[]; events: SandboxEvent[]; statement?: SandboxStatement };
+export type Sandbox = { id: string; created: number; touched: number; counter: number; log: SandboxLogEntry[]; events: SandboxEvent[]; statement?: SandboxStatement; samples?: number };
 
 type Store = Map<string, Sandbox>;
 const holder = globalThis as unknown as { __paytraceSandboxes?: Store };
