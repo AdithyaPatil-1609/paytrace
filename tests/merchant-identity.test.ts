@@ -6,6 +6,9 @@ import { detectCommitments } from "../server/payments/engine";
 import { issueGroups } from "../server/presentation/issue-cards";
 import type { Dataset } from "../server/payments/types";
 import { pendingIdentities } from "../neo4j/merchant-identities";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { DetailPanel } from "../web/components/detail/detail-panel";
 
 const dictionary = readDictionary();
 const reply = (name: string | null, category: string | null) => JSON.stringify({ results: [{ index: 0, name, category }] });
@@ -65,4 +68,14 @@ test("suggestions remain separate from verified aliases; confirming changes clas
   assert.equal(confirmed.annualCost, 15000);
   assert.equal(confirmed.cancellationPath, undefined);
   assert.equal(issueGroups([confirmed]).find(group => group.id === "unknown")?.rows.length, 0);
+});
+
+test("merchant identity review actions are outside the fixed-size drawer header", () => {
+  const dataset: Dataset = { asOf: "2026-11-22", dictionary: [], mandates: [], usage: [], notifications: [], statement: ["2026-08-30", "2026-09-29"].map((date, index) => ({ txnId: String(index), persona: "p1", accountId: "x", accountType: "unknown", narration: "M365", date, debit: 599, reference: "", channel: "statement", txnKind: "debit_purchase" })) };
+  const [item] = detectCommitments({ ...dataset, merchantIdentities: [{ id: "identity", descriptor: "M365", name: "Microsoft 365", category: "software", status: "suggested" }] });
+  const html = renderToStaticMarkup(createElement(DetailPanel, { item, asOf: dataset.asOf, dataset, source: { kind: "neo4j", personal: true, counts: { payments: 2, messages: 0, mandates: 0, patterns: 0, commitments: 1 } }, challengeLive: false, onClose: () => {} }));
+  const header = html.match(/<header>[\s\S]*?<\/header>/)?.[0];
+  assert.ok(header);
+  assert.doesNotMatch(header, /Confirm identity|Not this merchant/);
+  assert.match(html, /<div class="merchant-identity-actions">[\s\S]*?Confirm identity<\/button>[\s\S]*?Not this merchant<\/button><\/div>/);
 });

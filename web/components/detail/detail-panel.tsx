@@ -95,9 +95,10 @@ export function DetailPanel({
             <h2 id="transaction-title">{item.merchant}</h2>
             <code>{item.rawNarration}</code>
             <p>{item.plainDescription}</p>
-            {source.personal && item.merchantIdentity && <MerchantIdentityReview key={`${item.merchantIdentity.id}-${item.merchantIdentity.status}`} identity={item.merchantIdentity} />}
           </div>
         </header>
+
+        {source.personal && item.merchantIdentity && <MerchantIdentityReview key={`${item.merchantIdentity.id}-${item.merchantIdentity.status}`} identity={item.merchantIdentity} />}
 
         <PriceHistory item={item} flagged={flagged} />
         <ProofChain item={item} flagged={flagged} live={source.kind === "neo4j"} />
@@ -216,12 +217,14 @@ function MerchantIdentityReview({ identity }: { identity: MerchantIdentity }) {
       setMessage("Saved. Your next dashboard refresh will show the change.");
     } catch { setMessage("Could not save. Please retry."); setBusy(false); }
   }
-  return <section className="drawer-block" aria-label="Merchant identity review">
+  return <section className="drawer-block merchant-identity-review" aria-label="Merchant identity review">
     <h3>{identity.status === "confirmed" ? "Identity confirmed by you" : "Review AI merchant suggestion"}</h3>
     <p>{identity.name} · {identity.category}. This does not verify an autopay method or cancellation path.</p>
-    {identity.status === "suggested" && <button className="primary-button" disabled={busy} onClick={() => void decide("confirmed")}>Confirm identity</button>}{" "}
-    <button className="secondary-button" disabled={busy} onClick={() => void decide("rejected")}>{identity.status === "confirmed" ? "Undo confirmation" : "Not this merchant"}</button>
-    {message && <p role="status">{message}</p>}
+    <div className="merchant-identity-actions">
+      {identity.status === "suggested" && <button type="button" className="primary-button" disabled={busy} onClick={() => void decide("confirmed")}>Confirm identity</button>}
+      <button type="button" className="secondary-button" disabled={busy} onClick={() => void decide("rejected")}>{identity.status === "confirmed" ? "Undo confirmation" : "Not this merchant"}</button>
+    </div>
+    {message && <p className="drawer-note" role="status">{message}</p>}
   </section>;
 }
 
